@@ -13,7 +13,11 @@ class MemberPolicy
      */
     public function viewAny(User $user): bool
     {
-        return false;
+        // return false;
+        return $user->hasAnyRole([
+            'President',
+            'Treasurer',
+        ]);
     }
 
     /**
@@ -21,7 +25,10 @@ class MemberPolicy
      */
     public function view(User $user, Member $member): bool
     {
-        return false;
+        // return false;
+        return $user->hasRole('President')
+        || $user->hasRole('Treasurer')
+        || $user->member?->id === $member->id;
     }
 
     /**
@@ -29,7 +36,7 @@ class MemberPolicy
      */
     public function create(User $user): bool
     {
-        return false;
+       return $user->hasRole('President');
     }
 
     /**
@@ -37,7 +44,10 @@ class MemberPolicy
      */
     public function update(User $user, Member $member): bool
     {
-        return false;
+        return $user->hasAnyRole([
+            'President',
+            'Treasurer',
+        ]);
     }
 
     /**

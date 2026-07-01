@@ -26,8 +26,8 @@ class SystemSetting extends Model
     | Route Model Binding
     |--------------------------------------------------------------------------
     */
-     public function getRouteKeyName(): string
-    {
-        return 'id';
-    }
+    //  public function getRouteKeyName(): string
+    // {
+    //     return 'id';
+    // }
 }

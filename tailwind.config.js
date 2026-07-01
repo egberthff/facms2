@@ -18,10 +18,26 @@ export default {
                 sans: ['Figtree', ...defaultTheme.fontFamily.sans],
             },
         },
+        colors: {
+        heading: '#111827', 
+        body: '#4b5563',
+        brand: '#1c64f2', // Flowbite default blue
+        default: {
+          DEFAULT: '#e5e7eb',
+          medium: '#d1d5db',
+        },
+        neutral: {
+          'tertiary': '#f3f4f6',
+          'secondary-medium': '#f9fafb',
+        }
+      },
+      borderRadius: {
+        'base': '0.5rem', // Flowbite base rounded corner
+      }
     },
 
     plugins: [
         forms,
-        flowbite,
+        require('flowbite/plugin'),
     ],
 };

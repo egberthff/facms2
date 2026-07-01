@@ -19,4 +19,20 @@ class DashboardTest extends TestCase
         $response->assertOk();
         $response->assertSee('Dashboard');
     }
+
+    public function test_admin_user_sees_dashboard_stats(): void
+    {
+        $user = User::factory()->create();
+        $user->assignRole('President');
+
+        $response = $this->actingAs($user)->get('/dashboard');
+
+        $response->assertOk();
+        $response->assertViewHasAll([
+            'members',
+            'pendingClaims',
+            'approvedClaims',
+            'rejectedClaims',
+        ]);
+    }
 }

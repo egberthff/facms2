@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\ServerStatus;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -62,7 +63,7 @@ class Member extends Model
 
     public function user()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'user_id', 'user_id');
     }
 
     public function claims()

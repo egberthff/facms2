@@ -111,4 +111,9 @@ class Claim extends Model
     {
         return $query->where('status', 'Paid');
     }
+
+    public function scopeRejected($query)
+    {
+        return $query->where('status', 'Rejected');
+    }
 }

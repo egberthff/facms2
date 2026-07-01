@@ -17,6 +17,16 @@ window.Alpine = Alpine;
 
 Alpine.start();
 
+import 'flowbite';
+
+import Swal from 'sweetalert2';
+
+window.Swal = Swal;
+
+import Chart from 'chart.js/auto';
+
+window.Chart = Chart;
+
 // Initialize components on DOM ready
 document.addEventListener('DOMContentLoaded', () => {
     // Map imports

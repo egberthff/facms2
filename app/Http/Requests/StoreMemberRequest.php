@@ -19,18 +19,6 @@ class StoreMemberRequest extends FormRequest
     {
         return [
 
-            'name' => [
-                'required',
-                'string',
-                'max:255',
-            ],
-
-            'email' => [
-                'required',
-                'email',
-                'unique:users,email',
-            ],
-
             'employee_number' => [
                 'required',
                 'string',
@@ -86,6 +74,11 @@ class StoreMemberRequest extends FormRequest
                 'in:Permanent,Probationary,Contractual,Part-time',
             ],
 
+            'membership_status' => [
+                'required',
+                'in:Active,Inactive,Suspended',
+            ],
+
             'contact_number' => [
                 'required',
                 'string',
@@ -95,6 +88,13 @@ class StoreMemberRequest extends FormRequest
             'address' => [
                 'required',
                 'string',
+            ],
+
+            'email' => [
+                'required',
+                'email',
+                'max:255',
+                'unique:users,email',
             ],
 
             'gcash_number' => [

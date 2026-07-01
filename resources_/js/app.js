@@ -15,6 +15,14 @@ window.Alpine = Alpine;
 // window.flatpickr = flatpickr;
 // window.FullCalendar = Calendar;
 
+import 'flowbite';
+
+import Swal from 'sweetalert2';
+window.Swal = Swal;
+
+import Chart from 'chart.js/auto';
+window.Chart = Chart;
+
 Alpine.start();
 
 // Initialize components on DOM ready
