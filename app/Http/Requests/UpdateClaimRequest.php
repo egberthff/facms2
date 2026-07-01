@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\Auth;
 
 class UpdateClaimRequest extends FormRequest
 {
@@ -12,7 +13,11 @@ class UpdateClaimRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        // return false;
+        return Auth::user()->hasAnyRole([
+            'President',
+            'Treasurer',
+        ]);
     }
 
     /**
@@ -22,6 +27,8 @@ class UpdateClaimRequest extends FormRequest
      */
     public function rules(): array
     {
+        $claim = $this->route('claim');
+        
         return [
             //
         ];

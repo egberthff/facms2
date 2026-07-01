@@ -11,7 +11,15 @@ class DashboardController extends Controller
     public function __invoke()
     {
         if (Auth::user()->hasRole('Member')) {
-            return view('dashboard.member');
+            return view('dashboard.member', [
+                'totalCliams' => 1000,
+                'processing' => 4,
+                'disbursed' => 5,
+                'pending' => 7,
+                'balance' => 10000,
+                'recentTransactions' => [],
+                'title' => 'Main'
+            ]);
         }
 
         return view('dashboard.admin', [
@@ -20,6 +28,7 @@ class DashboardController extends Controller
             'approvedClaims' => Claim::approved()->count(),
             'rejectedClaims' => Claim::rejected()->count(),
             'totalClaims' => Claim::rejected()->count(),
+            'title' => 'Admin'
         ]);
     }
 

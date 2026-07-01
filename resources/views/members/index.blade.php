@@ -1,31 +1,45 @@
 <x-app-layout>
    
-    <div class="p-4 bg-white border border-blue-200 rounded-xl shadow-sm dark:bg-gray-900 dark:border-gray-800 overflow-hidden">
-        <div class="flex justify-end mb-4">
-        <x-button
-        id="add-new-member-btn"
-        type="button" 
-        class="btn btn-info align-self-end add-new-member-btn hover:bg-brand-strong focus:ring-4 focus:ring-brand-medium shadow-xs font-medium leading-5 rounded-base text-sm px-4 py-2.5 focus:outline-none" 
-        data-action="add-new-member"
-        data-modal-target="member-modal" 
-        data-modal-toggle="member-modal">
-            Add New Member
-        </x-button>
+    <div class="p-4 bg-white border border-blue-200 rounded-xl shadow-sm dark:bg-gray-900 dark:border-gray-800">
+        <div class="flex justify-between items-center mb-4 w-full p-2">
+            <!-- Left End: Filter Dropdown -->
+            <div class="flex items-center">
+                <label for="member-status-filter" class="sr-only">Filter by Status</label>
+                <select id="member-status-filter" class="bg-slate-700 text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
+                    <option value="">All Members</option>
+                    <option value="Active" selected>Active Members</option>
+                    <option value="Inactive">Inactive Members</option>
+                </select>
+            </div>  
+
+            <!-- Right End: Add Action -->
+            <div class="flex">  
+                 <x-button
+                    id="add-new-member-btn"
+                    type="button" 
+                    class="btn btn-info add-new-member-btn hover:bg-brand-strong focus:ring-4 focus:ring-brand-medium shadow-xs font-medium leading-5 rounded-base text-sm px-4 py-2.5 focus:outline-none" 
+                    data-action="add-new-member"
+                    data-modal-target="member-modal" 
+                    data-modal-toggle="member-modal">
+                        Add New Member
+                    </x-button>
+            </div>
         </div>
-        <div class="overflow-x-auto">
-            {{-- <x-table id="members-table" class="w-full text-sm text-left text-gray-500 dark:text-gray-400 border-collapse"> --}}
-            <x-table id="members-table" >
+
+        <div class="w-full">
+            <x-table id="members-table" class="dt-responsive">
                 <thead>
                     {{-- <tr class="text-xs uppercase tracking-wider text-gray-700 bg-gray-50 dark:bg-gray-800 dark:text-gray-300"> --}}
-                        <tr></tr>
                         <th class="px-6 py-4 font-semibold">Employee ID</th>
                         <th class="px-6 py-4 font-semibold">Member</th>
                         <th class="px-6 py-4 font-semibold">Work Details</th>
-                        <th class="px-6 py-4 font-semibold">Employment Status</th>
+                        {{-- <th class="px-6 py-4 font-semibold">Employment Status</th> --}}
                         <th class="px-6 py-4 font-semibold">Membership Status</th>
+                        <th class="px-6 py-4 font-semibold">Claims</th>
+                        <th class="px-6 py-4 font-semibold">Contributions</th>
                         <th class="px-6 py-4 font-semibold">Action</th>
 
-                    </tr>
+                    {{-- </tr> --}}
                 </thead>
                 <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
                     @if(isset($members) && count($members) > 0)
@@ -34,8 +48,10 @@
                                 <td class="px-6 py-4 font-semibold text-gray-900 dark:text-white whitespace-nowrap">{{ $member->employee_number }}</td>
                                 <td class="px-6 py-4 whitespace-nowrap">{{ ucwords($member->last_name) }}, {{ ucwords($member->first_name) }} {{ ucwords($member->middle_name) }}, {{ ucwords($member->suffex) }}</td>
                                 <td class="px-6 py-4 whitespace-nowrap">{{ $member->department }} - {{ $member->position }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap">{{ $member->employment_status }}</td>
+                                {{-- <td class="px-6 py-4 whitespace-nowrap">{{ $member->employment_status }}</td> --}}
                                 <td class="px-6 py-4 whitespace-nowrap">{{ $member->membership_status }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap">{{ $member->claims }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap">{{ $member->contributions }}</td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <x-button type="button" 
                                         id="edit-member-btn"
@@ -222,6 +238,12 @@
                         info: "Showing {start} to {end} of {rows} entries"
                     }
                 });
+                document.getElementById('member-status-filter').addEventListener('change', function(e) {
+                    const selectedValue = e.target.value;
+    
+                        // If 'All Members' is selected, value is "". It resets the visible dataset rows.
+                        dataTable.search(selectedValue);
+                        });
             }
 
             //Listener for Dynamic Edit/Add Member button click

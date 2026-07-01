@@ -21,7 +21,10 @@ class ClaimPolicy
      */
     public function view(User $user, Claim $claim): bool
     {
-        return false;
+        return $user->hasAnyRole([
+            'President',
+            'Treasurer',
+        ]);
     }
 
     /**
@@ -29,7 +32,9 @@ class ClaimPolicy
      */
     public function create(User $user): bool
     {
-        return false;
+        return $user->hasRole([
+            'Member',
+        ]);
     }
 
     /**
@@ -37,7 +42,10 @@ class ClaimPolicy
      */
     public function update(User $user, Claim $claim): bool
     {
-        return false;
+        return $user->hasAnyRole([
+            'President',
+            'Treasurer',
+        ]);
     }
 
     /**
