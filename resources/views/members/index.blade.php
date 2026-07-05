@@ -296,7 +296,8 @@
                         submitBtn.textContent = 'Save Details';
 
                         // 2. Set backend store route
-                        memberForm.action = '/members.store'; 
+                        // memberForm.action = '/members.store'; 
+                        memberForm.action = '/members'; 
 
                         // 3. Remove Laravel's PUT method spoofing so it stays a clean POST request
                         const methodInput = memberForm.querySelector('input[name="_method"]');

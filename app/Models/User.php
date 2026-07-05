@@ -71,6 +71,8 @@ class User extends Authenticatable
     use HasUuids;
 
     protected $primaryKey = 'user_id';
+     // ADD THIS LINE FOR SPATIE
+    protected $guard_name = 'web'; 
     public $incrementing = false;
 
     protected $keyType = 'string';

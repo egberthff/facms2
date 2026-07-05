@@ -3,7 +3,8 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 class ClaimController extends Controller
 {
     /**
@@ -19,6 +20,24 @@ class ClaimController extends Controller
      */
     public function create()
     {
+       Log::error('User permission dump', [
+            'user_id' => Auth::id(),
+            'permissions' => Auth::user()->getAllPermissions()->pluck('name')
+        ]);
+
+        foreach (array_keys(config('auth.guards')) as $guard) {
+            if (Auth::guard($guard)->check()) {
+                $activeGuard = $guard;
+                break;
+            }
+        }
+
+        Log::info('Active login guard:', ['guard' => $activeGuard]);
+
+        Log::info('Spatie expected guard:', [
+            // 'model_guard' => Auth::user()->guardName() 
+        ]);
+
         return view('claims.index', ['title' => "Submit Claim"]);
     }
 
