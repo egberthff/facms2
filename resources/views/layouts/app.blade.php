@@ -30,8 +30,12 @@
 
     {{-- Sidebar --}}
     {{-- <x-layout.sidebar /> --}}
+    @role('President|Treasurer')
     <x-sidebar/>
-
+    @endrole
+    @role("Member")
+    <x-sidebar-member/>
+    @endrole
     {{-- Main Content --}}
     <div class="flex-1 flex flex-col lg:ml-64">
 

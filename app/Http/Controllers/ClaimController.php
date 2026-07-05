@@ -19,7 +19,7 @@ class ClaimController extends Controller
      */
     public function create()
     {
-        //
+        return view('claims.index', ['title' => "Submit Claim"]);
     }
 
     /**
