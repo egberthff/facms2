@@ -94,10 +94,10 @@
 
                 <li>
 
-                    {{-- <a href="{{ route('claims.create') }}" --}}
-                    <a href="{{ route('dashboard') }}"
+                    <a href="{{ route('claim.create') }}"
+                    {{-- <a href="{{ route('dashboard') }}" --}}
                         class="flex items-center p-3 rounded-lg transition
-                        {{ request()->routeIs('claims.create')
+                        {{ request()->routeIs('claim.create')
                             ? 'bg-slate-700 text-white'
                             : 'text-white hover:bg-slate-700' }}">
 
@@ -118,7 +118,7 @@
                     {{-- <a href="{{ route('claims.my') }}" --}}
                     <a href="{{ route('dashboard') }}"
                         class="flex items-center p-3 rounded-lg transition
-                        {{ request()->routeIs('claims.my')
+                        {{ request()->routeIs('claim.my')
                             ? 'bg-slate-700 text-white'
                             : 'text-white hover:bg-slate-700' }}">
 

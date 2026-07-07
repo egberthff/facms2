@@ -25,6 +25,7 @@ class Claim extends Model
         'requested_amount',
         'approved_amount',
         'annual_limit',
+        'desctiption',
         'status',
         'remarks',
         'submitted_at',

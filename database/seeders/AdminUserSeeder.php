@@ -44,5 +44,38 @@ class AdminUserSeeder extends Seeder
                 'gcash_account_name' => null,
             ]
         );
+
+        $user = User::updateOrCreate(
+            ['email' => 'member@facms.test'],
+            [
+                'email' => 'member@bisu.edu.ph',
+                'name' => 'Member Test Account',
+                'password' => Hash::make('123456'),
+                'is_active' => true,
+            ]
+        );
+
+        $user->assignRole('Member');
+
+        Member::updateOrCreate(
+            ['user_id' => $user->user_id],
+            [
+                'employee_number' => 'EMP-0002',
+                'first_name' => 'Member',
+                'middle_name' => 'Test',
+                'last_name' => 'Account',
+                'suffix' => null,
+                'gender' => 'Male',
+                'birth_date' => '1990-01-01',
+                'department' => 'CCJ',
+                'position' => 'Member',
+                'employment_status' => 'Permanent',
+                'membership_status' => 'Active',
+                'contact_number' => '09123456790',
+                'address' => 'N/A',
+                'gcash_number' => null,
+                'gcash_account_name' => null,
+            ]
+        );
     }
 }

@@ -25,7 +25,68 @@ class StoreClaimRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'claimType' => [
+                'required',
+                'string',
+            ],
+
+            'amount' => [
+                'required',
+                'numeric',
+                'min:1'
+            ],
+            'description' => [
+                'required',
+                'string',
+            ],
+            'incidentDate' => [
+                'required',
+                'date',
+            ],
+            'hospital' => [
+                'nullable',
+                'string',
+                'max:255'
+            ],
+            'documents' => [
+                'nullable',
+                'array',
+            ],
+            'documents.*' => [
+                'file',
+                'mimes:pdf,jpeg,jpeg,png',
+                'max:10240'
+            ],
+            'paymentMethod' => [
+                'required',
+                'string'
+            ],
+            'bank' => [
+                'nullable', 
+                'string'
+            ],
+            'accountName' => [
+                'nullable',
+                'string'
+            ],
+            'accountNumber' => [
+                'nullable',
+                'string'
+            ],
+            'branch' => [
+                'nullable',
+                'string'
+            ],
+    
+            'gcashName' => [
+                'nullable',
+                'string'
+            ],
+            'gcashNumber' => [
+                'nullable',
+                'string'
+            ],
+    
         ];
     }
 }

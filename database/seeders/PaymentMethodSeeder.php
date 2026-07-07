@@ -9,7 +9,7 @@ class PaymentMethodSeeder extends Seeder
 {
     public function run(): void
     {
-        foreach (['GCash', 'Check'] as $method) {
+        foreach (['GCash', 'Check', 'Bank Transfer'] as $method) {
 
             PaymentMethod::updateOrCreate(
                 ['name' => $method],
