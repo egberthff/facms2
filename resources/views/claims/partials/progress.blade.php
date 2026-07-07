@@ -1,4 +1,4 @@
-        <div class="bg-white rounded-2xl border border-blue-700 shadow-sm p-5 mb-6">
+       <div class="bg-white rounded-2xl border border-blue-700 shadow-sm p-5 mb-6">
 
             <div class="flex flex-wrap items-center justify-center gap-5 md:gap-12">
 

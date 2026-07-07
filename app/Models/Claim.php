@@ -25,6 +25,7 @@ class Claim extends Model
         'requested_amount',
         'approved_amount',
         'annual_limit',
+        'desctiption',
         'status',
         'remarks',
         'submitted_at',
@@ -64,7 +65,7 @@ class Claim extends Model
 
     public function member()
     {
-        return $this->belongsTo(Member::class);
+        return $this->belongsTo(Member::class, 'member_id', 'id');
     }
 
     public function claimType()

@@ -50,6 +50,8 @@ return new class extends Migration
                 'Paid',
             ])->default('Pending');
 
+            $table->text('description')->nullable();
+
             $table->text('remarks')->nullable();
 
             // Dates
