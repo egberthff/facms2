@@ -7,10 +7,12 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use App\Http\Requests\StoreClaimRequest;
+use App\Enums\ClaimStatus;
 use App\Models\ClaimType;
 use App\Models\PaymentMethod;
 use App\Models\Claim;
 use App\Models\ClaimDocument;
+use App\Models\SystemSetting;
 class ClaimController extends Controller
 {
     /**
@@ -28,6 +30,7 @@ class ClaimController extends Controller
     {
         $data['title'] = 'Submit Claim';
         $data['claimTypes'] = ClaimType::all();
+        $data['paymentMethods'] = PaymentMethod::all();
         $data['paymentMethodBanks'] = ['BDO', 'BPI', 'PNB', 'LandBank', 'Mentrobank'];
 
         return view('claims.index', $data);
@@ -63,6 +66,13 @@ class ClaimController extends Controller
                 . '-'
                 . strtoupper(Str::random(6));
     
+             /*
+            |--------------------------------------------------------------------------
+            | Get Annual Limit
+            |--------------------------------------------------------------------------
+            */
+            $annualLimit = SystemSetting::annualLimit();
+
             /*
             |--------------------------------------------------------------------------
             | Create Claim
@@ -76,8 +86,8 @@ class ClaimController extends Controller
                 'payment_method_id' => $request->paymentMethod,
                 'requested_amount' => $request->amount,
                 'approved_amount' => null,
-                'annual_limit' => null,
-                'status' => 'Pending',
+                'annual_limit' =>  $this->toMysqlDecimal($annualLimit->setting_value),
+                'status' => ClaimStatus::Pending->value,
                 'description' => $request->description,
                 'submitted_at' => now(),
             ]);
@@ -124,8 +134,8 @@ class ClaimController extends Controller
             return response()->json([
             'success' => true,
             'message' => 'Claim submitted successfully.',
-            'redirect' => route('claims.index')
-        ]);
+            // 'redirect' => route('claims.index')
+            ], 200);
             // return redirect()
             //     ->route('claims.index')
             //     ->with(
@@ -141,7 +151,7 @@ class ClaimController extends Controller
            return response()->json([
                'success' => false,
                'message' => 'Something went wrong while processing your claim.',
-               'error' => $e->getMessage() // You can remove this in production for security
+            //    'error' => $e->getMessage() // You can remove this in production for security
            ], 500); 
             // return back()
             //     ->withInput()
@@ -183,4 +193,18 @@ class ClaimController extends Controller
     {
         //
     }
+
+    private function toMysqlDecimal($number, int $decimals = 2): string 
+{
+    // Clean localized number strings (e.g., convert "1.234,56" or "1,234.56" to a clean float)
+    if (is_string($number)) {
+        // Strip out anything that isn't a digit, dot, or minus sign
+        $number = str_replace(',', '.', $number);
+        $number = preg_replace('/[^0-9.-]/', '', $number);
+    }
+
+    // Format the number to match MySQL expectations
+    return number_format((float)$number, $decimals, '.', '');
+}
+
 }

@@ -197,7 +197,14 @@
                         formData.append('incidentDate', this.form.incidentDate);
                         formData.append('hospital', this.form.hospital);
 
-                        formData.append('paymentMethod', this.form.paymentMethod);
+                         const paymentMethodMap = {
+                            'check': '019f32cb-c177-7193-a110-d5cc8aeb9c60',
+                            'gcash': '019f32cb-c172-72d3-97bd-b1b888fe3611',
+                            'bank':  '019f32cb-c17d-7362-94af-09d027798fca'
+                        };
+                        const selectedId = paymentMethodMap[this.form.paymentMethod] || this.form.paymentMethod;
+                        formData.append('paymentMethod', selectedId);
+                        // formData.append('paymentMethod', this.form.paymentMethod);
 
                         formData.append('bank', this.form.bank);
                         formData.append('accountName', this.form.accountName);
@@ -241,7 +248,7 @@
                         
                            alert(data.message);
                         
-                           window.location.href = data.redirect;
+                        //    window.location.href = data.redirect;
                         
                        } catch (error) {
                         

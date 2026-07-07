@@ -48,6 +48,9 @@ class StoreClaimRequest extends FormRequest
                 'string',
                 'max:255'
             ],
+            'description' => [
+                'required'
+            ],
             'documents' => [
                 'nullable',
                 'array',

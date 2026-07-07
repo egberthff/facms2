@@ -30,4 +30,9 @@ class SystemSetting extends Model
     // {
     //     return 'id';
     // }
+
+        public function scopeAnnualLimit($query)
+    {
+        return $query->where('setting_key', 'annual_claim_limit')->first();
+    }
 }
