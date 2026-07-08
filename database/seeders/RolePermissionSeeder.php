@@ -22,8 +22,6 @@ class RolePermissionSeeder extends Seeder
             'release payments',
             'manage members',
             'manage funds',
-            'view member metrics',
-            'view all metrics'
         ];
 
         // 3. Create permissions in the database
@@ -38,7 +36,6 @@ class RolePermissionSeeder extends Seeder
         $memberRole->syncPermissions([
             'create claims', 
             'view claims',
-            'view member metrics'
         ]);
 
         // Treasurers manage funds and release payments
@@ -48,8 +45,6 @@ class RolePermissionSeeder extends Seeder
             'release payments',
             'manage funds',
             'update claims',
-            'view member metrics',
-            'view all metrics'
         ]);
 
         // Presidents can do everything

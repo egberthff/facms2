@@ -34,10 +34,5 @@ class AppServiceProvider extends ServiceProvider
         });
           Blade::anonymousComponentPath(resource_path('views/layouts'), 'layouts');
           Blade::anonymousComponentPath(resource_path('views/claims'), 'claims');
-
-         $policies = [
-            // Registers the Dashboard Policy manually
-            'dashboard' => \App\Policies\DashboardPolicy::class,
-        ];
     }
 }

@@ -68,20 +68,17 @@ class Member extends Model
 
     public function claims()
     {
-        // return $this->hasMany(Claim::class);
-        return $this->hasMany(Claim::class, 'member_id', 'id');
+        return $this->hasMany(Claim::class);
     }
 
     public function contributions()
     {
-        // return $this->hasMany(ContributionDetail::class);
-        return $this->hasMany(ContributionDetail::class, 'member_id', 'id');
+        return $this->hasMany(ContributionDetail::class);
     }
 
     public function fundTransactions()
     {
-        // return $this->hasMany(FundTransaction::class);
-        return $this->hasMany(FundTransaction::class, 'member_id', 'id');
+        return $this->hasMany(FundTransaction::class);
     }
 
     /*

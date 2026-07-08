@@ -47,7 +47,7 @@ return new class extends Migration
                 'Pending',
                 'Approved',
                 'Rejected',
-                'Disbursed',
+                'Paid',
             ])->default('Pending');
 
             $table->text('description')->nullable();

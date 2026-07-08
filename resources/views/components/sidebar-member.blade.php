@@ -114,7 +114,9 @@
                 </li>
 
                 <li>
-                     <a href="{{ route('claim.my', Auth::user()) }}" 
+
+                    {{-- <a href="{{ route('claims.my') }}" --}}
+                    <a href="{{ route('dashboard') }}"
                         class="flex items-center p-3 rounded-lg transition
                         {{ request()->routeIs('claim.my')
                             ? 'bg-slate-700 text-white'
@@ -134,7 +136,8 @@
 
                 <li>
 
-                    <a href="{{ route('balance.my-metrics') }}"
+                    {{-- <a href="{{ route('balance.index') }}" --}}
+                    <a href="{{ route('dashboard') }}"
                         class="flex items-center p-3 rounded-lg transition
                         {{ request()->routeIs('balance.*')
                             ? 'bg-slate-700 text-white'
