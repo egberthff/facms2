@@ -211,29 +211,15 @@ class ClaimController extends Controller
 
         // 4. Query using the direct member ID
         $data['claims'] = Claim::forMember($member->id)
-            ->latest('submitted_at')
-            ->get();
+        ->with(['claimType', 'paymentMethod', 'reviewer', 'documents'])
+        ->latest('submitted_at')
+        ->get();
+
+        \Log::error(print_r($data['claims'][0], true));
 
         return view('claims.claims-list', $data);
     }
-
-    // public function myClaims(User $user)
-    // {
-    //     // 1. Authorize via Gate facade (Laravel 11 style)
-    //     Gate::authorize('viewMyClaims', [Claim::class, $user]);
     
-    //     // 2. Fetch the claims using the relationship scope
-    //     $data['claims'] = Claim::forUser($user->id)
-    //         ->latest('submitted_at')
-    //         ->get();
-        
-    //         \Log::error(gettype($data['claims']));
-    //         \Log::error(print_r($data['claims'], true));
-    
-    //     return view('claims.claims-list', $data);
-    // }
-    
-
     private function toMysqlDecimal($number, int $decimals = 2): string 
     {
         // Clean localized number strings (e.g., convert "1.234,56" or "1,234.56" to a clean float)
