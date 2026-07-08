@@ -11,7 +11,7 @@
             <!-- ============ Total Claims ========== -->
             <x-stats-card
             title="Total Claims"
-            value="₱23,000">
+            value="{{ $totalClaims }}">
             <x-slot:icon>
             <x-heroicon-o-clock class="w-10 h-10 text-yellow-500"/>
             </x-slot:icon>
@@ -20,7 +20,7 @@
             <!-- ============ Processing ============ -->
             <x-stats-card
             title="Processing"
-            value="5">
+            value="{{ $processing }}">
             <x-slot:icon>
             <x-heroicon-o-clock class="w-10 h-10 text-yellow-500"/>
             </x-slot:icon>
@@ -29,7 +29,7 @@
             <!-- ============ Disbursed ============= -->
             <x-stats-card
             title="Disbursed"
-            value="5">
+            value="{{ $disbursed }}">
             <x-slot:icon>
             <x-heroicon-o-clock class="w-10 h-10 text-yellow-500"/>
             </x-slot:icon>
@@ -38,7 +38,7 @@
             <!-- ============ Pending =============== -->
             <x-stats-card
             title="Pending"
-            value="5">
+            value="{{ $pending }}">
             <x-slot:icon>
             <x-heroicon-o-clock class="w-10 h-10 text-yellow-500"/>
             </x-slot:icon>
@@ -54,12 +54,12 @@
                 
                 <!-- Large Peso Currency Display -->
                 <div class="text-4xl font-bold mb-6 flex items-center">
-                    <span>₱0.00</span>
+                    <span>₱{{ $balance }}</span>
                 </div>
 
                 <!-- Action Button Actions -->
                 <div class="flex gap-4">
-                    <a href="#" class="flex-1 text-center border border-white/40 hover:bg-white/10 text-white font-medium py-2.5 px-4 rounded-full transition-colors text-sm">
+                    <a href="{{ route('claim.my', Auth::user()) }}" class="flex-1 text-center border border-white/40 hover:bg-white/10 text-white font-medium py-2.5 px-4 rounded-full transition-colors text-sm">
                         View Details
                     </a>
                     <a href="{{ route('claim.create') }}" class="flex-1 text-center bg-[#F28C4F] hover:bg-[#e07b3e] text-white font-medium py-2.5 px-4 rounded-full transition-colors text-sm">
@@ -74,6 +74,40 @@
             <h3 class="text-base font-bold text-gray-900">
                 Recent Transactions
             </h3>
+            <div class="w-full">
+            <table class="dt-responsive w-full">
+                <thead class="bg-gray-100">
+                    <tr>
+                        <th class="px-4 py-3 text-left font-semibold">Ref #</th>
+                        <th class="px-4 py-3 text-left font-semibold">Claim Type</th>
+                        <th class="px-4 py-3 text-right font-semibold">Amount</th>
+                        <th class="px-4 py-3 text-center font-semibold">Date Filed</th>
+                        <th class="px-4 py-3 text-center font-semibold">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                      @foreach($recentTransactions as $claim)
+                    <tr>
+                        <td class="px-4 py-3 whitespace-nowrap font-medium text-slate-900">{{ $claim->claim_number }}</td>
+                        <td class="px-4 py-3 text-slate-600">{{ $claim->claimType->name }}</td>
+                        <td class="px-4 py-3 text-right font-semibold text-slate-900">{{ number_format($claim->requested_amount, 2) }}</td>
+                        <td class="px-4 py-3 text-center text-slate-500">{{ $claim->submitted_at->format('M d, Y') }}</td>
+                        <td class="px-4 py-3 text-center">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                {{ $claim->status === 'Pending' ? 'bg-amber-100 text-amber-800' : '' }}
+                                {{ $claim->status === 'Approved' ? 'bg-emerald-100 text-emerald-800' : '' }}
+                                {{ $claim->status === 'Rejected' ? 'bg-rose-100 text-rose-800' : '' }}
+                                {{ $claim->status === 'Processing' ? 'bg-blue-100 text-blue-800' : '' }}
+                                {{ $claim->status === 'Disbursed' ? 'bg-purple-100 text-purple-800' : '' }}
+                            ">
+                                {{ $claim->status }}
+                            </span>
+                        </td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+            </div>
         </div>
 
     </div>
