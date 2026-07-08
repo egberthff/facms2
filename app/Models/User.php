@@ -1,60 +1,4 @@
 <?php
-
-// namespace App\Models;
-
-// // use Illuminate\Contracts\Auth\MustVerifyEmail;
-// use Illuminate\Database\Eloquent\Concerns\HasUuids;
-// use Database\Factories\UserFactory;
-// use Illuminate\Database\Eloquent\Factories\HasFactory;
-// use Illuminate\Foundation\Auth\User as Authenticatable;
-// use Illuminate\Notifications\Notifiable;
-
-// class User extends Authenticatable
-// {
-//     /** @use HasFactory<UserFactory> */
-//     use HasFactory, Notifiable, HasUuids;
-
-//      protected $primaryKey = 'user_id';
-
-//     public $incrementing = false;
-
-//     protected $keyType = 'string';
-
-//     /**
-//      * The attributes that are mass assignable.
-//      *
-//      * @var list<string>
-//      */
-//     protected $fillable = [
-//         'name',
-//         'email',
-//         'password',
-//     ];
-
-//     /**
-//      * The attributes that should be hidden for serialization.
-//      *
-//      * @var list<string>
-//      */
-//     protected $hidden = [
-//         'password',
-//         'remember_token',
-//     ];
-
-//     /**
-//      * Get the attributes that should be cast.
-//      *
-//      * @return array<string, string>
-//      */
-//     protected function casts(): array
-//     {
-//         return [
-//             'email_verified_at' => 'datetime',
-//             'password' => 'hashed',
-//         ];
-//     }
-// }
-//==================== MODEL STARTS HERE =======================//
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -134,6 +78,21 @@ class User extends Authenticatable
     public function fundTransactions()
     {
         return $this->hasMany(FundTransaction::class, 'created_by');
+    }
+
+    /**
+     * Fetch all claims through the member bridging relationship.
+     */
+    public function claims(): HasManyThrough
+    {
+        return $this->hasManyThrough(
+            Claim::class,
+            Member::class,
+            'user_id',    // Foreign key on members table
+            'member_id',  // Foreign key on claims table
+            'user_id',    // Local key on users table
+            'id'          // Local key on members table
+        );
     }
 }
 
