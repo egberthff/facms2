@@ -39,7 +39,7 @@ return new class extends Migration
             $table->dateTime('submitted_at')->nullable(); // Changed from date to dateTime
             $table->dateTime('reviewed_at')->nullable(); // Added from new schema
             $table->dateTime('approved_at')->nullable(); // Changed from date to dateTime
-            $table->dateTime('paid_at')->nullable(); // Added from new schema
+            $table->dateTime('disbursed_at')->nullable(); // Added from new schema
             
             $table->timestamps(); // Handles created_at and updated_at
             $table->softDeletes(); // Handles deleted_at

@@ -60,7 +60,7 @@ return new class extends Migration
             $table->timestamp('approved_at')
                 ->nullable();
 
-            $table->timestamp('paid_at')
+            $table->timestamp('disbursed_at')
                 ->nullable();
 
             // Reviewer

@@ -33,7 +33,7 @@ class Claim extends Model
         'remarks',
         'submitted_at',
         'approved_at',
-        'paid_at',
+        'disbursed_at',
         'reviewed_by',
     ];
 
@@ -46,7 +46,7 @@ class Claim extends Model
 
             'submitted_at' => 'datetime',
             'approved_at' => 'datetime',
-            'paid_at' => 'datetime',
+            'disbursed_at' => 'datetime',
         ];
     }
 
@@ -154,7 +154,7 @@ class Claim extends Model
     public function scopeDisbursedThisMonth(Builder $query): Builder
     {
         return $query->where('status', 'Disbursed')
-                     ->whereMonth('paid_at', Carbon::now()->month)
-                     ->whereYear('paid_at', Carbon::now()->year);
+                     ->whereMonth('disbursed_at', Carbon::now()->month)
+                     ->whereYear('disbursed_at', Carbon::now()->year);
     }
 }
