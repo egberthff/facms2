@@ -5,10 +5,12 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate; 
 use Illuminate\Support\Str;
 use App\Http\Requests\StoreClaimRequest;
 use App\Enums\ClaimStatus;
 use App\Models\ClaimType;
+use App\Models\User;
 use App\Models\PaymentMethod;
 use App\Models\Claim;
 use App\Models\ClaimDocument;
@@ -20,7 +22,7 @@ class ClaimController extends Controller
      */
     public function index()
     {
-        //
+       //
     }
 
     /**
@@ -194,17 +196,55 @@ class ClaimController extends Controller
         //
     }
 
-    private function toMysqlDecimal($number, int $decimals = 2): string 
-{
-    // Clean localized number strings (e.g., convert "1.234,56" or "1,234.56" to a clean float)
-    if (is_string($number)) {
-        // Strip out anything that isn't a digit, dot, or minus sign
-        $number = str_replace(',', '.', $number);
-        $number = preg_replace('/[^0-9.-]/', '', $number);
+    public function myClaims(User $user)
+    {
+        Gate::authorize('viewMyClaims', [Claim::class, $user]);
+
+        // 2. Safely grab the user's member relation profile
+        $member = $user->member;
+
+        // 3. Fallback safely if this user account isn't hooked to a member profile
+        if (!$member) {
+            $data['claims'] = collect(); // returns an empty collection instead of crashing
+            return view('claims.claims-list', $data);
+        }
+
+        // 4. Query using the direct member ID
+        $data['claims'] = Claim::forMember($member->id)
+            ->latest('submitted_at')
+            ->get();
+
+        return view('claims.claims-list', $data);
     }
 
-    // Format the number to match MySQL expectations
-    return number_format((float)$number, $decimals, '.', '');
-}
+    // public function myClaims(User $user)
+    // {
+    //     // 1. Authorize via Gate facade (Laravel 11 style)
+    //     Gate::authorize('viewMyClaims', [Claim::class, $user]);
+    
+    //     // 2. Fetch the claims using the relationship scope
+    //     $data['claims'] = Claim::forUser($user->id)
+    //         ->latest('submitted_at')
+    //         ->get();
+        
+    //         \Log::error(gettype($data['claims']));
+    //         \Log::error(print_r($data['claims'], true));
+    
+    //     return view('claims.claims-list', $data);
+    // }
+    
+
+    private function toMysqlDecimal($number, int $decimals = 2): string 
+    {
+        // Clean localized number strings (e.g., convert "1.234,56" or "1,234.56" to a clean float)
+        if (is_string($number)) {
+            // Strip out anything that isn't a digit, dot, or minus sign
+            $number = str_replace(',', '.', $number);
+            $number = preg_replace('/[^0-9.-]/', '', $number);
+        }
+
+        // Format the number to match MySQL expectations
+        return number_format((float)$number, $decimals, '.', '');
+    }
 
 }

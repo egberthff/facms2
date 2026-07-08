@@ -71,4 +71,18 @@ class ClaimPolicy
     {
         return false;
     }
+
+    /**
+    * Determine whether the user can view their own claims.
+    */
+    public function viewMyClaims(User $user, User $targetUser = null): bool
+    {
+        // Presidents and Treasurers can see anyone's claim list
+        if ($user->hasAnyRole(['President', 'Treasurer'])) {
+            return true;
+        }
+    
+        // Members can only see their own claim list
+        return $user->hasRole('Member') && $user->id === $targetUser?->id;
+    }
 }

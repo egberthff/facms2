@@ -108,13 +108,31 @@ class Claim extends Model
         return $query->where('status', 'Approved');
     }
     
-    public function scopePaid($query)
+    public function scopeDisbursed($query)
     {
-        return $query->where('status', 'Paid');
+        return $query->where('status', 'Disbursed');
     }
 
     public function scopeRejected($query)
     {
         return $query->where('status', 'Rejected');
+    }
+
+    /**
+     * Scope a query to only include claims belonging to a specific user's member profile.
+     */
+    public function scopeForUser($query, $userId)
+    {
+        return $query->whereHas('member', function ($builder) use ($userId) {
+            $builder->where('user_id', $userId);
+        });
+    }
+
+    /**
+     * Scope a query to only include claims belonging to a specific member ID.
+     */
+    public function scopeForMember($query, $memberId)
+    {
+        return $query->where('member_id', $memberId);
     }
 }
