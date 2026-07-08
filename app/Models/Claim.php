@@ -3,12 +3,9 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Builder; 
-use Carbon\Carbon;
 
 class Claim extends Model
 {
@@ -28,7 +25,7 @@ class Claim extends Model
         'requested_amount',
         'approved_amount',
         'annual_limit',
-        'description',
+        'desctiption',
         'status',
         'remarks',
         'submitted_at',
@@ -111,50 +108,13 @@ class Claim extends Model
         return $query->where('status', 'Approved');
     }
     
-    public function scopeDisbursed($query)
+    public function scopePaid($query)
     {
-        return $query->where('status', 'Disbursed');
+        return $query->where('status', 'Paid');
     }
 
     public function scopeRejected($query)
     {
         return $query->where('status', 'Rejected');
-    }
-
-    /**
-     * Scope a query to only include claims belonging to a specific user's member profile.
-     */
-    public function scopeForUser($query, $userId)
-    {
-        return $query->whereHas('member', function ($builder) use ($userId) {
-            $builder->where('user_id', $userId);
-        });
-    }
-
-    /**
-     * Scope a query to only include claims belonging to a specific member ID.
-     */
-    public function scopeForMember($query, $memberId)
-    {
-        return $query->where('member_id', $memberId);
-    }
-
-    /**
-     * Scope to filter claims approved or disbursed within the current year.
-     */
-    public function scopeApprovedThisYear(Builder $query): Builder
-    {
-        return $query->whereIn('status', ['Approved', 'Disbursed'])
-                     ->whereYear('submitted_at', Carbon::now()->year);
-    }
-
-    /**
-     * Scope to filter disbursed claims within the current month.
-     */
-    public function scopeDisbursedThisMonth(Builder $query): Builder
-    {
-        return $query->where('status', 'Disbursed')
-                     ->whereMonth('paid_at', Carbon::now()->month)
-                     ->whereYear('paid_at', Carbon::now()->year);
     }
 }
