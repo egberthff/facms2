@@ -6,6 +6,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate; 
+use Illuminate\Http\JsonResponse;
+
 use Illuminate\Support\Str;
 use App\Http\Requests\StoreClaimRequest;
 use App\Enums\ClaimStatus;
@@ -15,8 +17,17 @@ use App\Models\PaymentMethod;
 use App\Models\Claim;
 use App\Models\ClaimDocument;
 use App\Models\SystemSetting;
+use App\Services\ClaimService;
+
+use Exception;
 class ClaimController extends Controller
 {
+    private ClaimService $claimService;
+
+     public function __construct(ClaimService $claimService)
+    {
+        $this->claimService = $claimService;
+    }
     /**
      * Display a listing of the resource.
      */
@@ -30,10 +41,7 @@ class ClaimController extends Controller
      */
     public function create()
     {
-        $data['title'] = 'Submit Claim';
-        $data['claimTypes'] = ClaimType::all();
-        $data['paymentMethods'] = PaymentMethod::all();
-        $data['paymentMethodBanks'] = ['BDO', 'BPI', 'PNB', 'LandBank', 'Mentrobank'];
+        $data = $this->claimService->getFormData(); 
 
         return view('claims.index', $data);
     }
@@ -41,129 +49,29 @@ class ClaimController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreClaimRequest $request)
+    public function store(StoreClaimRequest $request): JsonResponse
     {
-           
-        DB::beginTransaction();
-    
         try {
-    
-            /*
-            |--------------------------------------------------------------------------
-            | Get IDs
-            |--------------------------------------------------------------------------
-            */
-    
-            // $claimType = ClaimType::where('id', $request->claimType)->firstOrFail();
-            // $paymentMethod = PaymentMethod::where('id', $request->paymentMethod)->firstOrFail();
-    
-            /*
-            |--------------------------------------------------------------------------
-            | Generate Claim Number
-            |--------------------------------------------------------------------------
-            */
-    
-            $claimNumber = 'CLM-'
-                . now()->format('Ymd')
-                . '-'
-                . strtoupper(Str::random(6));
-    
-             /*
-            |--------------------------------------------------------------------------
-            | Get Annual Limit
-            |--------------------------------------------------------------------------
-            */
-            $annualLimit = SystemSetting::annualLimit();
+            // Pass validated data and files directly to the service
+            $this->claimService->createClaim(
+                $request->validated(), 
+                $request->file('documents', [])
+            );
 
-            /*
-            |--------------------------------------------------------------------------
-            | Create Claim
-            |--------------------------------------------------------------------------
-            */
-    
-            $claim = Claim::create([
-                'claim_number' => $claimNumber,
-                'member_id' => Auth::user()->member->id,
-                'claim_type_id' => $request->claimType,
-                'payment_method_id' => $request->paymentMethod,
-                'requested_amount' => $request->amount,
-                'approved_amount' => null,
-                'annual_limit' =>  $this->toMysqlDecimal($annualLimit->setting_value),
-                'status' => ClaimStatus::Pending->value,
-                'description' => $request->description,
-                'submitted_at' => now(),
-            ]);
-    
-            /*
-            |--------------------------------------------------------------------------
-            | Save Uploaded Files
-            |--------------------------------------------------------------------------
-            */
-    
-            if ($request->hasFile('documents')) {
-                foreach ($request->file('documents') as $file) {
-                    $storedFilename =
-                        Str::uuid()
-                        . '.'
-                        . $file->getClientOriginalExtension();
-                    $path = $file->storeAs(
-                        'documents/claims',
-                        $storedFilename,
-                        'public'
-                    );
-    
-                    ClaimDocument::create([
-                        'claim_id' => $claim->id,
-                        'document_type' => pathinfo(
-                            $file->getClientOriginalName(),
-                            PATHINFO_EXTENSION
-                        ),
-                        'original_filename' =>
-                            $file->getClientOriginalName(),
-                        'stored_filename' =>
-                            $storedFilename,
-                        'file_path' =>
-                            $path,
-                        'mime_type' =>
-                            $file->getMimeType(),
-                        'file_size' =>
-                            $file->getSize(),
-                    ]);
-                }
-            }
-    
-            DB::commit();
             return response()->json([
-            'success' => true,
-            'message' => 'Claim submitted successfully.',
-            // 'redirect' => route('claims.index')
+                'success' => true,
+                'message' => 'Claim submitted successfully.',
             ], 200);
-            // return redirect()
-            //     ->route('claims.index')
-            //     ->with(
-            //         'success',
-            //         'Claim submitted successfully.'
-            //     );
-    
-        } catch (\Exception $e) {
-    
-            DB::rollBack();
-    
-           // Return a JSON response with a 500 error code
-           return response()->json([
-               'success' => false,
-               'message' => 'Something went wrong while processing your claim.',
-            //    'error' => $e->getMessage() // You can remove this in production for security
-           ], 500); 
-            // return back()
-            //     ->withInput()
-            //     ->with(
-            //         'error',
-            //         $e->getMessage()
-            //     );
+
+        } catch (Exception $e) {
+            // Log the actual error here for debugging: Log::error($e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Something went wrong while processing your claim.',
+            ], 500);
         }
     }
-
+    
     /**
      * Display the specified resource.
      */
@@ -200,29 +108,9 @@ class ClaimController extends Controller
     {
         Gate::authorize('viewMyClaims', [Claim::class, $user]);
 
-        $member = $user->member;
-
-        if (!$member) {
-            $data['claims'] = collect(); // returns an empty collection instead of crashing
-            return view('claims.claims-list', $data);
-        }
-
-        $data['claims'] = Claim::forMember($member->id)
-        ->with(['claimType', 'paymentMethod', 'reviewer', 'documents'])
-        ->latest('submitted_at')
-        ->get();
+        $data['claims'] = $this->claimService->getClaimsForUser($user);
 
         return view('claims.claims-list', $data);
-    }
-    
-    private function toMysqlDecimal($number, int $decimals = 2): string 
-    {
-        if (is_string($number)) {
-            $number = str_replace(',', '.', $number);
-            $number = preg_replace('/[^0-9.-]/', '', $number);
-        }
-
-        return number_format((float)$number, $decimals, '.', '');
     }
 
 }

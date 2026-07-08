@@ -20,8 +20,7 @@ class="w-10 h-10 text-blue-600"/>
 
 <x-stats-card
 title="Total Claims"
-{{-- :value="$totalClaims" --}}
-:value="10">
+:value="$totalClaims">
 
 <x-slot:icon> 
 
@@ -32,10 +31,9 @@ class="w-10 h-10 text-blue-600"/>
 
 </x-stats-card>
 
-<x-stats-card
+{{-- <x-stats-card
 title="Processing Claims"
-{{-- :value="$processingClaims" --}}
-:value="13">
+:value="$approvedClaims">
 
 <x-slot:icon>
 
@@ -44,7 +42,7 @@ class="w-10 h-10 text-yellow-500"/>
 
 </x-slot:icon>
 
-</x-stats-card>
+</x-stats-card> --}}
 
 <x-stats-card
 title="Pending Claims"
@@ -74,8 +72,7 @@ class="w-10 h-10 text-green-600"/>
 
 <x-stats-card
 title="Disbursed Claims"
-{{-- :value="$disbursedClaims" --}}
-:value="0">
+:value="$disbursedClaims">
 
 <x-slot:icon>
 

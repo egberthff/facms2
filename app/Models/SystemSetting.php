@@ -31,8 +31,21 @@ class SystemSetting extends Model
     //     return 'id';
     // }
 
-        public function scopeAnnualLimit($query)
+    /**
+     * Scope to filter down to the annual limit row.
+     */
+    public function scopeAnnualLimit($query)
     {
-        return $query->where('setting_key', 'annual_claim_limit')->first();
+        return $query->where('setting_key', 'annual_claim_limit');
+    }
+
+     /**
+     * Static helper to quickly retrieve the raw decimal limit value.
+     */
+    public static function getGlobalLimit(): float
+    {
+        // Safely resolve the query builder scope, defaulting to 23000.00 if the DB row doesn't exist
+        $setting = self::annualLimit()->first();
+        return $setting ? (float) $setting->setting_value : 23000.00;
     }
 }

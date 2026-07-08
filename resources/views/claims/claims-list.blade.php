@@ -218,7 +218,7 @@
                             <div class="sm:pl-4">
                                 <span class="block text-xs text-slate-400 font-medium">3. Released / Disbursed On</span>
                                 <span class="block font-semibold text-slate-700 mt-0.5 text-xs" 
-                                  x-text="activeClaim.paid_at ? new Date(activeClaim.paid_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'N/A'">
+                                  x-text="activeClaim.disbursed_at ? new Date(activeClaim.disbursed_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'N/A'">
                             </div>
                         </div>
                     </div>
