@@ -200,36 +200,28 @@ class ClaimController extends Controller
     {
         Gate::authorize('viewMyClaims', [Claim::class, $user]);
 
-        // 2. Safely grab the user's member relation profile
         $member = $user->member;
 
-        // 3. Fallback safely if this user account isn't hooked to a member profile
         if (!$member) {
             $data['claims'] = collect(); // returns an empty collection instead of crashing
             return view('claims.claims-list', $data);
         }
 
-        // 4. Query using the direct member ID
         $data['claims'] = Claim::forMember($member->id)
         ->with(['claimType', 'paymentMethod', 'reviewer', 'documents'])
         ->latest('submitted_at')
         ->get();
-
-        \Log::error(print_r($data['claims'][0], true));
 
         return view('claims.claims-list', $data);
     }
     
     private function toMysqlDecimal($number, int $decimals = 2): string 
     {
-        // Clean localized number strings (e.g., convert "1.234,56" or "1,234.56" to a clean float)
         if (is_string($number)) {
-            // Strip out anything that isn't a digit, dot, or minus sign
             $number = str_replace(',', '.', $number);
             $number = preg_replace('/[^0-9.-]/', '', $number);
         }
 
-        // Format the number to match MySQL expectations
         return number_format((float)$number, $decimals, '.', '');
     }
 

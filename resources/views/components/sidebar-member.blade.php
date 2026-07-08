@@ -134,8 +134,7 @@
 
                 <li>
 
-                    {{-- <a href="{{ route('balance.index') }}" --}}
-                    <a href="{{ route('dashboard') }}"
+                    <a href="{{ route('balance.my-metrics') }}"
                         class="flex items-center p-3 rounded-lg transition
                         {{ request()->routeIs('balance.*')
                             ? 'bg-slate-700 text-white'

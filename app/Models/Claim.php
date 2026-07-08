@@ -3,9 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Builder; 
+use Carbon\Carbon;
 
 class Claim extends Model
 {
@@ -134,5 +137,24 @@ class Claim extends Model
     public function scopeForMember($query, $memberId)
     {
         return $query->where('member_id', $memberId);
+    }
+
+    /**
+     * Scope to filter claims approved or disbursed within the current year.
+     */
+    public function scopeApprovedThisYear(Builder $query): Builder
+    {
+        return $query->whereIn('status', ['Approved', 'Disbursed'])
+                     ->whereYear('submitted_at', Carbon::now()->year);
+    }
+
+    /**
+     * Scope to filter disbursed claims within the current month.
+     */
+    public function scopeDisbursedThisMonth(Builder $query): Builder
+    {
+        return $query->where('status', 'Disbursed')
+                     ->whereMonth('paid_at', Carbon::now()->month)
+                     ->whereYear('paid_at', Carbon::now()->year);
     }
 }

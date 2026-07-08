@@ -85,4 +85,13 @@ class ClaimPolicy
         // Members can only see their own claim list
         return $user->hasRole('Member') && $user->id === $targetUser?->id;
     }
+
+    /**
+     * Determine whether the user can view summary dashboard statistics.
+     */
+    public function viewDashboardDashboardMetrics(User $user, User $targetMember): bool
+    {
+        // Users can only view their own stats, unless they are an administrator
+        return $user->id === $targetMember->id || $user->hasRole('admin');
+    }
 }
