@@ -13,11 +13,12 @@ class AdminUserSeeder extends Seeder
     public function run(): void
     {
         $user = User::updateOrCreate(
-            ['email' => 'president@facms.test'],
+            ['email' => 'president@bisu.edu.ph'],
             [
                 'email' => 'president@bisu.edu.ph',
                 'name' => 'System President',
                 'password' => Hash::make('123456'),
+                'email_verified_at' => now(),
                 'is_active' => true,
             ]
         );
@@ -46,11 +47,12 @@ class AdminUserSeeder extends Seeder
         );
 
         $user = User::updateOrCreate(
-            ['email' => 'member@facms.test'],
+            ['email' => 'member@bisu.edu.ph'],
             [
                 'email' => 'member@bisu.edu.ph',
                 'name' => 'Member Test Account',
                 'password' => Hash::make('123456'),
+                'email_verified_at' => now(),
                 'is_active' => true,
             ]
         );

@@ -25,7 +25,7 @@ class ClaimService
 
         try {
             $claimNumber = 'CLM-' . now()->format('Ymd') . '-' . strtoupper(Str::random(6));
-            $annualLimit = SystemSetting::annualLimit();
+            $annualLimit = SystemSetting::annualLimit()->first();
 
             // 1. Create the Claim record
             $claim = Claim::create([

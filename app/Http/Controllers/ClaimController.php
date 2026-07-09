@@ -64,7 +64,8 @@ class ClaimController extends Controller
             ], 200);
 
         } catch (Exception $e) {
-            // Log the actual error here for debugging: Log::error($e->getMessage());
+            // Log the actual error here for debugging: 
+            \Log::error($e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Something went wrong while processing your claim.',
