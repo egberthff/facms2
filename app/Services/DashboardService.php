@@ -24,6 +24,7 @@ class DashboardService
             'disbursedClaims'=> Claim::disbursed()->count(),
             'rejectedClaims' => Claim::rejected()->count(),
             'totalClaims'    => Claim::count(), // Fixed bug: previously assigned to rejected count
+            'balance'        => number_format(1000000, 2),
         ];
     }
 
