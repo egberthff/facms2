@@ -5,6 +5,8 @@ namespace App\Http\Requests;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
+use App\Enums\ClaimStatus;
 
 class UpdateClaimRequest extends FormRequest
 {
@@ -30,7 +32,15 @@ class UpdateClaimRequest extends FormRequest
         $claim = $this->route('claim');
         
         return [
-            //
+            'remarks' => [
+                'nullable',
+                'string'
+            ],
+            'status' => [
+                'required',
+                'string',
+                Rule::enum(ClaimStatus::class), // Validates against Pending, Approved, Rejected, Disbursed
+            ],
         ];
     }
 }

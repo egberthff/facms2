@@ -15,7 +15,8 @@ class RolePermissionSeeder extends Seeder
 
         // 2. Define your application permissions
         $permissions = [
-            'view claims',
+            'view own claims',
+            'view all claims',
             'create claims',
             'update claims',
             'review claims',
@@ -37,19 +38,20 @@ class RolePermissionSeeder extends Seeder
         $memberRole = Role::findOrCreate('Member', 'web');
         $memberRole->syncPermissions([
             'create claims', 
-            'view claims',
+            'view own claims',
             'view member metrics'
         ]);
 
         // Treasurers manage funds and release payments
         $treasurerRole = Role::findOrCreate('Treasurer', 'web');
         $treasurerRole->syncPermissions([
-            'view claims',
+            'view own claims',
             'release payments',
             'manage funds',
             'update claims',
             'view member metrics',
-            'view all metrics'
+            'view all metrics',
+            'view all claims'
         ]);
 
         // Presidents can do everything

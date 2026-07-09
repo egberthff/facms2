@@ -121,4 +121,36 @@ class ClaimService
             'paymentMethodBanks' => ['BDO', 'BPI', 'PNB', 'LandBank', 'Metrobank'], // Fixed typo: Mentrobank -> Metrobank
         ];
     }
+
+    public function getAllClaims(): Collection
+    {
+       return Claim::with(['claimType', 'paymentMethod', 'reviewer', 'documents'])
+            ->latest('submitted_at')
+            ->get();
+        
+    }
+
+     /**
+     * Update the claim status securely.
+     */
+    public function updateStatus(Claim $claim, array $data): Claim
+    {
+        DB::beginTransaction();
+
+        // $
+
+        try{
+        $claim->update([
+            'status' => $data['status'],
+            'remarks' => $data['remarks']
+        ]);
+
+        DB::commit();
+            return $claim;
+
+        } catch (Exception $e) {
+            DB::rollBack();
+            throw $e; // Rethrow to let the controller handle the HTTP error response
+        }
+    }
 }

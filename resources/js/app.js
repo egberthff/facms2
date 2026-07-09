@@ -59,3 +59,61 @@ document.addEventListener('DOMContentLoaded', () => {
     //     import('./components/calendar-init').then(module => module.calendarInit());
     // }
 });
+
+window.updateClaimStatus = function(claimId, status) {
+            // 1. Trigger SweetAlert2 Confirmation
+            Swal.fire({
+                title: 'Are you sure?',
+                text: "You are about to approve this claim.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#2563eb', // Matches your blue-600 theme
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Yes, approve it!'
+            }).then((result) => {
+                // 2. If user confirmed, send request to server
+                if (result.isConfirmed) {
+                    sendStatusRequest(claimId, status);
+                }
+            });
+         }
+
+ window.sendStatusRequest = function(claimId, status) {
+            // Adjust the URL to match your actual Laravel route
+            fetch(`/claims/${claimId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                },
+                body: JSON.stringify({ 
+                    status: status.trim(),
+                    remarks: ['Approved', 'Rejected'].includes(status.trim()) 
+                        ? document.querySelector('textarea')?.value || '' 
+                        : ''
+                })
+            })
+            .then(response => {
+                if (!response.ok) throw new Error('Network response was not ok');
+                return response.json();
+            })
+            .then(data => {
+                // 3. Show success alert and handle UI update
+                Swal.fire({
+                    title: 'SUCCESS',
+                    icon: 'success',
+                    text: data['message'],
+                });
+
+                window.dispatchEvent(new CustomEvent('close-modal')); // Close your Alpine modal if needed
+                
+                // Optional: Refresh the page or update your Alpine state to reflect the change
+                window.location.reload(); 
+            })
+            .catch(error => {
+                Swal.fire('Error!', 'Something went wrong while updating.', 'error');
+                console.error(error);
+            });
+        }
+    
