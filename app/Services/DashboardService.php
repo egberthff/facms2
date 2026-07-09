@@ -23,7 +23,7 @@ class DashboardService
             'approvedClaims' => Claim::approved()->count(),
             'disbursedClaims'=> Claim::disbursed()->count(),
             'rejectedClaims' => Claim::rejected()->count(),
-            'totalClaims'    => Claim::count(), // Fixed bug: previously assigned to rejected count
+            'totalClaims'    => Claim::count(),
         ];
     }
 
