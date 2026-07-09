@@ -14,7 +14,7 @@
                                      type.toLowerCase().includes(searchLower);
                 return matchesStatus && matchesSearch;
             }
-         }">
+         }"  @close-modal.window="openModal = false">
     
     <!-- ========================================= -->
     <!-- CLAIMS LIST CARD -->
@@ -100,7 +100,7 @@
                         <td class="px-4 py-3 text-center whitespace-nowrap">
                             <button
                                 type="button"
-                                @click="activeClaim = @js($claim); console.error(activeClaim); openModal = true;"
+                                @click="activeClaim = @js($claim); openModal = true;"
                                 class="inline-flex items-center px-3 py-1.5 bg-blue-50 border border-blue-200 text-blue-700 rounded-lg text-xs font-semibold hover:bg-blue-100 transition">
                                 View Details
                             </button>
@@ -195,9 +195,24 @@
                         </div>
 
                         <div class="p-4 rounded-xl border" :class="activeClaim.remarks && activeClaim.remarks !== 'No remarks provided.' ? 'bg-amber-50/40 border-amber-100' : 'bg-slate-50/30 border-slate-100'">
-                            <span class="block text-xs font-bold uppercase tracking-wider mb-1" :class="activeClaim.remarks && activeClaim.remarks !== 'No remarks provided.' ? 'text-amber-700' : 'text-slate-400'">Processor Evaluation Remarks</span>
-                            <p class="leading-relaxed whitespace-pre-line text-xs" :class="activeClaim.remarks && activeClaim.remarks !== 'No remarks provided.' ? 'text-slate-800 font-medium' : 'text-slate-400 italic'" x-text="activeClaim.remarks"></p>
+                            <span class="block text-xs font-bold uppercase tracking-wider mb-2" :class="activeClaim.remarks && activeClaim.remarks !== 'No remarks provided.' ? 'text-amber-700' : 'text-slate-400'">
+                                Processor Evaluation Remarks
+                            </span>
+                        
+                            @hasrole("President")
+                                <!-- Editable input area exclusively for the President -->
+                                <textarea 
+                                    x-model="activeClaim.remarks" 
+                                    placeholder="Type review or evaluation remarks here..."
+                                    rows="3"
+                                    class="w-full text-xs p-2.5 rounded-lg border border-slate-200 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition font-medium text-slate-800 placeholder-slate-400 focus:outline-none">
+                                </textarea>
+                            @else
+                                <!-- View-only text display container for other user roles -->
+                                <p class="leading-relaxed whitespace-pre-line text-xs" :class="activeClaim.remarks && activeClaim.remarks !== 'No remarks provided.' ? 'text-slate-800 font-medium' : 'text-slate-400 italic'" x-text="activeClaim.remarks"></p>
+                            @endrole
                         </div>
+
                     </div>
 
                     <!-- Section 4: Workflow Lifecycle Status Timeline Logs -->
@@ -249,7 +264,7 @@
                                         </div>
                                         <!-- 4. Dynamically generate the storage asset link path -->
                                         <a :href="'/storage/' + doc.file_path" target="_blank" class="inline-flex items-center gap-1 font-semibold text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100/70 px-2.5 py-1 rounded transition shrink-0">
-                                            Download File
+                                            View File
                                         </a>
                                     </div>
                                 </template>
@@ -268,6 +283,21 @@
 
                 <!-- Modal Action Footer Buttons Area -->
                 <div class="flex justify-end gap-2 border-t border-slate-100 pt-4 mt-5">
+                   @hasrole("President")
+                    <button 
+                        type="button" 
+                        x-show="activeClaim.status !== 'Approved'" 
+                        @click="approveClaim('{{ $claim->id }}')" 
+                        class="px-5 py-2 text-sm font-semibold text-blue-600 bg-blue-100 hover:bg-blue-200 border border-blue-400 rounded-xl transition">
+                        Approve
+                    </button>
+                     <button 
+                        type="button" 
+                         @click="updateClaimStatus('{{ $claim->id }}', 'Rejected')" 
+                        class="px-5 py-2 text-sm font-semibold text-red-600 bg-red-100 hover:bg-red-200 border border-red-400 rounded-xl transition">
+                        Reject
+                    </button>
+                    @endrole
                     <button 
                         type="button" 
                         @click="openModal = false" 

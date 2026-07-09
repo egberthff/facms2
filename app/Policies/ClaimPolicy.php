@@ -13,7 +13,11 @@ class ClaimPolicy
      */
     public function viewAny(User $user): bool
     {
-        return false;
+       // Allows Presidents and Treasurers to view the entire list of claims
+        return $user->hasAnyRole([
+            'President',
+            'Treasurer',
+        ]);
     }
 
     /**

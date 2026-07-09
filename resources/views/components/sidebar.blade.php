@@ -57,7 +57,7 @@
             </div>
             <ul class="space-y-2">
                 <li>
-                    <a href="#"
+                    <a href="{{ route('claim.list') }}"
                         class="flex items-center p-3 rounded-lg text-white hover:bg-slate-700">
                         <x-heroicon-o-document-text class="w-5 h-5"/>
                         <span class="ml-3">All Claims</span>

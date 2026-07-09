@@ -10,6 +10,7 @@ use Illuminate\Http\JsonResponse;
 
 use Illuminate\Support\Str;
 use App\Http\Requests\StoreClaimRequest;
+use App\Http\Requests\UpdateClaimRequest;
 use App\Enums\ClaimStatus;
 use App\Models\ClaimType;
 use App\Models\User;
@@ -33,7 +34,9 @@ class ClaimController extends Controller
      */
     public function index()
     {
-       //
+       $data['claims'] = $this->claimService->getAllClaims();
+
+       return view('claims.claims-list', $data);
     }
 
     /**
@@ -92,9 +95,30 @@ class ClaimController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    // public function update(Request $request, string $id)
+    // {
+    //     //
+    // }
+
+    /**
+     * Update the status of a specific claim.
+     */
+    public function update(UpdateClaimRequest $request, Claim $claim): JsonResponse
     {
-        //
+         try {
+        $this->claimService->updateStatus($claim, $request->validated());
+
+         return response()->json([
+                'success' => true,
+                'message' => 'Status updated successfully!',
+            ], 200);
+         }catch(Exception $e){
+             \Log::error($e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Something went wrong while processing update.',
+            ], 500);
+         }
     }
 
     /**

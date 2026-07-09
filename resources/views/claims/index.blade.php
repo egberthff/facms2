@@ -236,8 +236,6 @@
                                body: formData
                             
                            });
-                          console.log(typeof response);
-                          console.log(response);
                            const data = await response.json();
                         
                            if (!response.ok) {
