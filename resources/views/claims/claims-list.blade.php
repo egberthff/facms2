@@ -287,7 +287,7 @@
                     <button 
                         type="button" 
                         x-show="activeClaim.status !== 'Approved'" 
-                        @click="approveClaim('{{ $claim->id }}')" 
+                        @click="updateClaimStatus('{{ $claim->id }}', 'Approved')" 
                         class="px-5 py-2 text-sm font-semibold text-blue-600 bg-blue-100 hover:bg-blue-200 border border-blue-400 rounded-xl transition">
                         Approve
                     </button>

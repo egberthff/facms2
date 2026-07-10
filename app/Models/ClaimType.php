@@ -19,6 +19,7 @@ class ClaimType extends Model
         'name',
         'required_document',
         'description',
+        'required_amount',
         'is_active',
     ];
 
@@ -26,6 +27,7 @@ class ClaimType extends Model
     {
         return [
             'is_active' => 'boolean',
+            'required_amount' => 'decimal:2'
         ];
     }
 

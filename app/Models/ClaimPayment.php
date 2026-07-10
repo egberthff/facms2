@@ -20,8 +20,9 @@ class ClaimPayment extends Model
         'payment_method_id',
         'reference_number',
         'amount',
-        'released_by',
+        'processed_by',
         'released_at',
+        'receipt_path',
         'remarks',
     ];
 
@@ -51,6 +52,15 @@ class ClaimPayment extends Model
     public function paymentMethod()
     {
         return $this->belongsTo(PaymentMethod::class);
+    }
+
+    public function claimType() 
+    { 
+        return $this->belongsTo(ClaimType::class); 
+    }
+    public function member() 
+    {
+         return $this->belongsTo(Member::class); 
     }
 
     public function releasedBy()
