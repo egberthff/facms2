@@ -20,8 +20,9 @@ class ClaimPayment extends Model
         'payment_method_id',
         'reference_number',
         'amount',
-        'released_by',
+        'processed_by',
         'released_at',
+        'receipt_path',
         'remarks',
     ];
 

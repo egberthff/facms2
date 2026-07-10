@@ -3,17 +3,25 @@
 namespace App\Http\Controllers;
 
 use App\Models\Disbursement;
+use App\Services\DisbursementService;
 use App\Http\Requests\StoreDisbursementRequest;
 use App\Http\Requests\UpdateDisbursementRequest;
 
 class DisbursementController extends Controller
 {
+    private ClaimService $claimService;
+    public function __construct(DisbursementService $disbursementService)
+    {
+        $this->disbursementService = $disbursementService;
+    }
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
-        //
+        $data['disbursements'] = $this->disbursementService->getDisbursmentAll()->all();
+        return view('disbursements.index',  $data);
+        
     }
 
     /**

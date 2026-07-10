@@ -18,3 +18,4 @@ require __DIR__.'/finance.php';
 require __DIR__.'/report.php';
 require __DIR__.'/setting.php';
 require __DIR__.'/dashboard.php';
+require __DIR__.'/disbursement.php';

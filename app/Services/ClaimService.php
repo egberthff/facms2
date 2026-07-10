@@ -7,7 +7,7 @@ use App\Models\SystemSetting;
 use App\Models\User;
 use App\Models\ClaimType;
 use App\Models\PaymentMethod;
-use App\Enums\ClaimStatus; // Update with your actual Enum namespace
+use App\Enums\ClaimStatus;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;

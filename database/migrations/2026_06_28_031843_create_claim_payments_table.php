@@ -31,9 +31,11 @@ return new class extends Migration
             $table->decimal('amount', 12, 2);
 
             // Treasurer who released the payment
-            $table->foreignUuid('released_by')
+            $table->foreignUuid('processed_by')
                 ->constrained('users', 'user_id')
                 ->restrictOnDelete();
+
+            $table->string('receipt_path')->nullable();
 
             $table->timestamp('released_at');
 

@@ -45,6 +45,7 @@ return new class extends Migration
             // Workflow
             $table->enum('status', [
                 'Pending',
+                'Processing',
                 'Approved',
                 'Rejected',
                 'Disbursed',

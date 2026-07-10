@@ -20,6 +20,8 @@ class RolePermissionSeeder extends Seeder
             'create claims',
             'update claims',
             'review claims',
+            'view disbursment',
+            'update disbursement',
             'release payments',
             'manage members',
             'manage funds',
