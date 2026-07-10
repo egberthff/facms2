@@ -6,7 +6,10 @@ use App\Models\ClaimDocument;
 use App\Models\SystemSetting;
 use App\Models\User;
 use App\Models\ClaimType;
+use App\Models\Member;
 use App\Models\PaymentMethod;
+use App\Models\ContributionBatch;
+use App\Models\ContributionDetail;
 use App\Enums\ClaimStatus;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -135,22 +138,76 @@ class ClaimService
      */
     public function updateStatus(Claim $claim, array $data): Claim
     {
-        DB::beginTransaction();
+        // Standardize text check against Schema Enums ('Approved')
+        $statusInput = trim($data['status']);
 
-        // $
+        // Put ALL transactional logic inside the try block so rollbacks work reliably
+        try {
+            DB::beginTransaction();
 
-        try{
-        $claim->update([
-            'status' => $data['status'],
-            'remarks' => $data['remarks']
-        ]);
+            if (strtolower($statusInput) === 'approved') {
 
-        DB::commit();
+                $claim->loadMissing('claimType');
+
+                if (!$claim->claimType || !$claim->claimType->is_active) {
+                   throw new Exception('The associated claim type is invalid or inactive.');
+                }
+
+                $amountPerMember = (float) $claim->claimType->required_amount;
+
+                // Extract dynamically matching active members
+                $members = Member::where('membership_status', 'Active')->get();
+                $totalMembersCount = $members->count();
+
+                // Guard check: Avoid division by zero or empty processing
+                if ($totalMembersCount > 0) {
+                    $totalAmount = $totalMembersCount * $amountPerMember;
+
+                    // Correctly save model and extract its raw primary key string
+                    $contributionBatch = ContributionBatch::create([
+                        'claim_id'           => $claim->id,
+                        'amount_per_member'  => $amountPerMember,
+                        'total_members'      => $totalMembersCount,
+                        'total_amount'      => $totalAmount,
+                        'generated_at'       => now(),
+                        'generated_by'       => Auth::user()->user_id 
+                    ]);
+
+                    // Structure data into a batch array for a single database payload
+                    $batchData = [];
+                    $now = now();
+
+                    foreach ($members as $member) {
+                        $batchData[] = [
+                            'id'                     => (string) Str::uuid(), // Required since schema uses UUID primary key
+                            'contribution_batch_id'  => $contributionBatch->id,
+                            'member_id'              => $member->id,
+                            'amount'                 => $amountPerMember,
+                            'status'                 => 'Unpaid',
+                            'paid_at'                => null, 
+                            'created_at'             => $now,
+                            'updated_at'             => $now
+                        ];
+                    }
+
+                    // Execute highly optimized query payload 
+                    DB::table('contribution_details')->insert($batchData);
+                }
+            }
+
+            // Complete the parent workflow update
+            $claim->update([
+                'status'  => $statusInput,
+                'remarks' => $data['remarks'] ?? null
+            ]);
+
+            DB::commit();
             return $claim;
 
         } catch (Exception $e) {
             DB::rollBack();
-            throw $e; // Rethrow to let the controller handle the HTTP error response
+            throw $e; 
         }
     }
+
 }

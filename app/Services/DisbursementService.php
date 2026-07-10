@@ -5,7 +5,7 @@ use App\Models\Claim;
 use App\Models\ClaimDocument;
 use App\Models\SystemSetting;
 use App\Models\User;
-use App\Model\Member;
+use App\Models\Member;
 use App\Models\ClaimType;
 use App\Models\PaymentMethod;
 use App\Models\ClaimPayment;
@@ -21,7 +21,7 @@ class DisbursementService
 
     public function getDisbursmentAll(): Collection
     {
-            return ClaimPayment::with([PaymentMethod, ClaimType, Claim, Member]);
+            return ClaimPayment::with(['PaymentMethod', 'ClaimType', 'Claim', 'Member'])->get();
     }
 
 }

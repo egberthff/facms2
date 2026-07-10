@@ -54,6 +54,15 @@ class ClaimPayment extends Model
         return $this->belongsTo(PaymentMethod::class);
     }
 
+    public function claimType() 
+    { 
+        return $this->belongsTo(ClaimType::class); 
+    }
+    public function member() 
+    {
+         return $this->belongsTo(Member::class); 
+    }
+
     public function releasedBy()
     {
         return $this->belongsTo(User::class, 'released_by');

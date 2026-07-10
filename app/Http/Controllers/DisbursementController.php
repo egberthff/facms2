@@ -9,7 +9,7 @@ use App\Http\Requests\UpdateDisbursementRequest;
 
 class DisbursementController extends Controller
 {
-    private ClaimService $claimService;
+    private DisbursementService $disbursementService;
     public function __construct(DisbursementService $disbursementService)
     {
         $this->disbursementService = $disbursementService;
@@ -19,7 +19,7 @@ class DisbursementController extends Controller
      */
     public function index()
     {
-        $data['disbursements'] = $this->disbursementService->getDisbursmentAll()->all();
+        $data['disbursements'] = $this->disbursementService->getDisbursmentAll();
         return view('disbursements.index',  $data);
         
     }

@@ -12,19 +12,13 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('claim_types', function (Blueprint $table) {
-
             $table->uuid('id')->primary();
-
             $table->string('name', 100)->unique();
-
             $table->string('required_document');
-
             $table->text('description')->nullable();
-
+            $table->decimal('required_amount', 10, 2);
             $table->boolean('is_active')->default(true);
-
             $table->timestamps();
-
             $table->index('is_active');
         });
     }
