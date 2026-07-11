@@ -104,7 +104,7 @@ class DisbursementService
             'approved_amount' => $approvedAmount,
             'released_amount' => $releasedAmount,
             'pending_amount' => $pendingAmount,
-            'released_count' => ClaimPayment::count(),
+            'released_count' => ClaimPayment::whereNotNull('released_at')->count(),
         ];
     }
 }

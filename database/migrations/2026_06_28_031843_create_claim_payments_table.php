@@ -28,7 +28,7 @@ return new class extends Migration
             $table->string('reference_number')
                 ->nullable();
 
-            $table->decimal('amount', 12, 2);
+            $table->decimal('amount', 12, 2)->default(0.00);
 
             // Treasurer who released the payment
             $table->foreignUuid('processed_by')

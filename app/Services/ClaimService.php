@@ -263,6 +263,7 @@ class ClaimService
                 case 'approved' : {
                     $claimUpdateData['status'] = $statusInput;
                     $claimUpdateData['remarks'] = $data['remarks'] ?? null;
+                    $claimUpdateData['approved_amount'] = $claim->requested_amount ?? 0.00;
                     $claimUpdateData['approved_at'] = now();
                     $claimUpdateData['updated_at'] = now();
                     break;
