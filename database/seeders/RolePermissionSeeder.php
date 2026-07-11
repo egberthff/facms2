@@ -21,6 +21,8 @@ class RolePermissionSeeder extends Seeder
             'update claims',
             'review claims',
             'view disbursment',
+            'view own contribution',
+            'view all contribution',
             'update disbursement',
             'release payments',
             'manage members',
@@ -41,7 +43,8 @@ class RolePermissionSeeder extends Seeder
         $memberRole->syncPermissions([
             'create claims', 
             'view own claims',
-            'view member metrics'
+            'view member metrics',
+            'view own contribution'
         ]);
 
         // Treasurers manage funds and release payments
@@ -53,7 +56,8 @@ class RolePermissionSeeder extends Seeder
             'update claims',
             'view member metrics',
             'view all metrics',
-            'view all claims'
+            'view all claims',
+            'view own contribution'
         ]);
 
         // Presidents can do everything
