@@ -50,8 +50,8 @@
                         <th class="px-6 py-3">Member</th>
                         <th class="px-6 py-3">Type</th>
                         <th class="px-6 py-3">Amount</th>
-                        <th class="px-6 py-3">Bank</th>
-                        <th class="px-6 py-3">Account</th>
+                        <th class="px-6 py-3">Payment Method</th>
+                        {{-- <th class="px-6 py-3">Account</th> --}}
                         <th class="px-6 py-3">Status</th>
                         <th class="px-6 py-3 text-right">Action</th>
                     </tr>
@@ -84,7 +84,7 @@
                             <td class="px-6 py-4 text-center">{{ $claimType?->name ?? 'N/A' }}</td>
                             <td class="px-6 py-4 text-center">₱{{ number_format((float) $row->amount, 2) }}</td>
                             <td class="px-6 py-4 text-center">{{ $row->paymentMethod?->name ?? 'N/A' }}</td>
-                            <td class="px-6 py-4 text-center">{{ $accountValue }}</td>
+                            {{-- <td class="px-6 py-4 text-center">{{ $accountValue }}</td> --}}
                             <td class="px-6 py-4 text-center">
                                 <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold {{ $row->released_at ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700' }}">
                                     {{ $statusText }}
