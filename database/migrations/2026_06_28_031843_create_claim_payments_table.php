@@ -37,7 +37,7 @@ return new class extends Migration
 
             $table->string('receipt_path')->nullable();
 
-            $table->timestamp('released_at');
+            $table->timestamp('released_at')->nullable();
 
             $table->text('remarks')
                 ->nullable();

@@ -236,6 +236,19 @@ class ClaimService
 
                     // Execute highly optimized query payload 
                     DB::table('contribution_details')->insert($batchData);
+
+                    $claim->payment()->updateOrCreate(
+                    ['claim_id' => $claim->id],
+                    [
+                        'id' => (string) Str::uuid(),
+                        'payment_method_id' => $claim->payment_method_id,
+                        'reference_number' => null,
+                        'amount' => $this->toMysqlDecimal($claim->requested_amount),
+                        'processed_by' => Auth::user()?->user_id ?? Auth::id(),
+                        'released_at' => null,
+                        'remarks' => $data['remarks'] ?? null,
+                    ]
+                );
                 }
             }
 
