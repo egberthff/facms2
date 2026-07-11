@@ -202,6 +202,7 @@
                             @hasrole("President")
                                 <!-- Editable input area exclusively for the President -->
                                 <textarea 
+                                    id="claim-remarks-field"
                                     x-model="activeClaim.remarks" 
                                     placeholder="Type review or evaluation remarks here..."
                                     rows="3"
@@ -286,14 +287,21 @@
                    @hasrole("President")
                     <button 
                         type="button" 
+                        x-show="activeClaim.status !== 'Disbursed'" 
+                        @click="updateClaimStatus(activeClaim.id, 'Disbursed', activeClaim)" 
+                        class="px-5 py-2 text-sm font-semibold text-emerald-600 bg-emerald-100 hover:bg-emerald-200 border border-emerald-400 rounded-xl transition">
+                        Disburse
+                    </button>
+                    <button 
+                        type="button" 
                         x-show="activeClaim.status !== 'Approved'" 
-                        @click="updateClaimStatus('{{ $claim->id }}', 'Approved')" 
+                        @click="updateClaimStatus(activeClaim.id, 'Approved', activeClaim)" 
                         class="px-5 py-2 text-sm font-semibold text-blue-600 bg-blue-100 hover:bg-blue-200 border border-blue-400 rounded-xl transition">
                         Approve
                     </button>
                      <button 
                         type="button" 
-                         @click="updateClaimStatus('{{ $claim->id }}', 'Rejected')" 
+                         @click="updateClaimStatus(activeClaim.id, 'Rejected', activeClaim)" 
                         class="px-5 py-2 text-sm font-semibold text-red-600 bg-red-100 hover:bg-red-200 border border-red-400 rounded-xl transition">
                         Reject
                     </button>

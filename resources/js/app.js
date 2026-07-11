@@ -60,20 +60,71 @@ document.addEventListener('DOMContentLoaded', () => {
     // }
 });
 
-window.updateClaimStatus = function(claimId, status) {
-            // 1. Trigger SweetAlert2 Confirmation
+window.updateClaimStatus = function(claimId, status, claimData = {}) {
+            const normalizedStatus = String(status || '').trim();
+            const isDisbursed = normalizedStatus.toLowerCase() === 'disbursed';
+
+            if (isDisbursed) {
+                Swal.fire({
+                    title: 'Prepare disbursement',
+                    html: `
+                        <div class="text-left space-y-3">
+                            <label class="block text-sm">
+                                <span class="mb-1 block font-semibold text-slate-700">Amount</span>
+                                <input id="disbursement-amount" type="number" step="0.01" min="0" value="${claimData.approved_amount ?? claimData.requested_amount ?? ''}" class="swal2-input" />
+                            </label>
+                            <label class="block text-sm">
+                                <span class="mb-1 block font-semibold text-slate-700">Reference Number</span>
+                                <input id="disbursement-reference" type="text" class="swal2-input" />
+                            </label>
+                            <label class="block text-sm">
+                                <span class="mb-1 block font-semibold text-slate-700">Remarks</span>
+                                <textarea id="disbursement-remarks" class="swal2-textarea" rows="3"></textarea>
+                            </label>
+                        </div>
+                    `,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#2563eb',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Confirm disbursement'
+                }).then((result) => {
+                    if (!result.isConfirmed) return;
+
+                    const amount = document.getElementById('disbursement-amount')?.value?.trim();
+                    const referenceNumber = document.getElementById('disbursement-reference')?.value?.trim() || '';
+                    const remarks = document.getElementById('disbursement-remarks')?.value?.trim() || '';
+
+                    if (!amount) {
+                        Swal.showValidationMessage('Amount is required.');
+                        return;
+                    }
+
+                    sendStatusRequest(claimId, normalizedStatus, {
+                        amount,
+                        reference_number: referenceNumber,
+                        payment_remarks: remarks,
+                    });
+                });
+
+                return;
+            }
+
             Swal.fire({
                 title: 'Are you sure?',
-                text: "You are about to approve this claim.",
+                text: normalizedStatus === 'approved'
+                    ? 'You are about to approve this claim.'
+                    : 'You are about to update this claim status.',
                 icon: 'warning',
                 showCancelButton: true,
-                confirmButtonColor: '#2563eb', // Matches your blue-600 theme
+                confirmButtonColor: '#2563eb',
                 cancelButtonColor: '#d33',
-                confirmButtonText: 'Yes, approve it!'
+                confirmButtonText: normalizedStatus === 'approved' ? 'Yes, approve it!' : 'Yes, continue'
             }).then((result) => {
-                // 2. If user confirmed, send request to server
                 if (result.isConfirmed) {
-                    sendStatusRequest(claimId, status);
+                    sendStatusRequest(claimId, normalizedStatus, {
+                        remarks: document.getElementById('claim-remarks-field')?.value || ''
+                    });
                 }
             });
          }
@@ -118,8 +169,9 @@ window.markContributionAsPaid = function(detailId) {
     });
 };
 
- window.sendStatusRequest = function(claimId, status) {
-            // Adjust the URL to match your actual Laravel route
+ window.sendStatusRequest = function(claimId, status, extraData = {}) {
+            const normalizedStatus = String(status || '').trim();
+
             fetch(`/claims/${claimId}`, {
                 method: 'PUT',
                 headers: {
@@ -127,11 +179,12 @@ window.markContributionAsPaid = function(detailId) {
                     'Accept': 'application/json',
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                 },
-                body: JSON.stringify({ 
-                    status: status.trim(),
-                    remarks: ['Approved', 'Rejected'].includes(status.trim()) 
-                        ? document.querySelector('textarea')?.value || '' 
-                        : ''
+                body: JSON.stringify({
+                    status: normalizedStatus,
+                    remarks: ['Approved', 'Rejected'].includes(normalizedStatus)
+                        ? document.getElementById('claim-remarks-field')?.value || ''
+                        : (extraData.remarks || ''),
+                    ...extraData,
                 })
             })
             .then(response => {

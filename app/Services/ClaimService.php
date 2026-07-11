@@ -10,6 +10,7 @@ use App\Models\Member;
 use App\Models\PaymentMethod;
 use App\Models\ContributionBatch;
 use App\Models\ContributionDetail;
+use App\Models\ClaimPayment;
 use App\Enums\ClaimStatus;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -140,10 +141,41 @@ class ClaimService
     {
         // Standardize text check against Schema Enums ('Approved')
         $statusInput = trim($data['status']);
+        $isDisbursed = strtolower($statusInput) === 'disbursed';
+
+        \Log::error(print_r($claim, true));
 
         // Put ALL transactional logic inside the try block so rollbacks work reliably
         try {
             DB::beginTransaction();
+
+            if ($isDisbursed) {
+                $amount = $data['amount'] ?? $claim->approved_amount ?? $claim->requested_amount;
+                $referenceNumber = $data['reference_number'] ?? null;
+                $remarks = $data['payment_remarks'] ?? $data['remarks'] ?? null;
+                $paymentMethodId = $data['payment_method_id'] ?? $claim->payment_method_id;
+
+                if (blank($amount)) {
+                    throw new Exception('A disbursement amount is required.');
+                }
+
+                if (blank($paymentMethodId)) {
+                    throw new Exception('A payment method is required for disbursement.');
+                }
+
+                $claim->payment()->updateOrCreate(
+                    ['claim_id' => $claim->id],
+                    [
+                        'id' => (string) Str::uuid(),
+                        'payment_method_id' => $paymentMethodId,
+                        'reference_number' => $referenceNumber,
+                        'amount' => $this->toMysqlDecimal($amount),
+                        'processed_by' => Auth::user()?->user_id ?? Auth::id(),
+                        'released_at' => now(),
+                        'remarks' => $remarks,
+                    ]
+                );
+            }
 
             if (strtolower($statusInput) === 'approved') {
 
@@ -198,7 +230,8 @@ class ClaimService
             // Complete the parent workflow update
             $claim->update([
                 'status'  => $statusInput,
-                'remarks' => $data['remarks'] ?? null
+                'remarks' => $data['remarks'] ?? null,
+                'disbursed_at' => $isDisbursed ? now() : $claim->disbursed_at,
             ]);
 
             DB::commit();

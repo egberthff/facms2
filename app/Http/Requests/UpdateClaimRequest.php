@@ -36,6 +36,24 @@ class UpdateClaimRequest extends FormRequest
                 'nullable',
                 'string'
             ],
+            'payment_remarks' => [
+                'nullable',
+                'string'
+            ],
+            'amount' => [
+                'nullable',
+                'numeric',
+                'min:0'
+            ],
+            'reference_number' => [
+                'nullable',
+                'string'
+            ],
+            'payment_method_id' => [
+                'nullable',
+                'string',
+                'exists:payment_methods,id'
+            ],
             'status' => [
                 'required',
                 'string',
