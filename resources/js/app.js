@@ -78,6 +78,46 @@ window.updateClaimStatus = function(claimId, status) {
             });
          }
 
+window.markContributionAsPaid = function(detailId) {
+    if (!detailId) return;
+
+    Swal.fire({
+        title: 'Mark as paid?',
+        text: 'This will override the selected contribution detail to Paid.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#2563eb',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Yes, mark as paid'
+    }).then((result) => {
+        if (!result.isConfirmed) return;
+
+        fetch(`/contributions/details/${detailId}/mark-paid`, {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            }
+        })
+        .then((response) => response.json().then((payload) => ({ ok: response.ok, payload })))
+        .then(({ ok, payload }) => {
+            if (!ok || !payload.success) {
+                throw new Error(payload.message || 'Unable to update contribution status.');
+            }
+
+            Swal.fire({
+                title: 'Success',
+                text: payload.message || 'Contribution marked as paid.',
+                icon: 'success'
+            }).then(() => window.location.reload());
+        })
+        .catch((error) => {
+            Swal.fire('Error', error.message || 'Unable to update contribution status.', 'error');
+        });
+    });
+};
+
  window.sendStatusRequest = function(claimId, status) {
             // Adjust the URL to match your actual Laravel route
             fetch(`/claims/${claimId}`, {

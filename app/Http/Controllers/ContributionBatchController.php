@@ -5,9 +5,15 @@ namespace App\Http\Controllers;
 use App\Models\ContributionBatch;
 use App\Http\Requests\StoreContributionBatchRequest;
 use App\Http\Requests\UpdateContributionBatchRequest;
+use App\Services\ContributionService;
 
 class ContributionBatchController extends Controller
 {
+    protected ContributionService $contributionService;
+     public function __construct(ContributionService $contributionService)
+    {
+        $this->contributionService = $contributionService;
+    }
     /**
      * Display a listing of the resource.
      */
@@ -63,4 +69,50 @@ class ContributionBatchController extends Controller
     {
         //
     }
+
+   /**
+     * Display the contribution batch monitoring dashboard.
+     */
+    public function monitorBatch()
+    {
+        // $this->authorize('viewAny', ContributionBatch::class);
+
+        $batches = ContributionBatch::with(['claim.member', 'claim.claimType', 'contributionDetails.member'])
+            ->latest('generated_at')
+            ->get()
+            ->map(function (ContributionBatch $batch) {
+                $details = $batch->contributionDetails->map(function ($detail) {
+                    $member = $detail->member;
+                    $status = strtolower((string) $detail->status);
+
+                    return [
+                        'id'              => $detail->id,
+                        'member_name'     => trim(sprintf('%s %s %s', $member?->first_name, $member?->middle_name, $member?->last_name)),
+                        'employee_number' => $member?->employee_number ?? 'N/A',
+                        'department'      => $member?->department ?? 'N/A',
+                        'amount'          => (float) $detail->amount,
+                        'status'          => $status,
+                        'paid_at'         => $detail->paid_at ? \Carbon\Carbon::parse($detail->paid_at)->format('M d, Y h:i A') : '—',
+                    ];
+                });
+
+                return [
+                    'id'                  => $batch->id,
+                    'claim_id'            => $batch->claim_id,
+                    'claim_number'        => $batch->claim?->claim_number ?? 'N/A',
+                    'claimant'            => trim(sprintf('%s %s %s', $batch->claim?->member?->first_name, $batch->claim?->member?->middle_name, $batch->claim?->member?->last_name)),
+                    'claim_type'          => $batch->claim?->claimType?->name ?? 'N/A',
+                    'collectible_amount'  => (float) $batch->total_amount,
+                    'collected_amount'    => (float) $details->where('status', 'paid')->sum('amount'),
+                    'generated_at'        => $batch->generated_at ? \Carbon\Carbon::parse($batch->generated_at)->format('M d, Y h:i A') : '—',
+                    'total_members'       => (int) $batch->total_members,
+                    'details'             => $details->values()->all(),
+                ];
+            });
+
+        return view('contributions.admin-contributions-monitor', [
+            'batches' => $batches,
+        ]);
+    }
+
 }

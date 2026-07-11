@@ -81,6 +81,15 @@ class ContributionService
         return $query->latest('generated_at')->paginate($perPage);
     }
 
+    public function getBatchMonitoringDetails(string $batchId): ContributionBatch
+    {
+        return ContributionBatch::with([
+            'claim.member', 
+            'claim.claimType',
+            'contributionDetails.member' // Pulls the members assigned to pay this batch
+        ])->findOrFail($batchId);
+    }
+
     /**
      * View contributions owed by a specific user's member account.
      */

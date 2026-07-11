@@ -75,6 +75,24 @@
 
         <hr class="border-slate-700 my-4" />
 
+        <!-- CONTRIBUTION SECTION -->
+        <div class="mb-4">
+            <div class="px-3 mb-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                Contributions
+            </div>
+            <ul class="space-y-2">
+                <li>
+                    <a href="{{ route('contributions.monitoring') }}"
+                        class="flex items-center p-3 rounded-lg text-white hover:bg-slate-700">
+                        <x-heroicon-o-chart-bar-square class="w-5 h-5"/>
+                        <span class="ml-3">All Contributions</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <hr class="border-slate-700 my-4" />
+
         <!-- MANAGEMENT SECTION -->
         <div class="mb-4">
             <div class="px-3 mb-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">

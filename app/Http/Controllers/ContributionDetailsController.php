@@ -70,7 +70,7 @@ class ContributionDetailsController extends Controller
 //                 'message' => $e->getMessage()
 //             ], 422);
 //         }
-//     }
+//     }    
 
      public function myOwedContributions(Request $request)
     {
@@ -116,7 +116,7 @@ class ContributionDetailsController extends Controller
         });
 
         $data['contributions'] = $formattedData;
-        return view('members.contributions', $data);
+        return view('contributions.member-contributions-monitor', $data);
 
         // return response()->json([
         //     'success' => true,
