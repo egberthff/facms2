@@ -29,8 +29,6 @@ class UpdateClaimRequest extends FormRequest
      */
     public function rules(): array
     {
-        $claim = $this->route('claim');
-        
         return [
             'remarks' => [
                 'nullable',
@@ -54,11 +52,31 @@ class UpdateClaimRequest extends FormRequest
                 'string',
                 'exists:payment_methods,id'
             ],
+            'proof_file' => [
+                'nullable',
+                'file',
+                'mimes:jpg,jpeg,png,pdf',
+                'max:2048'
+            ],
             'status' => [
-                'required',
+                'nullable',
                 'string',
                 Rule::enum(ClaimStatus::class), // Validates against Pending, Approved, Rejected, Disbursed
             ],
         ];
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $status = $this->input('status') ?? $this->input('_status') ?? null;
+
+        if ($status === null && $this->isJson()) {
+            $payload = $this->json()->all();
+            $status = $payload['status'] ?? null;
+        }
+
+        if ($status !== null) {
+            $this->merge(['status' => $status]);
+        }
     }
 }

@@ -106,7 +106,10 @@ class ClaimController extends Controller
     public function update(UpdateClaimRequest $request, Claim $claim): JsonResponse
     {
          try {
-        $this->claimService->updateStatus($claim, $request->validated());
+        $data = $request->validated();
+        $data['proof_file'] = $request->file('proof_file');
+
+        $this->claimService->updateStatus($claim, $data);
 
          return response()->json([
                 'success' => true,

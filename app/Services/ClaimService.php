@@ -12,6 +12,7 @@ use App\Models\ContributionBatch;
 use App\Models\ContributionDetail;
 use App\Models\ClaimPayment;
 use App\Enums\ClaimStatus;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -139,15 +140,22 @@ class ClaimService
      */
     public function updateStatus(Claim $claim, array $data): Claim
     {
-        // Standardize text check against Schema Enums ('Approved')
-        $statusInput = trim($data['status']);
-        $isDisbursed = strtolower($statusInput) === 'disbursed';
+        // \Log::error(print_r($data, true));
+        $rawStatus = $data['status'] ?? $data['_status'] ?? null;
 
-        \Log::error(print_r($claim, true));
+        // if (blank($rawStatus)) {
+        //     throw new Exception('The status field is required.');
+        // }
+
+        // Standardize text check against Schema Enums ('Approved')
+        $statusInput = trim((string) $rawStatus);
+        $isDisbursed = strtolower($statusInput) === 'disbursed';
 
         // Put ALL transactional logic inside the try block so rollbacks work reliably
         try {
             DB::beginTransaction();
+
+            $amount = null;
 
             if ($isDisbursed) {
                 $amount = $data['amount'] ?? $claim->approved_amount ?? $claim->requested_amount;
@@ -175,6 +183,10 @@ class ClaimService
                         'remarks' => $remarks,
                     ]
                 );
+
+                if (!empty($data['proof_file'])) {
+                    $this->uploadClaimDocuments($claim, [$data['proof_file']]);
+                }
             }
 
             if (strtolower($statusInput) === 'approved') {
@@ -227,12 +239,39 @@ class ClaimService
                 }
             }
 
+            $claimUpdateData = array();
+            switch (strtolower($statusInput)) {
+                case "processing" : {
+                    $claimUpdateData['status'] = $statusInput;
+                    $claimUpdateData['reviewed_by'] = Auth::user()->id;
+                    $claimUpdateData['updated_at'] = now();
+                    break;
+                }
+                case 'approved' : {
+                    $claimUpdateData['status'] = $statusInput;
+                    $claimUpdateData['remarks'] = $data['remarks'] ?? null;
+                    $claimUpdateData['approved_at'] = now();
+                    $claimUpdateData['updated_at'] = now();
+                    break;
+                }
+                case 'disbursed' : {
+                    $claimUpdateData['status'] = $statusInput;
+                    $claimUpdateData['remarks'] = $data['remarks'] ?? null;
+                    $claimUpdateData['approved_amount'] =  $this->toMysqlDecimal($amount);
+                    $claimUpdateData['disbursed_at'] = now();
+                    $claimUpdateData['updated_at'] = now();
+                    break;
+                }
+                case 'rejected' : {
+                    $claimUpdateData['status'] = $statusInput;
+                    $claimUpdateData['remarks'] = $data['remarks'] ?? null;
+                    $claimUpdateData['updated_at'] = now();
+                }
+
+            }
+
             // Complete the parent workflow update
-            $claim->update([
-                'status'  => $statusInput,
-                'remarks' => $data['remarks'] ?? null,
-                'disbursed_at' => $isDisbursed ? now() : $claim->disbursed_at,
-            ]);
+            $claim->update($claimUpdateData);
 
             DB::commit();
             return $claim;

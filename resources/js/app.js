@@ -81,6 +81,10 @@ window.updateClaimStatus = function(claimId, status, claimData = {}) {
                                 <span class="mb-1 block font-semibold text-slate-700">Remarks</span>
                                 <textarea id="disbursement-remarks" class="swal2-textarea" rows="3"></textarea>
                             </label>
+                            <label class="block text-sm">
+                                <span class="mb-1 block font-semibold text-slate-700">Proof / Receipt</span>
+                                <input id="disbursement-proof" type="file" class="swal2-file" />
+                            </label>
                         </div>
                     `,
                     icon: 'warning',
@@ -94,6 +98,7 @@ window.updateClaimStatus = function(claimId, status, claimData = {}) {
                     const amount = document.getElementById('disbursement-amount')?.value?.trim();
                     const referenceNumber = document.getElementById('disbursement-reference')?.value?.trim() || '';
                     const remarks = document.getElementById('disbursement-remarks')?.value?.trim() || '';
+                    const proofFile = document.getElementById('disbursement-proof')?.files?.[0] || null;
 
                     if (!amount) {
                         Swal.showValidationMessage('Amount is required.');
@@ -101,28 +106,31 @@ window.updateClaimStatus = function(claimId, status, claimData = {}) {
                     }
 
                     sendStatusRequest(claimId, normalizedStatus, {
+                        status: normalizedStatus,
                         amount,
                         reference_number: referenceNumber,
                         payment_remarks: remarks,
+                        proof_file: proofFile,
                     });
                 });
 
                 return;
             }
-
+            console.log(normalizedStatus);
             Swal.fire({
                 title: 'Are you sure?',
-                text: normalizedStatus === 'approved'
+                text: normalizedStatus.toLowerCase() === 'approved'
                     ? 'You are about to approve this claim.'
                     : 'You are about to update this claim status.',
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: '#2563eb',
                 cancelButtonColor: '#d33',
-                confirmButtonText: normalizedStatus === 'approved' ? 'Yes, approve it!' : 'Yes, continue'
+                confirmButtonText: normalizedStatus.toLowerCase() === 'approved' ? 'Yes, approve it!' : 'Yes, continue'
             }).then((result) => {
                 if (result.isConfirmed) {
                     sendStatusRequest(claimId, normalizedStatus, {
+                        status: normalizedStatus,
                         remarks: document.getElementById('claim-remarks-field')?.value || ''
                     });
                 }
@@ -171,21 +179,25 @@ window.markContributionAsPaid = function(detailId) {
 
  window.sendStatusRequest = function(claimId, status, extraData = {}) {
             const normalizedStatus = String(status || '').trim();
+            const formData = new FormData();
+            formData.append('_method', 'PUT');
+            formData.append('status', normalizedStatus);
+            formData.append('remarks', ['Approved', 'Rejected'].includes(normalizedStatus)
+                ? document.getElementById('claim-remarks-field')?.value || ''
+                : (extraData.remarks || ''));
 
+            if (extraData.amount) formData.append('amount', extraData.amount);
+            if (extraData.reference_number) formData.append('reference_number', extraData.reference_number);
+            if (extraData.payment_remarks) formData.append('payment_remarks', extraData.payment_remarks);
+            if (extraData.proof_file) formData.append('proof_file', extraData.proof_file);
+           console.log(Object.fromEntries(formData.entries()));
             fetch(`/claims/${claimId}`, {
-                method: 'PUT',
+                method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
                     'Accept': 'application/json',
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                 },
-                body: JSON.stringify({
-                    status: normalizedStatus,
-                    remarks: ['Approved', 'Rejected'].includes(normalizedStatus)
-                        ? document.getElementById('claim-remarks-field')?.value || ''
-                        : (extraData.remarks || ''),
-                    ...extraData,
-                })
+                body: formData
             })
             .then(response => {
                 if (!response.ok) throw new Error('Network response was not ok');
