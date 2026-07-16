@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use App\Models\Campus;
+use App\Models\Scopes\CampusMemberScope;
 
 class Member extends Model
 {
@@ -47,6 +48,11 @@ class Member extends Model
         ];
     }
 
+    protected static function booted(): void
+    {
+        static::addGlobalScope(new CampusMemberScope);
+    }
+
         /*
     |--------------------------------------------------------------------------
     | Route Model Binding
@@ -82,7 +88,6 @@ class Member extends Model
 
     public function fundTransactions()
     {
-        // return $this->hasMany(FundTransaction::class);
         return $this->hasMany(FundTransaction::class, 'member_id', 'id');
     }
 
@@ -107,6 +112,12 @@ class Member extends Model
     public function scopeActive($query)
     {
         return $query->where('membership_status', 'Active');
+    }
+
+    // Local filter scope so the President can switch between campuses via dropdown selection
+    public function scopeFilterCampus($query, ?string $campusId = null)
+    {
+        return $query->when($campusId, fn($q) => $q->where('campus_id', $campusId));
     }
 
 

@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
+use Illuminate\Database\Eloquent\Builder;
 
 class User extends Authenticatable
 {
@@ -15,7 +16,6 @@ class User extends Authenticatable
     use HasUuids;
 
     protected $primaryKey = 'user_id';
-     // ADD THIS LINE FOR SPATIE
     protected $guard_name = 'web'; 
     public $incrementing = false;
 
@@ -94,6 +94,35 @@ class User extends Authenticatable
             'id'          // Local key on members table
         );
     }
+
+    // public function scopeCampus(Builder $query, ?string $campusId = null): Builder
+    // {
+    //     $authUser = auth()->user();
+    
+    //     // Security Fallback: empty result set if guest logs in
+    //     if (!$authUser) {
+    //         return $query->whereRaw('1 = 0'); 
+    //     }
+    
+    //     // Case 1: President Role Logic
+    //     if ($authUser->role === 'president') {
+    //         // If a valid campus UUID filter is provided, restrict to it. Otherwise, return all.
+    //         return $campusId 
+    //             ? $query->whereHas('member', fn($q) => $q->where('campus_id', $campusId))
+    //             : $query;
+    //     }
+    
+    //     // Case 2: Treasurer Role Logic (Fallback)
+    //     // Safely look up the treasurer's assigned campus UUID via relationship
+    //     $treasurerCampusId = $authUser->member?->campus_id;
+    
+    //     if (!$treasurerCampusId) {
+    //         return $query->whereRaw('1 = 0'); // Block access if treasurer lacks a campus assignment
+    //     }
+    
+    //     return $query->whereHas('member', fn($q) => $q->where('campus_id', $treasurerCampusId));
+    // }
+
 }
 
 
