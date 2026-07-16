@@ -10,6 +10,8 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
 
+            CampusSeeder::class,
+
             ClaimTypeSeeder::class,
 
             PaymentMethodSeeder::class,

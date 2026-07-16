@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Models\Campus;
 
 class Member extends Model
 {
@@ -36,6 +37,7 @@ class Member extends Model
         'address',
         'gcash_number',
         'gcash_account_name',
+        'campus_id'
     ];
 
     protected function casts(): array
@@ -82,6 +84,11 @@ class Member extends Model
     {
         // return $this->hasMany(FundTransaction::class);
         return $this->hasMany(FundTransaction::class, 'member_id', 'id');
+    }
+
+    public function campus()
+    {
+        return $this->belongsTo(Campus::class, 'campus_id', 'id'); 
     }
 
     /*

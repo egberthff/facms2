@@ -49,6 +49,7 @@ return new class extends Migration
             $table->index('employee_number');
             $table->index('membership_status');
             $table->index('department');
+            $table->foreignUuid('campus_id')->constrained('campuses', 'id');
         });
     }
 
