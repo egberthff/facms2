@@ -71,10 +71,10 @@ class Claim extends Model
         return $this->belongsTo(Member::class, 'member_id', 'id');
     }
 
-public function claimType()
-{
-    return $this->belongsTo(ClaimType::class, 'claim_type_id', 'id');
-}
+    public function claimType()
+    {
+        return $this->belongsTo(ClaimType::class, 'claim_type_id', 'id');
+    }
 
     public function paymentMethod()
     {
