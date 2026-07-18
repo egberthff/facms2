@@ -67,24 +67,24 @@ class DisbursementController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Disbursement $disbursement)
-    {
-        //
-    }
+    // public function edit(Disbursement $disbursement)
+    // {
+    //     //
+    // }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(UpdateDisbursementRequest $request, Disbursement $disbursement)
-    {
-        //
-    }
+    // public function update(UpdateDisbursementRequest $request, Disbursement $disbursement)
+    // {
+    //     //
+    // }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Disbursement $disbursement)
-    {
-        //
-    }
+    // public function destroy(Disbursement $disbursement)
+    // {
+    //     //
+    // }
 }

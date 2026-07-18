@@ -19,15 +19,18 @@ use App\Models\Claim;
 use App\Models\ClaimDocument;
 use App\Models\SystemSetting;
 use App\Services\ClaimService;
+use App\Services\TreasuryLedgerService;
 
 use Exception;
 class ClaimController extends Controller
 {
     private ClaimService $claimService;
+    private TreasuryLedgerService $ledgerService;
 
-     public function __construct(ClaimService $claimService)
+     public function __construct(ClaimService $claimService, TreasuryLedgerService $ledgerService)
     {
         $this->claimService = $claimService;
+        $this->ledgerService = $ledgerService;
     }
     /**
      * Display a listing of the resource.
@@ -106,10 +109,10 @@ class ClaimController extends Controller
     public function update(UpdateClaimRequest $request, Claim $claim): JsonResponse
     {
          try {
-        $data = $request->validated();
-        $data['proof_file'] = $request->file('proof_file');
+            $data = $request->validated();
+            $data['proof_file'] = $request->file('proof_file');
 
-        $this->claimService->updateStatus($claim, $data);
+            $this->claimService->updateStatus($claim, $data);
 
          return response()->json([
                 'success' => true,

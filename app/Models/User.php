@@ -66,6 +66,23 @@ class User extends Authenticatable
         return $this->hasOne(Member::class, 'user_id', 'user_id');
     }
 
+        /**
+     * Get and cache the user's campus ID for the current request duration.
+     */
+    public function getCachedCampusId(): ?string
+    {
+        // Use a static property cache to prevent duplicate queries on the same request
+        static $campusId = 'unloaded';
+
+        if ($campusId === 'unloaded') {
+            // Force bypass global scopes on Member to avoid infinite loops
+            $member = $this->member()->withoutGlobalScopes()->first();
+            $campusId = $member ? $member->campus_id : null;
+        }
+
+        return $campusId;
+    }
+
     public function reviewedClaims()
     {
         return $this->hasMany(Claim::class, 'reviewed_by');
@@ -95,34 +112,6 @@ class User extends Authenticatable
             'id'          // Local key on members table
         );
     }
-
-    // public function scopeCampus(Builder $query, ?string $campusId = null): Builder
-    // {
-    //     $authUser = auth()->user();
-    
-    //     // Security Fallback: empty result set if guest logs in
-    //     if (!$authUser) {
-    //         return $query->whereRaw('1 = 0'); 
-    //     }
-    
-    //     // Case 1: President Role Logic
-    //     if ($authUser->role === 'president') {
-    //         // If a valid campus UUID filter is provided, restrict to it. Otherwise, return all.
-    //         return $campusId 
-    //             ? $query->whereHas('member', fn($q) => $q->where('campus_id', $campusId))
-    //             : $query;
-    //     }
-    
-    //     // Case 2: Treasurer Role Logic (Fallback)
-    //     // Safely look up the treasurer's assigned campus UUID via relationship
-    //     $treasurerCampusId = $authUser->member?->campus_id;
-    
-    //     if (!$treasurerCampusId) {
-    //         return $query->whereRaw('1 = 0'); // Block access if treasurer lacks a campus assignment
-    //     }
-    
-    //     return $query->whereHas('member', fn($q) => $q->where('campus_id', $treasurerCampusId));
-    // }
 
 }
 

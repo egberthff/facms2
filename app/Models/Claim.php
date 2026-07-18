@@ -101,6 +101,11 @@ class Claim extends Model
         return $this->hasMany(ContributionDetail::class);
     }
 
+    public function ledgerEntries()
+    {
+        return $this->morphMany(TreasuryLedger::class, 'sourceable');
+    }
+
     public function scopePending($query)
     {
         return $query->where('status', 'Pending');

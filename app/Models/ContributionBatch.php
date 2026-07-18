@@ -71,4 +71,9 @@ class ContributionBatch extends Model
     {
         return $this->hasMany(ContributionDetail::class, 'contribution_batch_id');
     }
+
+    public function ledgerEntries()
+    {
+        return $this->morphMany(TreasuryLedger::class, 'sourceable');
+    }
 }

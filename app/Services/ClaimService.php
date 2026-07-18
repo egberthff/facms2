@@ -17,10 +17,15 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Database\Eloquent\Collection;
+use App\Services\TreasuryLedgerService;
 use Exception;
 
 class ClaimService
 {
+    private TreasuryLedgerService $ledgerService;
+    public function __construct(TreasuryLedgerService $ledgerService){
+        $this->ledgerService = $ledgerService;
+    }
     /**
      * Handle the full claim creation business logic.
      */
@@ -140,12 +145,7 @@ class ClaimService
      */
     public function updateStatus(Claim $claim, array $data): Claim
     {
-        // \Log::error(print_r($data, true));
         $rawStatus = $data['status'] ?? $data['_status'] ?? null;
-
-        // if (blank($rawStatus)) {
-        //     throw new Exception('The status field is required.');
-        // }
 
         // Standardize text check against Schema Enums ('Approved')
         $statusInput = trim((string) $rawStatus);
@@ -155,10 +155,10 @@ class ClaimService
         try {
             DB::beginTransaction();
 
-            $amount = null;
+            // $amount = null;
 
+            $amount = $data['amount'] ?? $claim->approved_amount ?? $claim->requested_amount;
             if ($isDisbursed) {
-                $amount = $data['amount'] ?? $claim->approved_amount ?? $claim->requested_amount;
                 $referenceNumber = $data['reference_number'] ?? null;
                 $remarks = $data['payment_remarks'] ?? $data['remarks'] ?? null;
                 $paymentMethodId = $data['payment_method_id'] ?? $claim->payment_method_id;
@@ -187,6 +187,16 @@ class ClaimService
                 if (!empty($data['proof_file'])) {
                     $this->uploadClaimDocuments($claim, [$data['proof_file']]);
                 }
+
+                    $this->ledgerService->recordTransaction([
+                    'campus_id'        => $claim->member->campus_id,
+                    'sourceable_type'  => get_class($claim),
+                    'sourceable_id'    => $claim->id,
+                    'reference_number' => $data['reference_number'] ?? 'GL-' . time(),
+                    'description'      => "Disbursement for Claim #: " . $claim->claim_number,
+                    'type'             => 'Debit',
+                    'amount'           => $data['amount'],
+            ]);
             }
 
             if (strtolower($statusInput) === 'approved') {

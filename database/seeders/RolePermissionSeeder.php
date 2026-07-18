@@ -29,7 +29,10 @@ class RolePermissionSeeder extends Seeder
             'manage funds',
             'view member metrics',
             'view all metrics',
-            'view all campus data'
+            'view all campus data',
+            'view all treasury',
+            'view campus treasury',
+            'view ledger'
         ];
 
         // 3. Create permissions in the database
@@ -58,7 +61,11 @@ class RolePermissionSeeder extends Seeder
             'view member metrics',
             'view all metrics',
             'view all claims',
-            'view own contribution'
+            'view own contribution',
+            'view campus treasury',
+            'view ledger',
+            'view campus treasury',
+
         ]);
 
         // Presidents can do everything
