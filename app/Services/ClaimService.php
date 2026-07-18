@@ -26,9 +26,9 @@ class ClaimService
      */
     public function createClaim(array $data, array $files): Claim
     {
-        DB::beginTransaction();
 
         try {
+            DB::beginTransaction();
             $claimNumber = 'CLM-' . now()->format('Ymd') . '-' . strtoupper(Str::random(6));
             $annualLimit = SystemSetting::annualLimit()->first();
 

@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use App\Models\Scopes\CampusMemberScope;
 Use App\Models\Member;
 
 class Campus extends Model
@@ -33,6 +34,11 @@ class Campus extends Model
 
     public function member()
     {
-        return this->hasMany(Member::class);
+        return $this->hasMany(Member::class);
+    }
+
+        protected static function booted(): void
+    {
+        static::addGlobalScope(new CampusMemberScope);
     }
 }

@@ -28,7 +28,8 @@ class RolePermissionSeeder extends Seeder
             'manage members',
             'manage funds',
             'view member metrics',
-            'view all metrics'
+            'view all metrics',
+            'view all campus data'
         ];
 
         // 3. Create permissions in the database

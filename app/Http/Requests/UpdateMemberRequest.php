@@ -124,6 +124,11 @@ class UpdateMemberRequest extends FormRequest
                 'string',
                 'max:255',
             ],
+            'campus_id' => [
+                'nullable',
+                'string',
+                'max:36'
+            ]
         ];
     }
 }
