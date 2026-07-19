@@ -121,7 +121,7 @@
                             <th scope="col" class="px-4 py-3">Reference</th>
                             <th scope="col" class="px-4 py-3">Type</th>
                             <th scope="col" class="px-4 py-3">Amount</th>
-                            <th scope="col" class="px-4 py-3">Balance</th>
+                            <th scope="col" class="px-4 py-3">Running Balance</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100 dark:divide-gray-800">

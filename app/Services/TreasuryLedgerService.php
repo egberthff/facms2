@@ -59,69 +59,69 @@ class TreasuryLedgerService
      /**
      * Fetch standard metrics for a regular campus user.
      */
-    public function getStandardMetrics(): array
-    {
-        $entries = TreasuryLedger::with('campus')->orderBy('created_at', 'desc')->paginate(15);
-        $latestLedger = TreasuryLedger::orderBy('created_at', 'desc')->first();
+        public function getStandardMetrics(): array
+        {
+            $entries = TreasuryLedger::with('campus')->orderBy('created_at', 'desc')->paginate(15);
+            $latestLedger = TreasuryLedger::orderBy('created_at', 'desc')->first();
 
-        return [
-            'isPresident' => false,
-            'entries' => $entries, 
-            'currentBalance' => (float) ($latestLedger?->running_balance ?? 0.00),
-            'totalContributions' => 0.00,
-            'totalDisbursements' => 0.00
-        ];
-    }
-
-     /**
-     * Fetch global aggregate metrics across all campuses for administrators.
-     */
-    public function getPresidentialMetrics(?string $selectedCampusId = null): array
-    {
-        $allCampuses = Campus::select('campuses.id', 'campuses.acronym')
-            ->where('campuses.is_active', true)
-            ->selectSub(function ($query) {
-                $query->select('running_balance')
-                    ->from('treasury_ledger')
-                    ->whereColumn('treasury_ledger.campus_id', 'campuses.id')
-                    ->orderBy('created_at', 'desc')
-                    ->orderBy('id', 'desc')
-                    ->limit(1);
-            }, 'latest_balance')
-            ->get();
-
-        $totalGlobalBalance = (float) $allCampuses->sum('latest_balance');
-
-        $currentBalance = $selectedCampusId
-            ? (float) ($allCampuses->firstWhere('id', $selectedCampusId)?->latest_balance ?? 0.00)
-            : 0.00;
-
-        $filteredCampuses = $selectedCampusId 
-            ? $allCampuses->where('id', $selectedCampusId) 
-            : $allCampuses;
-
-        $ledgerQuery = TreasuryLedger::withoutGlobalScope(CampusMemberScope::class);
-
-        if ($selectedCampusId) {
-            $ledgerQuery->where('campus_id', $selectedCampusId);
+            return [
+                'isPresident' => false,
+                'entries' => $entries, 
+                'currentBalance' => (float) ($latestLedger?->running_balance ?? 0.00),
+                'totalContributions' => 0.00,
+                'totalDisbursements' => 0.00
+            ];
         }
 
-        $entries = $ledgerQuery->with('campus')
-            ->orderBy('created_at', 'desc')
-            ->orderBy('id', 'desc')
-            ->paginate(15);
+        /**
+         * Fetch global aggregate metrics across all campuses for administrators.
+         */
+        public function getPresidentialMetrics(?string $selectedCampusId = null): array
+        {
+            $allCampuses = Campus::select('campuses.id', 'campuses.acronym')
+                ->where('campuses.is_active', true)
+                ->selectSub(function ($query) {
+                    $query->select('running_balance')
+                        ->from('treasury_ledger')
+                        ->whereColumn('treasury_ledger.campus_id', 'campuses.id')
+                        ->orderBy('created_at', 'desc')
+                        ->orderBy('id', 'desc')
+                        ->limit(1);
+                }, 'latest_balance')
+                ->get();
 
-        return [
-            'isPresident' => true,
-            'allCampuses' => $allCampuses,             // Populates the entire selection dropdown menu
-            'filteredCampuses' => $filteredCampuses,   // Controls the dynamic balance summary cards
-            'totalGlobalBalance' => $totalGlobalBalance,
-            'currentBalance' => $currentBalance,
-            'entries' => $entries,
-            'selectedCampusId' => $selectedCampusId ? (string) $selectedCampusId : null,
-            'totalContributions' => 0.00, 
-            'totalDisbursements' => 0.00 
-        ];
-    }
+            $totalGlobalBalance = (float) $allCampuses->sum('latest_balance');
+
+            $currentBalance = $selectedCampusId
+                ? (float) ($allCampuses->firstWhere('id', $selectedCampusId)?->latest_balance ?? 0.00)
+                : 0.00;
+
+            $filteredCampuses = $selectedCampusId 
+                ? $allCampuses->where('id', $selectedCampusId) 
+                : $allCampuses;
+
+            $ledgerQuery = TreasuryLedger::withoutGlobalScope(CampusMemberScope::class);
+
+            if ($selectedCampusId) {
+                $ledgerQuery->where('campus_id', $selectedCampusId);
+            }
+
+            $entries = $ledgerQuery->with('campus')
+                ->orderBy('created_at', 'desc')
+                ->orderBy('id', 'desc')
+                ->paginate(15);
+
+            return [
+                'isPresident' => true,
+                'allCampuses' => $allCampuses,             // Populates the entire selection dropdown menu
+                'filteredCampuses' => $filteredCampuses,   // Controls the dynamic balance summary cards
+                'totalGlobalBalance' => $totalGlobalBalance,
+                'currentBalance' => $currentBalance,
+                'entries' => $entries,
+                'selectedCampusId' => $selectedCampusId ? (string) $selectedCampusId : null,
+                'totalContributions' => 0.00, 
+                'totalDisbursements' => 0.00 
+            ];
+        }
 
 }

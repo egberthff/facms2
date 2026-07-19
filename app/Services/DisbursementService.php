@@ -107,4 +107,19 @@ class DisbursementService
             'released_count' => ClaimPayment::whereNotNull('released_at')->count(),
         ];
     }
+
+     /**
+     * Get the total released claim payments sum, filtered by optional campus.
+     */
+    public function getTotalDisbursements(?string $selectedCampusId = null): float
+    {
+        $query = ClaimPayment::join('claims', 'claim_payments.claim_id', '=', 'claims.id')
+            ->join('members', 'claims.member_id', '=', 'members.id');
+
+        if ($selectedCampusId) {
+            $query->where('members.campus_id', $selectedCampusId);
+        }
+
+        return (float) $query->sum('claim_payments.amount');
+    }
 }

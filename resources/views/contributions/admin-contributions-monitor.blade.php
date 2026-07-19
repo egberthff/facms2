@@ -80,27 +80,6 @@
                 
                 </form>
 
-                    {{-- <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
-                         <!-- Contribution Type Context Trigger -->
-                        <form method="GET" action="{{ url()->current() }}" class="flex items-center gap-2">
-                            <select name="contribution_type" onchange="this.form.submit()" class="text-sm rounded-lg bg-white dark:bg-zinc-900 border-gray-300 dark:border-zinc-700 text-gray-700 dark:text-gray-300 focus:ring-blue-500 focus:border-blue-500 min-w-[200px]">
-                                <option value="claims">Claims</option>
-                                <option value="annual">Annual</option>
-                            </select>
-                        </form>
-
-                        <!-- Filtering Form Context Trigger -->
-                        <form method="GET" action="{{ url()->current() }}" class="flex items-center gap-2">
-                            <select name="campus_filter" onchange="this.form.submit()" class="text-sm rounded-lg bg-white dark:bg-zinc-900 border-gray-300 dark:border-zinc-700 text-gray-700 dark:text-gray-300 focus:ring-blue-500 focus:border-blue-500 min-w-[200px]">
-                                <option value="">All Campuses (Global View)</option>
-                                @foreach($allCampuses as $campus)
-                                    <option value="{{ $campus['id'] }}" {{ $selectedCampusId == $campus['id'] ? 'selected' : '' }}>
-                                        {{ $campus->acronym }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </form>
-                    </div> --}}
                 </div>
             </div>
         @endif

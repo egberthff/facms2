@@ -212,15 +212,30 @@ class ContributionService
         // Pro-Tip: You can extract the common $allCampuses query logic into a private 
         // service helper method to avoid duplicating it across these two functions!
         // $allCampuses = $this->getAllCampusesWithBalances(); 
-        $allCampuses = []; 
+        // $allCampuses = []; 
 
         // Build out your annual structural arrays here...
         return [
             'isPresident' => true,
-            'allCampuses' => $allCampuses,
-            'filteredCampuses' => $selectedCampusId ? $allCampuses->where('id', $selectedCampusId) : $allCampuses,
+            // 'allCampuses' => $allCampuses,
+            // 'filteredCampuses' => $selectedCampusId ? $allCampuses->where('id', $selectedCampusId) : $allCampuses,
             // ... include totalGlobalBalance, currentBalance, entries, etc.
         ];
+    }
+
+     /**
+     * Get the total paid contributions sum, filtered by optional campus.
+     */
+    public function getTotalContributions(?string $selectedCampusId = null): float
+    {
+        $query = ContributionDetail::where('contribution_details.status', 'Paid')
+            ->join('members', 'contribution_details.member_id', '=', 'members.id');
+
+        if ($selectedCampusId) {
+            $query->where('members.campus_id', $selectedCampusId);
+        }
+
+        return (float) $query->sum('contribution_details.amount');
     }
 
 }
