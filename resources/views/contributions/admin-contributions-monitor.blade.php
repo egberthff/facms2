@@ -1,88 +1,129 @@
 <x-app-layout>
-    <div class="p-6 max-w-7xl mx-auto space-y-6" x-data="{
-        search: '',
-        batches: @js($batches),
-        selectedBatch: null,
-        selectedDetail: null,
-        openModal: false,
-        openDetailModal: false,
-        selectBatch(batch) {
-            this.selectedBatch = batch;
-            this.openModal = true;
-        },
-        selectDetail(detail) {
-            this.selectedDetail = detail;
-            this.openDetailModal = true;
-        },
-        closeBatchModal() {
-            this.openModal = false;
-            this.selectedBatch = null;
-        },
-        closeDetailModal() {
-            this.openDetailModal = false;
-            this.selectedDetail = null;
-        },
-        hasSelectedDetail() {
-            return this.selectedDetail !== null && this.selectedDetail !== undefined;
-        },
-        markContributionAsPaid(detailId) {
-            window.markContributionAsPaid(detailId);
-        },
-        filteredBatches() {
-            const query = this.search.toLowerCase();
-            return this.batches.filter((batch) => {
-                if (!query) return true;
-                return [batch.claim_number, batch.claimant, batch.claim_type, batch.id]
-                    .join(' ')
-                    .toLowerCase()
-                    .includes(query);
-            });
-        }
-    }">
-        <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b pb-5">
+    <div class="container mx-auto p-4 md:p-6 space-y-6 bg-white dark:bg-zinc-900 text-gray-900 dark:text-white min-h-screen"
+        x-data="{
+            search: '',
+            batches: @js($batches),
+            selectedBatch: null,
+            selectedDetail: null,
+            openModal: false,
+            openDetailModal: false,
+            selectBatch(batch) {
+                this.selectedBatch = batch;
+                this.openModal = true;
+            },
+            selectDetail(detail) {
+                this.selectedDetail = detail;
+                this.openDetailModal = true;
+            },
+            closeBatchModal() {
+                this.openModal = false;
+                this.selectedBatch = null;
+            },
+            closeDetailModal() {
+                this.openDetailModal = false;
+                this.selectedDetail = null;
+            },
+            hasSelectedDetail() {
+                return this.selectedDetail !== null && this.selectedDetail !== undefined;
+            },
+            markContributionAsPaid(detailId) {
+                window.markContributionAsPaid(detailId);
+            },
+            filteredBatches() {
+                const query = this.search.toLowerCase();
+                return this.batches.filter((batch) => {
+                    if (!query) return true;
+                    return [batch.claim_number, batch.claimant, batch.claim_type, batch.id]
+                        .join(' ')
+                        .toLowerCase()
+                        .includes(query);
+                });
+            }
+        }">
+
+        <!-- Presidential Administrative Campus Filter Panel -->
+        @if($isPresident)
+            <div class="p-6 bg-gray-50 dark:bg-zinc-800/40 rounded-xl border border-gray-200 dark:border-zinc-800/80">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                        <h4 class="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Campus Batch Filter</h4>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Filter batch collections and member contributions per physical location.</p>
+                    </div>
+                    
+                    <!-- Filtering Form Context Trigger -->
+                    <form method="GET" action="{{ url()->current() }}" class="flex items-center gap-2">
+                        <select name="campus_filter" onchange="this.form.submit()" class="text-sm rounded-lg bg-white dark:bg-zinc-900 border-gray-300 dark:border-zinc-700 text-gray-700 dark:text-gray-300 focus:ring-blue-500 focus:border-blue-500 min-w-[200px]">
+                            <option value="">All Campuses (Global View)</option>
+                            @foreach($campusBalances as $campus)
+                                <option value="{{ $campus->id }}" {{ $selectedCampusId == $campus->id ? 'selected' : '' }}>
+                                    {{ $campus->acronym }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </form>
+                </div>
+            </div>
+        @endif
+
+        <!-- Header Section -->
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-gray-200 dark:border-zinc-800 pb-5">
             <div>
-                <h1 class="text-xl font-bold text-slate-900">Contribution Batch Monitoring</h1>
-                <p class="text-xs text-slate-500 mt-1">Review each contribution batch, its collectible value, collected amount, and detailed member contributions.</p>
+                <h1 class="text-xl font-bold text-gray-900 dark:text-white">Contribution Batch Monitoring</h1>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Review each contribution batch, its collectible value, collected amount, and detailed member contributions.</p>
             </div>
         </div>
 
-        <div class="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
-            <div class="p-4 border-b border-slate-100 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-                <div class="text-sm text-slate-600">
-                    Showing <span class="font-semibold text-slate-900">{{ count($batches) }}</span> contribution batch(es)
+        <!-- Main Panel Table Wrapper -->
+        <div class="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-lg shadow-sm p-4 md:p-6">
+            
+            <!-- Table Header Toolbar Controls -->
+            <div class="pb-4 mb-4 border-b border-gray-200 dark:border-zinc-800 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                <div class="text-sm text-gray-600 dark:text-gray-400">
+                    Showing <span class="font-semibold text-gray-900 dark:text-white" x-text="filteredBatches().length"></span> contribution batch(es)
                 </div>
                 <input
                     type="text"
                     x-model="search"
                     placeholder="Search by batch, claimant, or claim type..."
-                    class="w-full md:w-80 text-sm p-2.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    class="w-full md:w-80 text-sm p-2.5 rounded-lg bg-white dark:bg-zinc-900 border border-gray-300 dark:border-zinc-700 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
             </div>
 
+            <!-- Responsive Table Element Wrapper -->
             <div class="overflow-x-auto">
-                <table class="min-w-full text-sm">
-                    <thead class="bg-slate-50 border-b border-slate-100">
+                <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+                    <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-zinc-800 dark:text-gray-400">
                         <tr>
-                            <th class="px-4 py-3 text-left font-semibold text-slate-600">Batch ID</th>
-                            <th class="px-4 py-3 text-left font-semibold text-slate-600">Claim ID</th>
-                            <th class="px-4 py-3 text-left font-semibold text-slate-600">Claimant</th>
-                            <th class="px-4 py-3 text-right font-semibold text-slate-600">Collectible Amount</th>
-                            <th class="px-4 py-3 text-right font-semibold text-slate-600">Collected Amount</th>
-                            <th class="px-4 py-3 text-center font-semibold text-slate-600">Action</th>
+                            <th scope="col" class="px-4 py-3">Batch ID</th>
+                            <th scope="col" class="px-4 py-3">Claim ID</th>
+                            <th scope="col" class="px-4 py-3">Claimant</th>
+                            @if($isPresident)
+                                <th scope="col" class="px-4 py-3">Campus</th>
+                            @endif
+                            <th scope="col" class="px-4 py-3 text-right">Collectible Amount</th>
+                            <th scope="col" class="px-4 py-3 text-right">Collected Amount</th>
+                            <th scope="col" class="px-4 py-3 text-center">Action</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-slate-100">
+                    <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+                        <!-- Dynamic Alpine Loop Engine -->
                         <template x-for="batch in filteredBatches()" :key="batch.id">
-                            <tr class="hover:bg-slate-50/60 transition">
-                                <td class="px-4 py-3 font-mono text-xs text-slate-700" x-text="batch.id"></td>
-                                <td class="px-4 py-3 font-medium text-slate-700" x-text="batch.claim_id"></td>
-                                <td class="px-4 py-3">
-                                    <div class="font-medium text-slate-900" x-text="batch.claimant || 'N/A'"></div>
-                                    <div class="text-xs text-slate-500" x-text="batch.claim_type"></div>
+                            <tr class="bg-white hover:bg-gray-50/70 dark:bg-zinc-900 dark:hover:bg-zinc-800/50 transition-colors duration-150">
+                                <td class="px-4 py-3.5 font-mono text-xs text-gray-600 dark:text-gray-400" x-text="'BCH-' + String(batch.id).padStart(5, '0')"></td>
+                                <td class="px-4 py-3.5 font-medium text-gray-900 dark:text-white" x-text="batch.claim_id"></td>
+                                <td class="px-4 py-3.5">
+                                    <div class="font-medium text-gray-900 dark:text-white" x-text="batch.claimant || 'N/A'"></div>
+                                    <div class="text-xs text-gray-500 dark:text-gray-400" x-text="batch.claim_type"></div>
                                 </td>
-                                <td class="px-4 py-3 text-right font-semibold text-slate-900" x-text="'₱' + Number(batch.collectible_amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })"></td>
-                                <td class="px-4 py-3 text-right font-semibold" :class="batch.collected_amount >= batch.collectible_amount ? 'text-emerald-700' : 'text-amber-700'" x-text="'₱' + Number(batch.collected_amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })"></td>
-                                <td class="px-4 py-3 text-center">
+                                
+                                <!-- Optional Campus context flag column for Administrative access profiles -->
+                                @if($isPresident)
+                                    <td class="px-4 py-3.5 font-bold text-xs tracking-wide text-blue-600 dark:text-blue-400" x-text="batch.campus_acronym || 'SYS'"></td>
+                                @endif
+                                
+                                <td class="px-4 py-3.5 text-right font-semibold text-gray-900 dark:text-white" x-text="'₱' + Number(batch.collectible_amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })"></td>
+                                <td class="px-4 py-3.5 text-right font-semibold" :class="Number(batch.collected_amount) >= Number(batch.collectible_amount) ? 'text-green-600 dark:text-green-400' : 'text-amber-600 dark:text-amber-400'" x-text="'₱' + Number(batch.collected_amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })"></td>
+                                <td class="px-4 py-3.5 text-center">
                                     <button
                                         type="button"
                                         @click="selectBatch(batch)"
@@ -93,10 +134,19 @@
                                 </td>
                             </tr>
                         </template>
+
+                        <!-- Fallback empty collection template layout state -->
+                        <template x-if="filteredBatches().length === 0">
+                            <tr>
+                                <td colspan="{{ $isPresident ? '7' : '6' }}" class="text-center py-12 text-gray-400 dark:text-zinc-500 text-xs">
+                                    No records match your filters or search terms inside this workspace view.
+                                </td>
+                            </tr>
+                        </template>
                     </tbody>
                 </table>
             </div>
-        </div>
+        </div
 
         <div x-show="openModal" class="fixed inset-0 z-50 overflow-y-auto" style="display: none;">
             <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm" @click="closeBatchModal()"></div>

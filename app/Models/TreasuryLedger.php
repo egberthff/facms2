@@ -53,4 +53,9 @@ class TreasuryLedger extends Model
     {
         return $this->morphTo();
     }
+
+    public function campus()
+{
+    return $this->belongsTo(Campus::class, 'campus_id');
+}
 }

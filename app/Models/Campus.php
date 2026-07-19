@@ -37,6 +37,11 @@ class Campus extends Model
         return $this->hasMany(Member::class);
     }
 
+    public function treasuryLedger()
+    {
+        return $this->hasMany(TreasuryLedger::class);
+    }
+
         protected static function booted(): void
     {
         static::addGlobalScope(new CampusMemberScope);
