@@ -5,12 +5,15 @@ namespace App\Services;
 use App\Models\User;
 use App\Models\Member;
 use App\Models\Claim;
+use App\Models\Campus;
+use App\Models\Scopes\CampusMemberScope;
 use App\Models\ContributionBatch;
 use App\Models\ContributionDetail;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Carbon;
 use Exception;
 
 class ContributionService
@@ -133,4 +136,91 @@ class ContributionService
 
         return $detail;
     }
+
+     /**
+     * Generate administrative batch dashboard payloads with campus scoping metrics.
+     */
+    public function getClaimsContributionData(?string $selectedCampusId = null): array
+    {
+        $isPresident = Auth::user()->hasRole('president') || Auth::user()->can('view all campus data');
+        // 1. Prepare base query builder instance
+        $query = ContributionBatch::with([
+            'claim.member', 
+            'claim.claimType', 
+            'contributionDetails.member'
+        ]);
+
+        // 2. Apply Presidential Campus Filter logic
+        if ($isPresident) {
+            // Bypass Laravel Global Scopes if viewing global multi-campus matrix
+            $query->withoutGlobalScope(CampusMemberScope::class);
+            
+            if ($selectedCampusId) {
+                // Assuming your claims or members link the batch to a specific physical campus location
+                $query->whereHas('claim.member', function ($q) use ($selectedCampusId) {
+                    $q->where('campus_id', $selectedCampusId);
+                });
+            }
+        }
+
+        // 3. Process records with optimization mapping loops
+        $batches = $query->latest('generated_at')->get()->map(function (ContributionBatch $batch) {
+            $details = $batch->contributionDetails->map(function ($detail) {
+                $member = $detail->member;
+                return [
+                    'id'              => $detail->id,
+                    'member_name'     => trim(sprintf('%s %s %s', $member?->first_name, $member?->middle_name, $member?->last_name)),
+                    'employee_number' => $member?->employee_number ?? 'N/A',
+                    'department'      => $member?->department ?? 'N/A',
+                    'amount'          => (float) $detail->amount,
+                    'status'          => strtolower((string) $detail->status),
+                    'paid_at'         => $detail->paid_at ? Carbon::parse($detail->paid_at)->format('M d, Y h:i A') : '—',
+                ];
+            });
+
+            return [
+                'id'                  => $batch->id,
+                'claim_id'            => $batch->claim_id,
+                'claim_number'        => $batch->claim?->claim_number ?? 'N/A',
+                'claimant'            => trim(sprintf('%s %s %s', $batch->claim?->member?->first_name, $batch->claim?->member?->middle_name, $batch->claim?->member?->last_name)),
+                'claim_type'          => $batch->claim?->claimType?->name ?? 'N/A',
+                'campus_acronym'      => $batch->claim?->member?->campus?->acronym ?? 'SYS', // Bound for view row indicator labels
+                'collectible_amount'  => (float) $batch->total_amount,
+                'collected_amount'    => (float) $details->where('status', 'paid')->sum('amount'),
+                'generated_at'        => $batch->generated_at ? Carbon::parse($batch->generated_at)->format('M d, Y h:i A') : '—',
+                'total_members'       => (int) $batch->total_members,
+                'details'             => $details->values()->all(),
+            ];
+        });
+
+        // 4. Return clean, raw view value payloads
+        return [
+            'isPresident'      => $isPresident,
+            'selectedCampusId' => $selectedCampusId,
+            'allCampuses'   => Campus::where('is_active', true)->get(), // Reused your variable naming structure for alignment 
+            'batches'          => $batches->values()->all(),
+        ];
+    }
+
+    /**
+     * Summary of getAnnualMetrics
+     * @param mixed $selectedCampusId
+     * @return array{allCampuses: mixed, filteredCampuses: mixed, isPresident: bool}
+     */
+    public function getAnnualContributionData(?string $selectedCampusId = null): array
+    {
+        // Pro-Tip: You can extract the common $allCampuses query logic into a private 
+        // service helper method to avoid duplicating it across these two functions!
+        // $allCampuses = $this->getAllCampusesWithBalances(); 
+        $allCampuses = []; 
+
+        // Build out your annual structural arrays here...
+        return [
+            'isPresident' => true,
+            'allCampuses' => $allCampuses,
+            'filteredCampuses' => $selectedCampusId ? $allCampuses->where('id', $selectedCampusId) : $allCampuses,
+            // ... include totalGlobalBalance, currentBalance, entries, etc.
+        ];
+    }
+
 }

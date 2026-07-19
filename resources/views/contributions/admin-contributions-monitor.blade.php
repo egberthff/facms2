@@ -1,79 +1,110 @@
 <x-app-layout>
-    <div class="container mx-auto p-4 md:p-6 space-y-6 bg-white dark:bg-zinc-900 text-gray-900 dark:text-white min-h-screen"
-        x-data="{
-            search: '',
-            batches: @js($batches),
-            selectedBatch: null,
-            selectedDetail: null,
-            openModal: false,
-            openDetailModal: false,
-            selectBatch(batch) {
-                this.selectedBatch = batch;
-                this.openModal = true;
-            },
-            selectDetail(detail) {
-                this.selectedDetail = detail;
-                this.openDetailModal = true;
-            },
-            closeBatchModal() {
-                this.openModal = false;
-                this.selectedBatch = null;
-            },
-            closeDetailModal() {
-                this.openDetailModal = false;
-                this.selectedDetail = null;
-            },
-            hasSelectedDetail() {
-                return this.selectedDetail !== null && this.selectedDetail !== undefined;
-            },
-            markContributionAsPaid(detailId) {
-                window.markContributionAsPaid(detailId);
-            },
-            filteredBatches() {
-                const query = this.search.toLowerCase();
-                return this.batches.filter((batch) => {
-                    if (!query) return true;
-                    return [batch.claim_number, batch.claimant, batch.claim_type, batch.id]
-                        .join(' ')
-                        .toLowerCase()
-                        .includes(query);
-                });
-            }
-        }">
+    <div class="p-6 max-w-7xl mx-auto space-y-6" x-data="{
+        search: '',
+        batches: @js($batches),
+        selectedBatch: null,
+        selectedDetail: null,
+        openModal: false,
+        openDetailModal: false,
+        selectBatch(batch) {
+            this.selectedBatch = batch;
+            this.openModal = true;
+        },
+        selectDetail(detail) {
+            this.selectedDetail = detail;
+            this.openDetailModal = true;
+        },
+        closeBatchModal() {
+            this.openModal = false;
+            this.selectedBatch = null;
+        },
+        closeDetailModal() {
+            this.openDetailModal = false;
+            this.selectedDetail = null;
+        },
+        hasSelectedDetail() {
+            return this.selectedDetail !== null && this.selectedDetail !== undefined;
+        },
+        markContributionAsPaid(detailId) {
+            window.markContributionAsPaid(detailId);
+        },
+        filteredBatches() {
+            const query = this.search.toLowerCase();
+            return this.batches.filter((batch) => {
+                if (!query) return true;
+                return [batch.claim_number, batch.claimant, batch.claim_type, batch.id]
+                    .join(' ')
+                    .toLowerCase()
+                    .includes(query);
+            });
+        }
+    }">
 
-        <!-- Presidential Administrative Campus Filter Panel -->
-        @if($isPresident)
+     <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-gray-200 dark:border-zinc-800 pb-5">
+            <div>
+                <h1 class="text-xl font-bold text-gray-900 dark:text-white">Contribution Batch Monitoring</h1>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Review each contribution batch, its collectible value, collected amount, and detailed member contributions.</p>
+            </div>
+        </div>  
+
+    {{-- Administratice panel --}}
+      @if($isPresident)
             <div class="p-6 bg-gray-50 dark:bg-zinc-800/40 rounded-xl border border-gray-200 dark:border-zinc-800/80">
                 <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div>
                         <h4 class="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Campus Batch Filter</h4>
-                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Filter batch collections and member contributions per physical location.</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Filter batch collections and member contributions per campus.</p>
                     </div>
-                    
-                    <!-- Filtering Form Context Trigger -->
-                    <form method="GET" action="{{ url()->current() }}" class="flex items-center gap-2">
+
+                    <form method="GET" action="{{ url()->current() }}" class="flex flex-col md:flex-row md:items-center justify-end gap-3 w-full">
+    
+                    <!-- Contribution Type Filter -->
+                    <div class="flex items-center gap-2">
+                        <select name="contribution_type" onchange="this.form.submit()" class="text-sm rounded-lg bg-white dark:bg-zinc-900 border-gray-300 dark:border-zinc-700 text-gray-700 dark:text-gray-300 focus:ring-blue-500 focus:border-blue-500 min-w-[200px]">
+                            <option value="claims" {{ request('contribution_type') == 'claims' ? 'selected' : '' }}>Claims</option>
+                            <option value="annual" {{ request('contribution_type') == 'annual' ? 'selected' : '' }}>Annual</option>
+                        </select>
+                    </div>
+                
+                    <!-- Campus Filter (Note: Fixed array syntax to object syntax) -->
+                    <div class="flex items-center gap-2">
                         <select name="campus_filter" onchange="this.form.submit()" class="text-sm rounded-lg bg-white dark:bg-zinc-900 border-gray-300 dark:border-zinc-700 text-gray-700 dark:text-gray-300 focus:ring-blue-500 focus:border-blue-500 min-w-[200px]">
                             <option value="">All Campuses (Global View)</option>
-                            @foreach($campusBalances as $campus)
+                            @foreach($allCampuses as $campus)
                                 <option value="{{ $campus->id }}" {{ $selectedCampusId == $campus->id ? 'selected' : '' }}>
                                     {{ $campus->acronym }}
                                 </option>
                             @endforeach
                         </select>
-                    </form>
+                    </div>
+                
+                </form>
+
+                    {{-- <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                         <!-- Contribution Type Context Trigger -->
+                        <form method="GET" action="{{ url()->current() }}" class="flex items-center gap-2">
+                            <select name="contribution_type" onchange="this.form.submit()" class="text-sm rounded-lg bg-white dark:bg-zinc-900 border-gray-300 dark:border-zinc-700 text-gray-700 dark:text-gray-300 focus:ring-blue-500 focus:border-blue-500 min-w-[200px]">
+                                <option value="claims">Claims</option>
+                                <option value="annual">Annual</option>
+                            </select>
+                        </form>
+
+                        <!-- Filtering Form Context Trigger -->
+                        <form method="GET" action="{{ url()->current() }}" class="flex items-center gap-2">
+                            <select name="campus_filter" onchange="this.form.submit()" class="text-sm rounded-lg bg-white dark:bg-zinc-900 border-gray-300 dark:border-zinc-700 text-gray-700 dark:text-gray-300 focus:ring-blue-500 focus:border-blue-500 min-w-[200px]">
+                                <option value="">All Campuses (Global View)</option>
+                                @foreach($allCampuses as $campus)
+                                    <option value="{{ $campus['id'] }}" {{ $selectedCampusId == $campus['id'] ? 'selected' : '' }}>
+                                        {{ $campus->acronym }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </form>
+                    </div> --}}
                 </div>
             </div>
         @endif
 
-        <!-- Header Section -->
-        <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-gray-200 dark:border-zinc-800 pb-5">
-            <div>
-                <h1 class="text-xl font-bold text-gray-900 dark:text-white">Contribution Batch Monitoring</h1>
-                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Review each contribution batch, its collectible value, collected amount, and detailed member contributions.</p>
-            </div>
-        </div>
-
-        <!-- Main Panel Table Wrapper -->
         <div class="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-lg shadow-sm p-4 md:p-6">
             
             <!-- Table Header Toolbar Controls -->
@@ -109,8 +140,9 @@
                         <!-- Dynamic Alpine Loop Engine -->
                         <template x-for="batch in filteredBatches()" :key="batch.id">
                             <tr class="bg-white hover:bg-gray-50/70 dark:bg-zinc-900 dark:hover:bg-zinc-800/50 transition-colors duration-150">
-                                <td class="px-4 py-3.5 font-mono text-xs text-gray-600 dark:text-gray-400" x-text="'BCH-' + String(batch.id).padStart(5, '0')"></td>
-                                <td class="px-4 py-3.5 font-medium text-gray-900 dark:text-white" x-text="batch.claim_id"></td>
+                                {{-- <td class="px-4 py-3.5 font-mono text-xs text-gray-600 dark:text-gray-400" x-text="'BCH-' + String(batch.id).padStart(5, '0')"></td> --}}
+                                <td class="px-4 py-3.5 font-mono text-xs text-gray-600 dark:text-gray-400" x-text="batch.id"></td>
+                                <td class="px-4 py-3.5 font-medium text-gray-900 dark:text-white" x-text="batch.claim_number"></td>
                                 <td class="px-4 py-3.5">
                                     <div class="font-medium text-gray-900 dark:text-white" x-text="batch.claimant || 'N/A'"></div>
                                     <div class="text-xs text-gray-500 dark:text-gray-400" x-text="batch.claim_type"></div>
@@ -146,7 +178,7 @@
                     </tbody>
                 </table>
             </div>
-        </div
+        </div>
 
         <div x-show="openModal" class="fixed inset-0 z-50 overflow-y-auto" style="display: none;">
             <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm" @click="closeBatchModal()"></div>
