@@ -30,6 +30,7 @@ class DisbursementController extends Controller
         ];
 
         $data['disbursements'] = $this->disbursementService->getDisbursmentAll($filters);
+        \Log::error(print_r($data['disbursements'], true));
         $data['summary'] = $this->disbursementService->getDisbursementSummary();
         $data['filters'] = $filters;
         $data['yearOptions'] = $this->disbursementService->getYearOptions();

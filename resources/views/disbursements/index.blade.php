@@ -76,6 +76,7 @@
                                 'released_on' => optional($row->released_at)->format('M d, Y') ?: 'Pending',
                                 'reference_number' => $row->reference_number ?? 'N/A',
                                 'remarks' => $row->remarks ?? 'No remarks provided.',
+                                'receipt_path' => [$row->receipt_path] ?? [],
                             ];
                         @endphp
                         <tr>
@@ -93,7 +94,7 @@
                             <td class="px-6 py-4 text-right">
                                 <button
                                     type="button"
-                                    @click="activeDisbursement = @js($modalData); openModal = true;"
+                                    @click="activeDisbursement = @js($modalData); openModal = true; console.log(@js($modalData));"
                                     class="inline-flex items-center rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-100">
                                     View Details
                                 </button>
@@ -173,6 +174,42 @@
                     <div class="rounded-xl border border-slate-100 p-4">
                         <span class="block text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Remarks</span>
                         <p class="mt-1 whitespace-pre-line text-sm text-slate-700" x-text="activeDisbursement.remarks || 'No remarks provided.'"></p>
+                    </div>
+                </div>
+                <div class="rounded-xl border border-slate-100 p-4">
+                    <span class="block mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Attachments</span>
+                    
+                    <div class="divide-y divide-slate-100">
+                        <!-- Show documents if receipt_path is an array with items -->
+                        <template x-if="activeDisbursement.receipt_path && activeDisbursement.receipt_path.length > 0">
+                            <div>
+                                <template x-for="(doc, index) in activeDisbursement.receipt_path" :key="index">
+                                    <div class="flex items-center justify-between py-2.5 text-xs first:pt-0 last:pb-0">
+                                        <div class="flex items-center gap-2.5 min-w-0 pr-4">
+                                            <div class="p-2 bg-slate-50 rounded-lg text-slate-500 shrink-0">
+                                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                                </svg>
+                                            </div>
+                                            <div class="min-w-0 truncate">
+                                                {{-- <span class="font-medium text-slate-800 block truncate" x-text="doc.receipt_path"></span> --}}
+                                                {{-- <span class="text-[10px] text-slate-400" x-text="doc.file_size ? (doc.file_size / 1024).toFixed(1) + ' KB' : '0 KB'"></span> --}}
+                                            </div>
+                                        </div>
+                                        <a :href="'/storage/' + doc" target="_blank" class="inline-flex items-center gap-1 font-semibold text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100/70 px-2.5 py-1 rounded transition shrink-0">
+                                            View File
+                                        </a>
+                                    </div>
+                                </template>
+                            </div>
+                        </template>
+                    
+                        <!-- Fallback template when no attachments exist -->
+                        <template x-if="!activeDisbursement.receipt_path || activeDisbursement.receipt_path.length === 0">
+                            <div class="text-center py-4 text-slate-400 text-xs">
+                                No receipt or proof of payment uploaded.
+                            </div>
+                        </template>
                     </div>
                 </div>
             </div>

@@ -155,7 +155,6 @@ class ClaimService
         try {
             DB::beginTransaction();
 
-            // $amount = null;
 
             $amount = $data['amount'] ?? $claim->approved_amount ?? $claim->requested_amount;
             if ($isDisbursed) {
@@ -171,6 +170,14 @@ class ClaimService
                     throw new Exception('A payment method is required for disbursement.');
                 }
 
+                if (!empty($data['proof_file'])) {
+                    $originalName = $data['proof_file']->getClientOriginalName();
+                    $storedFilename = Str::uuid() . '.' . $data['proof_file']->getClientOriginalExtension();
+
+                    $path = $data['proof_file']->storeAs('documents/disbursements', $storedFilename, 'public');
+                }
+
+                //Insert claim payments
                 $claim->payment()->updateOrCreate(
                     ['claim_id' => $claim->id],
                     [
@@ -179,15 +186,12 @@ class ClaimService
                         'reference_number' => $referenceNumber,
                         'amount' => $this->toMysqlDecimal($amount),
                         'processed_by' => Auth::user()?->user_id ?? Auth::id(),
+                        'receipt_path' => $path ?? null,
                         'released_at' => now(),
                         'remarks' => $remarks,
                     ]
                 );
-
-                if (!empty($data['proof_file'])) {
-                    $this->uploadClaimDocuments($claim, [$data['proof_file']]);
-                }
-
+                    //Insert ledger record
                     $this->ledgerService->recordTransaction([
                     'campus_id'        => $claim->member->campus_id,
                     'sourceable_type'  => get_class($claim),

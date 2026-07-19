@@ -74,7 +74,7 @@ window.updateClaimStatus = function(claimId, status, claimData = {}) {
                                 <input id="disbursement-amount" type="number" step="0.01" min="0" value="${claimData.approved_amount ?? claimData.requested_amount ?? ''}" class="swal2-input" />
                             </label>
                             <label class="block text-sm">
-                                <span class="mb-1 block font-semibold text-slate-700">Reference Number</span>
+                                <span class="mb-1 block font-semibold text-slate-700">Reference Code</span>
                                 <input id="disbursement-reference" type="text" class="swal2-input" />
                             </label>
                             <label class="block text-sm">
@@ -180,6 +180,7 @@ window.markContributionAsPaid = function(detailId) {
  window.sendStatusRequest = function(claimId, status, extraData = {}) {
             const normalizedStatus = String(status || '').trim();
             const formData = new FormData();
+            // (status.toLowerCase().trim() === 'disbursed') ?  formData.append('_method', 'POST') : formData.append('_method', 'PUT');
             formData.append('_method', 'PUT');
             formData.append('status', normalizedStatus);
             formData.append('remarks', ['Approved', 'Rejected'].includes(normalizedStatus)
