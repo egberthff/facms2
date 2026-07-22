@@ -12,36 +12,26 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('claim_payments', function (Blueprint $table) {
-
             $table->uuid('id')->primary();
-
             $table->foreignUuid('claim_id')
                 ->unique()
                 ->constrained('claims', 'id')
                 ->cascadeOnDelete();
-
             $table->foreignUuid('payment_method_id')
                 ->constrained('payment_methods', 'id')
                 ->restrictOnDelete();
-
             // Check Number, GCash Reference No., etc.
             $table->string('reference_number')
                 ->nullable();
-
             $table->decimal('amount', 12, 2)->default(0.00);
-
             // Treasurer who released the payment
             $table->foreignUuid('processed_by')
                 ->constrained('users', 'user_id')
                 ->restrictOnDelete();
-
             $table->string('receipt_path')->nullable();
-
             $table->timestamp('released_at')->nullable();
-
             $table->text('remarks')
                 ->nullable();
-
             $table->timestamps();
 
             /*
