@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Models\Campus;
+use App\Models\Scopes\CampusMemberScope;
 
 class Member extends Model
 {
@@ -36,6 +38,7 @@ class Member extends Model
         'address',
         'gcash_number',
         'gcash_account_name',
+        'campus_id'
     ];
 
     protected function casts(): array
@@ -43,6 +46,11 @@ class Member extends Model
         return [
             'birth_date' => 'date',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        static::addGlobalScope(new CampusMemberScope);
     }
 
         /*
@@ -80,8 +88,12 @@ class Member extends Model
 
     public function fundTransactions()
     {
-        // return $this->hasMany(FundTransaction::class);
         return $this->hasMany(FundTransaction::class, 'member_id', 'id');
+    }
+
+    public function campus()
+    {
+        return $this->belongsTo(Campus::class, 'campus_id', 'id'); 
     }
 
     /*
@@ -100,6 +112,12 @@ class Member extends Model
     public function scopeActive($query)
     {
         return $query->where('membership_status', 'Active');
+    }
+
+    // Local filter scope so the President can switch between campuses via dropdown selection
+    public function scopeFilterCampus($query, ?string $campusId = null)
+    {
+        return $query->when($campusId, fn($q) => $q->where('campus_id', $campusId));
     }
 
 

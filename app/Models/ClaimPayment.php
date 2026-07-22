@@ -67,4 +67,9 @@ class ClaimPayment extends Model
     {
         return $this->belongsTo(User::class, 'released_by');
     }
+
+    public function ledgerEntries()
+    {
+        return $this->morphMany(TreasuryLedger::class, 'sourceable');
+    }
 }

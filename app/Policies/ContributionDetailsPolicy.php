@@ -4,6 +4,7 @@ namespace App\Policies;
 
 use App\Models\ContributionDetails;
 use App\Models\User;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Auth\Access\Response;
 
 class ContributionDetailsPolicy
@@ -11,9 +12,18 @@ class ContributionDetailsPolicy
     /**
      * Determine whether the user can view any models.
      */
-    public function viewAny(User $user): bool
+    public function viewAny(User $user, ): bool
     {
-        return false;
+        // return false;
+
+        if ($user->hasRole([
+            'President',
+            'Treasurer'
+        ])){
+            return true;
+        }else{
+            return $user->hasRole('Member') && $user->id === Auth::user()->id;
+        }
     }
 
     /**
@@ -22,6 +32,8 @@ class ContributionDetailsPolicy
     public function view(User $user, ContributionDetails $contributionDetails): bool
     {
         return false;
+        // return $user->
+
     }
 
     /**

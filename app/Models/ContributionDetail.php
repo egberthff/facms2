@@ -58,4 +58,9 @@ class ContributionDetail extends Model
     {
         return $this->belongsTo(Member::class, 'member_id');
     }
+
+    public function ledgerEntries()
+    {
+        return $this->morphMany(TreasuryLedger::class, 'sourceable');
+    }
 }

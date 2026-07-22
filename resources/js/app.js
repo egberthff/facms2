@@ -60,39 +60,145 @@ document.addEventListener('DOMContentLoaded', () => {
     // }
 });
 
-window.updateClaimStatus = function(claimId, status) {
-            // 1. Trigger SweetAlert2 Confirmation
+window.updateClaimStatus = function(claimId, status, claimData = {}) {
+            const normalizedStatus = String(status || '').trim();
+            const isDisbursed = normalizedStatus.toLowerCase() === 'disbursed';
+
+            if (isDisbursed) {
+                Swal.fire({
+                    title: 'Prepare disbursement',
+                    html: `
+                        <div class="text-left space-y-3">
+                            <label class="block text-sm">
+                                <span class="mb-1 block font-semibold text-slate-700">Amount</span>
+                                <input id="disbursement-amount" type="number" step="0.01" min="0" value="${claimData.approved_amount ?? claimData.requested_amount ?? ''}" class="swal2-input" />
+                            </label>
+                            <label class="block text-sm">
+                                <span class="mb-1 block font-semibold text-slate-700">Reference Code</span>
+                                <input id="disbursement-reference" type="text" class="swal2-input" />
+                            </label>
+                            <label class="block text-sm">
+                                <span class="mb-1 block font-semibold text-slate-700">Remarks</span>
+                                <textarea id="disbursement-remarks" class="swal2-textarea" rows="3"></textarea>
+                            </label>
+                            <label class="block text-sm">
+                                <span class="mb-1 block font-semibold text-slate-700">Proof / Receipt</span>
+                                <input id="disbursement-proof" type="file" class="swal2-file" />
+                            </label>
+                        </div>
+                    `,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#2563eb',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Confirm disbursement'
+                }).then((result) => {
+                    if (!result.isConfirmed) return;
+
+                    const amount = document.getElementById('disbursement-amount')?.value?.trim();
+                    const referenceNumber = document.getElementById('disbursement-reference')?.value?.trim() || '';
+                    const remarks = document.getElementById('disbursement-remarks')?.value?.trim() || '';
+                    const proofFile = document.getElementById('disbursement-proof')?.files?.[0] || null;
+
+                    if (!amount) {
+                        Swal.showValidationMessage('Amount is required.');
+                        return;
+                    }
+
+                    sendStatusRequest(claimId, normalizedStatus, {
+                        status: normalizedStatus,
+                        amount,
+                        reference_number: referenceNumber,
+                        payment_remarks: remarks,
+                        proof_file: proofFile,
+                    });
+                });
+
+                return;
+            }
+            console.log(normalizedStatus);
             Swal.fire({
                 title: 'Are you sure?',
-                text: "You are about to approve this claim.",
+                text: normalizedStatus.toLowerCase() === 'approved'
+                    ? 'You are about to approve this claim.'
+                    : 'You are about to update this claim status.',
                 icon: 'warning',
                 showCancelButton: true,
-                confirmButtonColor: '#2563eb', // Matches your blue-600 theme
+                confirmButtonColor: '#2563eb',
                 cancelButtonColor: '#d33',
-                confirmButtonText: 'Yes, approve it!'
+                confirmButtonText: normalizedStatus.toLowerCase() === 'approved' ? 'Yes, approve it!' : 'Yes, continue'
             }).then((result) => {
-                // 2. If user confirmed, send request to server
                 if (result.isConfirmed) {
-                    sendStatusRequest(claimId, status);
+                    sendStatusRequest(claimId, normalizedStatus, {
+                        status: normalizedStatus,
+                        remarks: document.getElementById('claim-remarks-field')?.value || ''
+                    });
                 }
             });
          }
 
- window.sendStatusRequest = function(claimId, status) {
-            // Adjust the URL to match your actual Laravel route
+window.markContributionAsPaid = function(detailId) {
+    if (!detailId) return;
+
+    Swal.fire({
+        title: 'Mark as paid?',
+        text: 'This will override the selected contribution detail to Paid.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#2563eb',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Yes, mark as paid'
+    }).then((result) => {
+        if (!result.isConfirmed) return;
+
+        fetch(`/contributions/details/${detailId}/mark-paid`, {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            }
+        })
+        .then((response) => response.json().then((payload) => ({ ok: response.ok, payload })))
+        .then(({ ok, payload }) => {
+            if (!ok || !payload.success) {
+                throw new Error(payload.message || 'Unable to update contribution status.');
+            }
+
+            Swal.fire({
+                title: 'Success',
+                text: payload.message || 'Contribution marked as paid.',
+                icon: 'success'
+            }).then(() => window.location.reload());
+        })
+        .catch((error) => {
+            Swal.fire('Error', error.message || 'Unable to update contribution status.', 'error');
+        });
+    });
+};
+
+ window.sendStatusRequest = function(claimId, status, extraData = {}) {
+            const normalizedStatus = String(status || '').trim();
+            const formData = new FormData();
+            // (status.toLowerCase().trim() === 'disbursed') ?  formData.append('_method', 'POST') : formData.append('_method', 'PUT');
+            formData.append('_method', 'PUT');
+            formData.append('status', normalizedStatus);
+            formData.append('remarks', ['Approved', 'Rejected'].includes(normalizedStatus)
+                ? document.getElementById('claim-remarks-field')?.value || ''
+                : (extraData.remarks || ''));
+
+            if (extraData.amount) formData.append('amount', extraData.amount);
+            if (extraData.reference_number) formData.append('reference_number', extraData.reference_number);
+            if (extraData.payment_remarks) formData.append('payment_remarks', extraData.payment_remarks);
+            if (extraData.proof_file) formData.append('proof_file', extraData.proof_file);
+           console.log(Object.fromEntries(formData.entries()));
             fetch(`/claims/${claimId}`, {
-                method: 'PUT',
+                method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
                     'Accept': 'application/json',
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                 },
-                body: JSON.stringify({ 
-                    status: status.trim(),
-                    remarks: ['Approved', 'Rejected'].includes(status.trim()) 
-                        ? document.querySelector('textarea')?.value || '' 
-                        : ''
-                })
+                body: formData
             })
             .then(response => {
                 if (!response.ok) throw new Error('Network response was not ok');

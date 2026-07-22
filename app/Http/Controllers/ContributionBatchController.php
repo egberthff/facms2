@@ -3,11 +3,19 @@
 namespace App\Http\Controllers;
 
 use App\Models\ContributionBatch;
+use App\Models\Campus;
 use App\Http\Requests\StoreContributionBatchRequest;
 use App\Http\Requests\UpdateContributionBatchRequest;
+use Illuminate\Http\Request;
+use App\Services\ContributionService;
 
 class ContributionBatchController extends Controller
 {
+    protected ContributionService $contributionService;
+     public function __construct(ContributionService $contributionService)
+    {
+        $this->contributionService = $contributionService;
+    }
     /**
      * Display a listing of the resource.
      */
@@ -63,4 +71,74 @@ class ContributionBatchController extends Controller
     {
         //
     }
+
+   /**
+     * Display the contribution batch monitoring dashboard.
+     */
+    public function monitorBatch(Request $request)
+    {
+        $selectedCampusId = $request->input('campus_filter');
+        $contributionType = $request->input('contribution_type', 'claims'); // 'claims' is the fallback default
+
+        // 2. Conditionally fetch dashboard metric payloads based on the type chosen
+        if ($contributionType === 'annual') {
+            // Calls your upcoming annual metrics logic inside the service file
+            $data = $this->contributionService->getAnnualContributionData($selectedCampusId);
+        } else {
+            // Falls back to your original presidential metrics pipeline
+            $data = $this->contributionService->getClaimsContributionData($selectedCampusId);
+        }
+        
+        // // 1. Evaluate user privilege profiles 
+        // $selectedCampusId = $request->input('campus_filter');
+
+        // // 2. Fetch data payload arrays using the service container
+        // $data = $this->contributionService->getBatchMonitoringData($selectedCampusId);
+
+        return view('contributions.admin-contributions-monitor', $data);
+    }
+
+    // public function monitorBatch()
+    // {
+    //     // $this->authorize('viewAny', ContributionBatch::class);
+
+    //     $data['batches'] = ContributionBatch::with(['claim.member', 'claim.claimType', 'contributionDetails.member'])
+    //         ->latest('generated_at')
+    //         ->get()
+    //         ->map(function (ContributionBatch $batch) {
+    //             $details = $batch->contributionDetails->map(function ($detail) {
+    //                 $member = $detail->member;
+    //                 $status = strtolower((string) $detail->status);
+
+    //                 return [
+    //                     'id'              => $detail->id,
+    //                     'member_name'     => trim(sprintf('%s %s %s', $member?->first_name, $member?->middle_name, $member?->last_name)),
+    //                     'employee_number' => $member?->employee_number ?? 'N/A',
+    //                     'department'      => $member?->department ?? 'N/A',
+    //                     'amount'          => (float) $detail->amount,
+    //                     'status'          => $status,
+    //                     'paid_at'         => $detail->paid_at ? \Carbon\Carbon::parse($detail->paid_at)->format('M d, Y h:i A') : '—',
+    //                 ];
+    //             });
+
+    //             return [
+    //                 'id'                  => $batch->id,
+    //                 'claim_id'            => $batch->claim_id,
+    //                 'claim_number'        => $batch->claim?->claim_number ?? 'N/A',
+    //                 'claimant'            => trim(sprintf('%s %s %s', $batch->claim?->member?->first_name, $batch->claim?->member?->middle_name, $batch->claim?->member?->last_name)),
+    //                 'claim_type'          => $batch->claim?->claimType?->name ?? 'N/A',
+    //                 'collectible_amount'  => (float) $batch->total_amount,
+    //                 'collected_amount'    => (float) $details->where('status', 'paid')->sum('amount'),
+    //                 'generated_at'        => $batch->generated_at ? \Carbon\Carbon::parse($batch->generated_at)->format('M d, Y h:i A') : '—',
+    //                 'total_members'       => (int) $batch->total_members,
+    //                 'details'             => $details->values()->all(),
+    //             ];
+    //         });
+
+    //         $data['allCampuses'] = Campus::where('is_active', true)->get();
+    //         $data['isPresident'] = true;
+
+    //     return view('contributions.admin-contributions-monitor', $data);
+    // }
+
 }

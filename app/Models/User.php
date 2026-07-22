@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 
 class User extends Authenticatable
 {
@@ -15,7 +17,6 @@ class User extends Authenticatable
     use HasUuids;
 
     protected $primaryKey = 'user_id';
-     // ADD THIS LINE FOR SPATIE
     protected $guard_name = 'web'; 
     public $incrementing = false;
 
@@ -65,6 +66,23 @@ class User extends Authenticatable
         return $this->hasOne(Member::class, 'user_id', 'user_id');
     }
 
+        /**
+     * Get and cache the user's campus ID for the current request duration.
+     */
+    public function getCachedCampusId(): ?string
+    {
+        // Use a static property cache to prevent duplicate queries on the same request
+        static $campusId = 'unloaded';
+
+        if ($campusId === 'unloaded') {
+            // Force bypass global scopes on Member to avoid infinite loops
+            $member = $this->member()->withoutGlobalScopes()->first();
+            $campusId = $member ? $member->campus_id : null;
+        }
+
+        return $campusId;
+    }
+
     public function reviewedClaims()
     {
         return $this->hasMany(Claim::class, 'reviewed_by');
@@ -94,6 +112,7 @@ class User extends Authenticatable
             'id'          // Local key on members table
         );
     }
+
 }
 
 

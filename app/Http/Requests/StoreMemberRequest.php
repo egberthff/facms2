@@ -108,6 +108,11 @@ class StoreMemberRequest extends FormRequest
                 'string',
                 'max:255',
             ],
+            'campus_id' => [
+                'nullable',
+                'string',
+                'max:36',
+            ]
         ];
     }
 }

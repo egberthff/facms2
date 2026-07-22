@@ -159,10 +159,47 @@
         <hr class="border-slate-700 my-4">
 
         <!-- ========================================= -->
+        <!-- Contibutions -->
+        <!-- ========================================= -->
+                <div class="mb-4">
+
+                    <div class="px-3 mb-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                    
+                        Contributions
+                    
+                    </div>
+                
+                    <ul class="space-y-2">
+                    
+                        <li>
+                        
+                            <a href="{{ route('member.my-contributions' , Auth::user()) }}"
+                                class="flex items-center p-3 rounded-lg transition
+                                {{ request()->routeIs('member.my-contributions')
+                                    ? 'bg-slate-700 text-white'
+                                    : 'text-white hover:bg-slate-700' }}">
+
+                                <x-heroicon-o-chart-bar-square class="w-5 h-5"/>
+                        
+                                <span class="ml-3">
+                                
+                                   My Contributions
+                                
+                                </span>
+                            
+                            </a>
+                        
+                        </li>
+                    
+                    </ul>
+                
+                </div>
+
+        <!-- ========================================= -->
         <!-- REPORTS -->
         <!-- ========================================= -->
 
-        <div class="mb-4">
+        {{-- <div class="mb-4">
 
             <div class="px-3 mb-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">
 
@@ -175,7 +212,7 @@
                 <li>
 
                     {{-- <a href="{{ route('reports.my') }}" --}}
-                    <a href="{{ route('dashboard') }}"
+                    {{-- <a href="{{ route('dashboard') }}"
                         class="flex items-center p-3 rounded-lg transition
                         {{ request()->routeIs('reports.my')
                             ? 'bg-slate-700 text-white'
@@ -195,7 +232,7 @@
 
             </ul>
 
-        </div>
+        </div> --}}
 
         <hr class="border-slate-700 my-4">
 

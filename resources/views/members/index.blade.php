@@ -27,196 +27,18 @@
         </div>
 
         <div class="w-full">
-            <x-table id="members-table" class="dt-responsive">
-                <thead>
-                    {{-- <tr class="text-xs uppercase tracking-wider text-gray-700 bg-gray-50 dark:bg-gray-800 dark:text-gray-300"> --}}
-                        <th class="px-6 py-4 font-semibold">Employee ID</th>
-                        <th class="px-6 py-4 font-semibold">Member</th>
-                        <th class="px-6 py-4 font-semibold">Work Details</th>
-                        {{-- <th class="px-6 py-4 font-semibold">Employment Status</th> --}}
-                        <th class="px-6 py-4 font-semibold">Membership Status</th>
-                        <th class="px-6 py-4 font-semibold">Claims</th>
-                        <th class="px-6 py-4 font-semibold">Contributions</th>
-                        <th class="px-6 py-4 font-semibold">Action</th>
-
-                    {{-- </tr> --}}
-                </thead>
-                <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
-                    @if(isset($members) && count($members) > 0)
-                        @foreach($members as $member)
-                            <tr class="hover:bg-gray-50/70 dark:hover:bg-gray-800/50 transition-colors duration-150">
-                                <td class="px-6 py-4 font-semibold text-gray-900 dark:text-white whitespace-nowrap">{{ $member->employee_number }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap">{{ ucwords($member->last_name) }}, {{ ucwords($member->first_name) }} {{ ucwords($member->middle_name) }}, {{ ucwords($member->suffex) }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap">{{ $member->department }} - {{ $member->position }}</td>
-                                {{-- <td class="px-6 py-4 whitespace-nowrap">{{ $member->employment_status }}</td> --}}
-                                <td class="px-6 py-4 whitespace-nowrap">{{ $member->membership_status }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap">{{ $member->claims }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap">{{ $member->contributions }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <x-button type="button" 
-                                        id="edit-member-btn"
-                                        class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-                                        data-action="edit-member-details"
-                                        data-modal-target="member-modal"
-                                        data-modal-toggle="member-modal"
-                                        data-member-id="{{ $member->id }}"
-                                        data-member-employee-number="{{ $member->employee_number }}"
-                                        data-member-first-name="{{ $member->first_name }}"
-                                        data-member-last-name="{{ $member->lastname }}"
-                                        data-member-middle-name="{{ $member->middle_name }}"
-                                        data-member-suffix="{{ $member->suffix }}"
-                                        data-member-gender="{{ $member->gender }}"
-                                        data-member-birtdate="{{ $member->birth_date }}"
-                                        data-member-department="{{ $member->department }}"
-                                        data-member-position="{{ $member->position }}"
-                                        data-member-employment-status="{{ $member->employment_status }}"
-                                        data-member-membership-status="{{ $member->membership_status }}"
-                                        data-contact-number="{{ $member->contact_number }}"
-                                        data-member-address="{{ $member->address }}"
-                                        data-member-gcash-number="{{ $member->gcash_number }}"
-                                        data-member-gcash-account-name="{{ $member->gcash_account_name }}"
-                                        >
-                                        Edit
-                                    </x-button>
-                                </td>
-                            </tr>
-                        @endforeach
-                    @else
-                        <tr>
-                            <td colspan="5" class="text-center py-4">No members found.</td>
-                        </tr>
-                    @endif
-    
-                </tbody>
-            </x-table>
+            @include('members.partials.members-table')
         </div>
     </div>
 
-<!-- Adding new member modal -->
-<div id="member-modal" data-modal-backdrop="static" tabindex="-1" aria-hidden="true" class="hidden bg-gray-900/50 overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-[calc(100%-1rem)] max-h-full">
-    <div class="relative p-4 w-full max-w-4xl max-h-full">
-        <!-- Modal content -->
-         <div class="relative bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-lg shadow-2xl p-4 md:p-6">
-            <!-- Modal header -->
-            <div class="flex items-center justify-between border-b border-gray-200 dark:border-zinc-800 pb-4 md:pb-5">
-                <h3 id="modal-title" class="text-lg font-medium text-gray-900 dark:text-white">
-                    Add New Member
-                </h3>
-                <button type="button" class="text-gray-500 bg-transparent hover:bg-gray-100 hover:text-gray-900 dark:hover:bg-zinc-800 dark:hover:text-white rounded-lg text-sm w-9 h-9 ms-auto inline-flex justify-center items-center" data-modal-hide="member-modal">
-                    <svg class="w-5 h-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18 17.94 6M18 18 6.06 6"/></svg>
-                    <span class="sr-only">Close modal</span>
-                </button>
-            </div>
-            
-            <!-- Modal body -->
-            <form action="" id="member-form" method="POST" onsubmit="handleFormSubmit(event)">
-                @csrf
-                <div class="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-4 py-4 md:py-6">
-                    
-                    <!-- Identification Section -->
-                    <div class="col-span-1 sm:col-span-2">
-                        <label for="employee_number" class="block mb-2.5 text-sm font-medium text-gray-900 dark:text-white">Employee Number</label>
-                        <input type="text" name="employee_number" value="123456" id="employee_number" class="bg-gray-50 dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full px-3 py-2.5 shadow-xs placeholder:text-gray-400" placeholder="EMP-2026-0001" required>
-                    </div>
-                    {{-- <div class="col-span-1 sm:col-span-2">
-                        <label for="user_id" class="block mb-2.5 text-sm font-medium text-gray-900 dark:text-white">Linked User Account ID (Optional)</label>
-                        <input type="text" name="user_id" id="user_id" value="098765" class="bg-gray-50 dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full px-3 py-2.5 shadow-xs placeholder:text-gray-400" placeholder="System User UUID">
-                    </div> --}}
+    <!-- Adding/updating member modal -->
+    @include('members.partials.member-form')
 
-                    <!-- Name Breakdown Section -->
-                    <div class="col-span-1">
-                        <label for="first_name" class="block mb-2.5 text-sm font-medium text-gray-900 dark:text-white">First Name</label>
-                        <input type="text" name="first_name" value="Jhon" id="first_name" class="bg-gray-50 dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full px-3 py-2.5 shadow-xs placeholder:text-gray-400" placeholder="John" required>
-                    </div>
-                    <div class="col-span-1">
-                        <label for="middle_name" class="block mb-2.5 text-sm font-medium text-gray-900 dark:text-white">Middle Name</label>
-                        <input type="text" name="middle_name" value="Eric" id="middle_name" class="bg-gray-50 dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full px-3 py-2.5 shadow-xs placeholder:text-gray-400" placeholder="Robert">
-                    </div>
-                    <div class="col-span-1">
-                        <label for="last_name" class="block mb-2.5 text-sm font-medium text-gray-900 dark:text-white">Last Name</label>
-                        <input type="text" name="last_name" value="Sage" id="last_name" class="bg-gray-50 dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full px-3 py-2.5 shadow-xs placeholder:text-gray-400" placeholder="Doe" required>
-                    </div>
-                    <div class="col-span-1">
-                        <label for="suffix" class="block mb-2.5 text-sm font-medium text-gray-900 dark:text-white">Suffix</label>
-                        <input type="text" name="suffix" id="suffix" class="bg-gray-50 dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full px-3 py-2.5 shadow-xs placeholder:text-gray-400" placeholder="Jr. / III">
-                    </div>
+    @include('members.partials.member-claims')
 
-                    <!-- Demographics Section -->
-                    <div class="col-span-1 sm:col-span-2 md:col-span-2">
-                        <label for="birth_date" class="block mb-2.5 text-sm font-medium text-gray-900 dark:text-white">Birth Date</label>
-                        <input type="date" name="birth_date" value="2003-03-28" id="birth_date" class="bg-gray-50 dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full px-3 py-2.5 shadow-xs">
-                    </div>
-                    <div class="col-span-1 sm:col-span-2 md:col-span-2">
-                        <label for="gender" class="block mb-2.5 text-sm font-medium text-gray-900 dark:text-white">Gender</label>
-                        <select name="gender" id="gender" class="block w-full px-3 py-2.5 bg-gray-50 dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 shadow-xs" required>
-                            <option value="" disabled selected>Select Gender</option>
-                            <option value="Male" selected>Male</option>
-                            <option value="Female">Female</option>
-                        </select>
-                    </div>
+    @include('members.partials.member-contributions')
 
-                    <div class="col-span-1 sm:col-span-2 md:col-span-2">
-                        <label for="address" class="block mb-2.5 text-sm font-medium text-gray-900 dark:text-white">Address</label>
-                        <input type="text" name="address" value="123 Main St" id="address" class="bg-gray-50 dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full px-3 py-2.5 shadow-xs placeholder:text-gray-400" placeholder="Enter address" required>
-                    </div>
 
-                    <!-- Employment Section -->
-                    <div class="col-span-1 sm:col-span-2 md:col-span-2">
-                        <label for="department" class="block mb-2.5 text-sm font-medium text-gray-900 dark:text-white">Department</label>
-                        <input type="text" name="department" value="CCJ" id="department" class="bg-gray-50 dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full px-3 py-2.5 shadow-xs placeholder:text-gray-400" placeholder="Human Resources" required>
-                    </div>
-                    <div class="col-span-1 sm:col-span-2 md:col-span-2">
-                        <label for="position" class="block mb-2.5 text-sm font-medium text-gray-900 dark:text-white">Position</label>
-                        <input type="text" name="position" value="Instructor" id="position" class="bg-gray-50 dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full px-3 py-2.5 shadow-xs placeholder:text-gray-400" placeholder="HR Generalist" required>
-                    </div>
-
-                    <!-- Statuses Section -->
-                    <div class="col-span-1 sm:col-span-2 md:col-span-2">
-                        <label for="employment_status" class="block mb-2.5 text-sm font-medium text-gray-900 dark:text-white">Employment Status</label>
-                        <select name="employment_status" id="employment_status" class="block w-full px-3 py-2.5 bg-gray-50 dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 shadow-xs" required>
-                            <option value="" disabled selected>Select Status</option>
-                            <option value="Permanent" selected>Permanent</option>
-                            <option value="Probationary">Probationary</option>
-                            <option value="Contractual">Contractual</option>
-                            <option value="Part-time">Part-time</option>
-                        </select>
-                    </div>
-                    <div class="col-span-1 sm:col-span-2 md:col-span-2">
-                        <label for="membership_status" class="block mb-2.5 text-sm font-medium text-gray-900 dark:text-white">Membership Status</label>
-                        <select name="membership_status" id="membership_status" class="block w-full px-3 py-2.5 bg-gray-50 dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 shadow-xs" required>
-                            <option value="" disabled selected>Select Status</option>
-                            <option value="Active" selected>Active</option>
-                            <option value="Inactive">Inactive</option>
-                        </select>
-                    </div>
-                    <div class="col-span-1 sm:col-span-2 md:col-span-2">
-                        <label for="contact_number" class="block mb-2.5 text-sm font-medium text-gray-900 dark:text-white">Contact Number</label>
-                        <input type="text" name="contact_number" value='09876543212' id="contact_number" class="bg-gray-50 dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full px-3 py-2.5 shadow-xs" placeholder="Enter contact number" required>
-                    </div>
-                    <div class="col-span-1 sm:col-span-2 md:col-span-2">
-                        <label for="email" class="block mb-2.5 text-sm font-medium text-gray-900 dark:text-white">Email</label>
-                        <input type="email" name="email" value="sample@example.com" id="email" class="bg-gray-50 dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full px-3 py-2.5 shadow-xs" placeholder="Enter email" required>
-                    </div>
-                    <div class="col-span-1 sm:col-span-2 md:col-span-2">
-                        <label for="gcash_number" class="block mb-2.5 text-sm font-medium text-gray-900 dark:text-white">GCash Number</label>
-                        <input type="text" name="gcash_number" id="gcash_number" class="bg-gray-50 dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full px-3 py-2.5 shadow-xs" placeholder="Enter GCash number">
-                    </div>
-                    <div class="col-span-1 sm:col-span-2 md:col-span-2">
-                        <label for="gcash_account_name" class="block mb-2.5 text-sm font-medium text-gray-900 dark:text-white">GCash Account Name</label>
-                        <input type="text" name="gcash_account_name" id="gcash_account_name" class="bg-gray-50 dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full px-3 py-2.5 shadow-xs" placeholder="Enter GCash account name">
-                    </div>
-                </div>
-                     
-                
-                <!-- Modal Footer -->
-                <div class="flex items-center justify-end space-x-2 border-t border-gray-200 dark:border-zinc-800 pt-4 md:pt-5">
-                     <button type="button" class="px-5 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 focus:ring-4 focus:outline-none focus:ring-blue-300" data-modal-hide="member-modal">Cancel</button>
-                     <button type="submit" id="submit-btn" class="text-white bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center">Save Member</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
 
     <!-- Corrected & Working Script Execution Block -->
     <script>
@@ -244,7 +66,221 @@
                         // If 'All Members' is selected, value is "". It resets the visible dataset rows.
                         dataTable.search(selectedValue);
                         });
+
+                // Attach a single listener to the entire table wrapper
+                tableElement.addEventListener('click', function (event) {
+                    // Find closest element with data-action to catch clicks inside custom components correctly
+                    const button = event.target.closest('[data-action]');
+                    if (!button) return;
+                
+                    const action = button.getAttribute('data-action');
+                    const memberId = button.getAttribute('data-member-id');
+                
+                    // Route actions accordingly
+                    if (action === 'view-claims') {
+                        fetchMemberDetails(memberId, 'claims');
+                    } else if (action === 'view-contributions') {
+                        fetchMemberDetails(memberId, 'contributions');
+                    }
+                });
             }
+
+            /**
+             * Universal functional wrapper handling Ajax requests
+             */
+            function fetchMemberDetails(memberId, type) {
+                // Generate clean RESTful route mapping endpoints matching your back-end structure
+                const url = `/members/${memberId}/${type}`;
+            
+                fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => {
+                    if (!response.ok) throw new Error('Network response failed.');
+                    return response.json();
+                })
+                .then(data => {
+                    if (type === 'claims') {
+                        renderClaimsModal(data);
+                    } else {
+                        renderContributionsModal(data);
+                    }
+                })
+                .catch(error => {
+                    console.error(`Error retrieving ${type}:`, error);
+                    alert(`Could not fetch data. Please try again.`);
+                });
+            }
+
+            /**
+             * Dynamic modal injection script for Member Claims
+             * Supports both an array of claims or a single claim object.
+             */
+            function renderClaimsModal(data) {
+                const tbody = document.getElementById('members-claims-table-body');
+                const modal = document.getElementById('member-claims-modal');
+                const modalTitle = document.getElementById('claims-modal-title');
+                        
+                if (!tbody || !modal) return;
+                        
+                // 1. Dynamic Header Update with Member's Name
+                if (data.member) {
+                    modalTitle.textContent = `Claims History: ${data.member.first_name} ${data.member.last_name}`;
+                } else {
+                    modalTitle.textContent = 'Member Claims History';
+                }
+            
+                // 2. Extract records array from response structure
+                const claims = data.records || [];
+                tbody.innerHTML = '';
+            
+                // 3. Fallback Handling
+                if (claims.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="4" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
+                                No claims history found for this member.
+                            </td>
+                        </tr>
+                    `;
+                } else {
+                    // 4. Populate table using payload arrays
+                    claims.forEach(claim => {
+                        // ISO Split cleaner converts '2026-07-17T13:31:05.000000Z' to '2026-07-17'
+                        const submittedDate = claim.submitted_at ? claim.submitted_at.split('T')[0] : '—';
+                        
+                        // Format currency fields
+                        const requestedAmount = parseFloat(claim.requested_amount || 0).toLocaleString('en-PH', {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2
+                        });
+                    
+                        // Map responsive status colors 
+                        let statusClasses = 'bg-gray-100 text-gray-800 dark:bg-zinc-800 dark:text-gray-300';
+                        const status = claim.status || 'Pending';
+                        
+                        if (['Approved', 'Disbursed'].includes(status)) {
+                            statusClasses = 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400';
+                        } else if (['Pending', 'Processing'].includes(status)) {
+                            statusClasses = 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400';
+                        } else if (['Rejected'].includes(status)) {
+                            statusClasses = 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400';
+                        }
+                    
+                        const rowHTML = `
+                            <tr class="bg-white border-b dark:bg-zinc-900 dark:border-zinc-800 hover:bg-gray-50 dark:hover:bg-zinc-800/50">
+                                <td class="px-4 py-3 font-medium text-gray-900 dark:text-white whitespace-nowrap">
+                                    ${claim.claim_number || '—'}
+                                </td>
+                                <td class="px-4 py-3">
+                                    ${submittedDate}
+                                </td>
+                                <td class="px-4 py-3 font-semibold text-gray-900 dark:text-white">
+                                    ₱${requestedAmount}
+                                </td>
+                                <td class="px-4 py-3">
+                                    <span class="px-2.5 py-0.5 text-xs font-medium rounded-full ${statusClasses}">
+                                        ${status}
+                                    </span>
+                                </td>
+                            </tr>
+                        `;
+                        
+                        tbody.insertAdjacentHTML('beforeend', rowHTML);
+                    });
+                }
+            
+                // 5. Unhide Modal Layout container on screen
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+            }
+
+            /**
+         * Dynamic modal injection script for Member Contributions
+         */
+        function renderContributionsModal(data) {
+            const tbody = document.getElementById('contributions-table-body');
+            const modalElement = document.getElementById("member-contributions-modal");
+            const contributionModalTitle = document.getElementById('contributions-modal-title');
+
+            if (!tbody || !modalElement) return;
+        
+            // 1. Dynamic Title Injection
+            if (data.member) {
+                contributionModalTitle.textContent = `Contributions History: ${data.member.first_name} ${data.member.last_name}`;
+            } else {
+                contributionModalTitle.textContent = 'Member Contributions History';
+            }
+        
+            // 2. Extract records array from response structure
+            const contributions = data.records || [];
+            tbody.innerHTML = '';
+        
+            // 3. Fallback Handling
+            if (contributions.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="4" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
+                            No contribution history records found for this member.
+                        </td>
+                    </tr>
+                `;
+            } else {
+                // 4. Populate table using payload arrays matching your 4 explicit headers
+                contributions.forEach(item => {
+                    // Formats currency string to standard PHP Peso locale 
+                    const contributionAmount = parseFloat(item.amount || 0).toLocaleString('en-PH', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                    });
+                
+                    // Isolate clean date formatting for paid_at records
+                    const paidDate = item.paid_at ? item.paid_at.split('T')[0] : '—';
+                
+                    // Clean string checks for active status badge mapping
+                    const rawStatus = (item.status || 'Unpaid').toLowerCase();
+                    let statusClasses = 'bg-gray-100 text-gray-800 dark:bg-zinc-800 dark:text-gray-300';
+
+                    if (rawStatus === 'paid') {
+                        statusClasses = 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400';
+                    } else if (rawStatus === 'pending') {
+                        statusClasses = 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400';
+                    } else if (rawStatus === 'unpaid') {
+                        statusClasses = 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400';
+                    }
+                
+                    const rowHTML = `
+                        <tr class="bg-white border-b dark:bg-zinc-900 dark:border-zinc-800 hover:bg-gray-50 dark:hover:bg-zinc-800/50">
+                            <td class="px-4 py-3 font-medium text-xs text-gray-400 font-mono whitespace-nowrap">
+                                ${item.contribution_batch_id || '—'}
+                            </td>
+                            <td class="px-4 py-3 font-semibold text-gray-900 dark:text-white">
+                                ₱${contributionAmount}
+                            </td>
+                            <td class="px-4 py-3">
+                                <span class="px-2.5 py-0.5 text-xs font-medium rounded-full ${statusClasses}">
+                                    ${item.status || 'Unpaid'}
+                                </span>
+                            </td>
+                            <td class="px-4 py-3 text-gray-500 dark:text-gray-400">
+                                ${paidDate}
+                            </td>
+                        </tr>
+                    `;
+                    
+                    tbody.insertAdjacentHTML('beforeend', rowHTML);
+                });
+            }
+
+            modalElement.classList.remove('hidden');
+            modalElement.classList.add('flex');
+        }   
+
 
             //Listener for Dynamic Edit/Add Member button click
             // Select all buttons that toggle the member modal
@@ -289,6 +325,7 @@
                         document.getElementById('suffix').value = btn.getAttribute('data-suffix') || '';
                         document.getElementById('birth_date').value = btn.getAttribute('data-birth-date') || '';
                         document.getElementById('gender').value = btn.getAttribute('data-gender') || '';
+                        document.getElementById('campus_id').selectedValue = btn.getAttribute('campus_id') || '';
 
                     } else if (action === 'add-new-member') {
                         // 1. Reset text labels for ADD mode
@@ -326,7 +363,6 @@
                 processData: false, // Prevent jQuery from processing the data
                 contentType: false, // Prevent jQuery from setting the content type
                 success: function(response) {
-                    console.log('Form submitted successfully:', response);
                     if(response.status === 200){
                         Swal.fire({
                             icon: 'success',

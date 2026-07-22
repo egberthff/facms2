@@ -10,23 +10,30 @@ use App\Models\Member;
 use App\Models\PaymentMethod;
 use App\Models\ContributionBatch;
 use App\Models\ContributionDetail;
+use App\Models\ClaimPayment;
 use App\Enums\ClaimStatus;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Database\Eloquent\Collection;
+use App\Services\TreasuryLedgerService;
 use Exception;
 
 class ClaimService
 {
+    private TreasuryLedgerService $ledgerService;
+    public function __construct(TreasuryLedgerService $ledgerService){
+        $this->ledgerService = $ledgerService;
+    }
     /**
      * Handle the full claim creation business logic.
      */
     public function createClaim(array $data, array $files): Claim
     {
-        DB::beginTransaction();
 
         try {
+            DB::beginTransaction();
             $claimNumber = 'CLM-' . now()->format('Ymd') . '-' . strtoupper(Str::random(6));
             $annualLimit = SystemSetting::annualLimit()->first();
 
@@ -138,12 +145,63 @@ class ClaimService
      */
     public function updateStatus(Claim $claim, array $data): Claim
     {
+        $rawStatus = $data['status'] ?? $data['_status'] ?? null;
+
         // Standardize text check against Schema Enums ('Approved')
-        $statusInput = trim($data['status']);
+        $statusInput = trim((string) $rawStatus);
+        $isDisbursed = strtolower($statusInput) === 'disbursed';
 
         // Put ALL transactional logic inside the try block so rollbacks work reliably
         try {
             DB::beginTransaction();
+
+
+            $amount = $data['amount'] ?? $claim->approved_amount ?? $claim->requested_amount;
+            if ($isDisbursed) {
+                $referenceNumber = $data['reference_number'] ?? null;
+                $remarks = $data['payment_remarks'] ?? $data['remarks'] ?? null;
+                $paymentMethodId = $data['payment_method_id'] ?? $claim->payment_method_id;
+
+                if (blank($amount)) {
+                    throw new Exception('A disbursement amount is required.');
+                }
+
+                if (blank($paymentMethodId)) {
+                    throw new Exception('A payment method is required for disbursement.');
+                }
+
+                if (!empty($data['proof_file'])) {
+                    $originalName = $data['proof_file']->getClientOriginalName();
+                    $storedFilename = Str::uuid() . '.' . $data['proof_file']->getClientOriginalExtension();
+
+                    $path = $data['proof_file']->storeAs('documents/disbursements', $storedFilename, 'public');
+                }
+
+                //Insert claim payments
+                $claim->payment()->updateOrCreate(
+                    ['claim_id' => $claim->id],
+                    [
+                        'id' => (string) Str::uuid(),
+                        'payment_method_id' => $paymentMethodId,
+                        'reference_number' => $referenceNumber,
+                        'amount' => $this->toMysqlDecimal($amount),
+                        'processed_by' => Auth::user()?->user_id ?? Auth::id(),
+                        'receipt_path' => $path ?? null,
+                        'released_at' => now(),
+                        'remarks' => $remarks,
+                    ]
+                );
+                    //Insert ledger record
+                    $this->ledgerService->recordTransaction([
+                    'campus_id'        => $claim->member->campus_id,
+                    'sourceable_type'  => get_class($claim),
+                    'sourceable_id'    => $claim->id,
+                    'reference_number' => $data['reference_number'] ?? 'GL-' . time(),
+                    'description'      => "Disbursement for Claim #: " . $claim->claim_number,
+                    'type'             => 'Debit',
+                    'amount'           => $data['amount'],
+            ]);
+            }
 
             if (strtolower($statusInput) === 'approved') {
 
@@ -192,14 +250,56 @@ class ClaimService
 
                     // Execute highly optimized query payload 
                     DB::table('contribution_details')->insert($batchData);
+
+                    $claim->payment()->updateOrCreate(
+                    ['claim_id' => $claim->id],
+                    [
+                        'id' => (string) Str::uuid(),
+                        'payment_method_id' => $claim->payment_method_id,
+                        'reference_number' => null,
+                        'amount' => $this->toMysqlDecimal($claim->requested_amount),
+                        'processed_by' => Auth::user()?->user_id ?? Auth::id(),
+                        'released_at' => null,
+                        'remarks' => $data['remarks'] ?? null,
+                    ]
+                );
                 }
             }
 
+            $claimUpdateData = array();
+            switch (strtolower($statusInput)) {
+                case "processing" : {
+                    $claimUpdateData['status'] = $statusInput;
+                    $claimUpdateData['reviewed_by'] = Auth::user()->id;
+                    $claimUpdateData['updated_at'] = now();
+                    break;
+                }
+                case 'approved' : {
+                    $claimUpdateData['status'] = $statusInput;
+                    $claimUpdateData['remarks'] = $data['remarks'] ?? null;
+                    $claimUpdateData['approved_amount'] = $claim->requested_amount ?? 0.00;
+                    $claimUpdateData['approved_at'] = now();
+                    $claimUpdateData['updated_at'] = now();
+                    break;
+                }
+                case 'disbursed' : {
+                    $claimUpdateData['status'] = $statusInput;
+                    $claimUpdateData['remarks'] = $data['remarks'] ?? null;
+                    $claimUpdateData['approved_amount'] =  $this->toMysqlDecimal($amount);
+                    $claimUpdateData['disbursed_at'] = now();
+                    $claimUpdateData['updated_at'] = now();
+                    break;
+                }
+                case 'rejected' : {
+                    $claimUpdateData['status'] = $statusInput;
+                    $claimUpdateData['remarks'] = $data['remarks'] ?? null;
+                    $claimUpdateData['updated_at'] = now();
+                }
+
+            }
+
             // Complete the parent workflow update
-            $claim->update([
-                'status'  => $statusInput,
-                'remarks' => $data['remarks'] ?? null
-            ]);
+            $claim->update($claimUpdateData);
 
             DB::commit();
             return $claim;

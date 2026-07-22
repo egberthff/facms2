@@ -26,7 +26,7 @@ return new class extends Migration
             $table->decimal('amount', 12, 2);
 
             $table->enum('status', [
-                'Pending',
+                'Unpaid',
                 'Paid'
             ])->default('Pending');
 
