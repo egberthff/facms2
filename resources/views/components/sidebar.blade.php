@@ -116,7 +116,7 @@
                     </a>
                 </li>
                 <li>
-                    <a href="#"
+                    <a href="{{ route('reports.index') }}"
                         class="flex items-center p-3 rounded-lg text-white hover:bg-slate-700">
                         <x-heroicon-o-chart-bar class="w-5 h-5"/>
                         <span class="ml-3">Reports</span>

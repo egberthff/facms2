@@ -32,7 +32,8 @@ class RolePermissionSeeder extends Seeder
             'view all campus data',
             'view all treasury',
             'view campus treasury',
-            'view ledger'
+            'view ledger',
+            'view reports'
         ];
 
         // 3. Create permissions in the database
@@ -65,6 +66,7 @@ class RolePermissionSeeder extends Seeder
             'view campus treasury',
             'view ledger',
             'view campus treasury',
+            'view reports'
 
         ]);
 
