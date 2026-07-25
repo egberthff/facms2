@@ -442,7 +442,7 @@
 
         <div
             x-transition
-            class="bg-blue-50 border border-blue-200 rounded-xl p-5">
+            class="bg-blue-50 border border-blue-200 rounded-xl p-5 print">
 
             <div
                 class="flex flex-wrap gap-x-8 gap-y-3 text-sm">
@@ -517,7 +517,7 @@
 
         <div
             x-transition
-            class="grid grid-cols-2 xl:grid-cols-4 gap-5">
+            class="grid grid-cols-2 xl:grid-cols-4 gap-5 print">
 
             <template
                 x-for="card in cards"
@@ -591,7 +591,7 @@
 
         <div
             x-transition
-            class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+            class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden print">
 
             {{-- Header --}}
 
@@ -619,11 +619,9 @@
 
                     Total Records :
 
-                    <span
-                        class="font-semibold text-gray-800"
-                        x-text="rows.length">
-
-                    </span>
+                    <span class="font-semibold text-gray-800" 
+                          x-text="cards.find(c => c.key === 'claims')?.value ?? 0">
+                    </span> 
 
                 </div>
 
@@ -784,10 +782,9 @@
                 <div
                     class="text-sm text-gray-500">
 
-                    <span
-                        x-text="rows.length">
-
-                    </span>
+                    <span class="font-semibold text-gray-800" 
+                          x-text="cards.find(c => c.key === 'claims')?.value ?? 0">
+                    </span> 
 
                     records
 
@@ -809,7 +806,7 @@
         x-if="!hasGenerated && !loading">
 
         <div
-            class="bg-white border border-dashed border-gray-300 rounded-xl p-16">
+            class="bg-white border border-dashed border-gray-300 rounded-xl p-16 print">
 
             <div
                 class="max-w-lg mx-auto text-center">

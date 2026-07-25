@@ -882,3 +882,55 @@ pre[class*='language-'] {
     margin-right: -60px !important;
   }
 }
+
+/* @media print {
+  /* Hide absolutely everything by default */
+  /* body * {
+    visibility: hidden;
+  } */
+  
+  /* Show only the elements with the .print class and their children */
+  /* .print, .print * {
+    visibility: visible;
+  } */
+  
+  /* Position the printed element at the top-left of the page */
+  /* .print:first-of-type {
+    margin-top: 0;
+    padding-top: 0;
+  } */
+/* } */ 
+
+@media print {
+  /* 1. Hide any top-level layout element (like the sidebar) that doesn't contain a print element */
+  body > *:not(:has(.print)) {
+    display: none !important;
+  }
+
+  /* 2. Hide any nested decoration elements (headers, buttons) that aren't part of the report */
+  body *:not(:has(.print)):not(.print):not(.print *) {
+    display: none !important;
+  }
+
+  /* 3. Flatten layout grids/flexbox wrappers so the report spans the full page width */
+  body, 
+  body *:has(.print) {
+    display: block !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    position: static !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  /* 4. Ensure your printable sections display normally and don't split awkwardly */
+  .print {
+    display: block !important;
+    width: 100% !important;
+    margin-bottom: 30px !important;
+    page-break-inside: avoid; /* Prevents a single card from splitting across two pages */
+  }
+}
+
+
