@@ -310,4 +310,13 @@ class ClaimService
         }
     }
 
+    public function getClaimType(?string $claimTypeId = null): Collection|ClaimType|null
+    {
+        if ($claimTypeId) {
+            return ClaimType::find($claimTypeId); 
+        }
+
+        return ClaimType::all()->where('is_active', TRUE);
+    }
+
 }

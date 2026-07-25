@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use Carbon\Carbon;
+use App\Models\Claim;
 use InvalidArgumentException;
 
 class ReportService
@@ -43,8 +44,105 @@ class ReportService
 
     protected function monthlySummary(array $filters): array
     {
-        return [
+        // 1. Build a base query that applies all global filters
+        $baseQuery = Claim::query()
+            ->when(!empty($filters['campus_id']), function ($query) use ($filters) {
+                return $query->whereHas('member', function ($subQuery) use ($filters) {
+                    return $subQuery->where('campus_id', $filters['campus_id']);
+                });
+            })
+            ->when(!empty($filters['claim_type']), function ($query) use ($filters) {
+                return $query->where('claim_type_id', $filters['claim_type']);
+            })
+            ->when(!empty($filters['member_id']), function ($query) use ($filters) {
+                return $query->where('member_id', $filters['member_id']);
+            });
 
+        // 2. Define the months you want to loop through
+        $months = [
+            ['name' => 'January', 'num' => '01'],
+            ['name' => 'February', 'num' => '02'],
+            ['name' => 'March', 'num' => '03'],
+            ['name' => 'April', 'num' => '04'],
+            ['name' => 'May', 'num' => '05'],
+            ['name' => 'June', 'num' => '06'],
+            ['name' => 'July', 'num' => '07'],
+            ['name' => 'August', 'num' => '08'],
+            ['name' => 'September', 'num' => '09'],
+            ['name' => 'October', 'num' => '10'],
+            ['name' => 'November', 'num' => '11'],
+            ['name' => 'December', 'num' => '12'],
+        ];
+
+        $rows = [];
+        $totalClaims = 0;
+        $totalPending = 0;
+        $totalProcessing = 0;
+        $totalApproved = 0;
+        $totalRejected = 0;
+        $totalDisbursed = 0;
+
+        // 3. Loop through months to calculate dynamic rows
+        foreach ($months as $month) {
+            $year = (!empty($filters['date_from'])) ? date('Y', strtotime($filters['date_from'])) : date('Y'); // Or parse from $filters['date_from'] if needed
+
+            // Clone base query to prevent query pollution across iterations
+            $claimsCount = (clone $baseQuery)
+                ->whereYear('submitted_at', $year)
+                ->whereMonth('submitted_at', $month['num'])
+                ->count();
+
+            $pendingCount = (clone $baseQuery)
+                ->whereYear('submitted_at', $year)
+                ->whereMonth('submitted_at', $month['num'])
+                ->where('status', 'Pending') // Example status match
+                ->count();
+
+            $processingCount = (clone $baseQuery)
+                ->whereYear('submitted_at', $year)
+                ->whereMonth('submitted_at', $month['num'])
+                ->where('status', 'Processing') // Example status match
+                ->count();
+
+
+            $approvedCount = (clone $baseQuery)
+                ->whereYear('submitted_at', $year)
+                ->whereMonth('submitted_at', $month['num'])
+                ->where('status', 'Approved') // Example status match
+                ->count();
+
+            $rejectedCount = (clone $baseQuery)
+                ->whereYear('submitted_at', $year)
+                ->whereMonth('submitted_at', $month['num'])
+                ->where('status', 'Rejected')
+                ->count();
+
+            $disbursedCount = (clone $baseQuery)
+                ->whereYear('submitted_at', $year)
+                ->whereMonth('submitted_at', $month['num'])
+                ->where('status', 'Disbursed')
+                ->count();
+
+            // Accumulate totals for top-level summary cards
+            $totalClaims += $claimsCount;
+            $totalPending += $pendingCount;
+            $totalProcessing += $processingCount;
+            $totalApproved += $approvedCount;
+            $totalRejected += $rejectedCount;
+            $totalDisbursed += $disbursedCount;
+
+            $rows[] = [
+                'month' => $month['name'],
+                'claims' => $claimsCount,
+                'pending' => $totalPending,
+                'processing' => $totalProcessing,
+                'approved' => $approvedCount,
+                'rejected' => $rejectedCount,
+                'disbursed' => $disbursedCount,
+            ];
+        }
+
+        return [
             'context' => $this->buildContext(
                 'Monthly Claims Summary',
                 'Monthly claim statistics.',
@@ -52,97 +150,52 @@ class ReportService
             ),
 
             'cards' => [
-
                 [
                     'key' => 'claims',
                     'label' => 'Claims Filed',
-                    'value' => 145,
+                    'value' => $totalClaims,
                 ],
-
+                [
+                    'key' => 'pending',
+                    'label' => 'Pending',
+                    'value' => $totalPending,
+                ],
+                [
+                    'key' => 'processing',
+                    'label' => 'Processing',
+                    'value' => $totalProcessing,
+                ],
                 [
                     'key' => 'approved',
                     'label' => 'Approved',
-                    'value' => 118,
+                    'value' => $totalApproved,
                 ],
-
                 [
                     'key' => 'rejected',
                     'label' => 'Rejected',
-                    'value' => 12,
+                    'value' => $totalRejected,
                 ],
-
                 [
                     'key' => 'disbursed',
                     'label' => 'Disbursed',
-                    'value' => 95,
+                    'value' => $totalDisbursed,
                 ],
-
             ],
 
             'columns' => [
-
-                [
-                    'key' => 'month',
-                    'label' => 'Month',
-                    'type' => 'text',
-                ],
-
-                [
-                    'key' => 'claims',
-                    'label' => 'Claims',
-                    'type' => 'number',
-                ],
-
-                [
-                    'key' => 'approved',
-                    'label' => 'Approved',
-                    'type' => 'number',
-                ],
-
-                [
-                    'key' => 'rejected',
-                    'label' => 'Rejected',
-                    'type' => 'number',
-                ],
-
-                [
-                    'key' => 'disbursed',
-                    'label' => 'Disbursed',
-                    'type' => 'number',
-                ],
-
+                ['key' => 'month', 'label' => 'Month', 'type' => 'text'],
+                ['key' => 'claims', 'label' => 'Claims', 'type' => 'number'],
+                ['key' => 'pending', 'label' => 'Pending', 'type' => 'number'],
+                ['key' => 'processing', 'label' => 'Processing', 'type' => 'number'],
+                ['key' => 'approved', 'label' => 'Approved', 'type' => 'number'],
+                ['key' => 'rejected', 'label' => 'Rejected', 'type' => 'number'],
+                ['key' => 'disbursed', 'label' => 'Disbursed', 'type' => 'number'],
             ],
 
-            'rows' => [
-
-                [
-                    'month' => 'January',
-                    'claims' => 20,
-                    'approved' => 16,
-                    'rejected' => 2,
-                    'disbursed' => 15,
-                ],
-
-                [
-                    'month' => 'February',
-                    'claims' => 28,
-                    'approved' => 24,
-                    'rejected' => 1,
-                    'disbursed' => 22,
-                ],
-
-                [
-                    'month' => 'March',
-                    'claims' => 35,
-                    'approved' => 30,
-                    'rejected' => 2,
-                    'disbursed' => 28,
-                ],
-
-            ],
-
+            'rows' => $rows,
         ];
     }
+
 
     protected function campusSummary(array $filters): array
     {
@@ -548,22 +601,6 @@ class ReportService
                 ],
 
             ],
-
-        ];
-    }
-
-    /**
-     * Mock campuses.
-     */
-    public function getCampuses(): array
-    {
-        return [
-
-            ['id' => 1, 'name' => 'Main Campus'],
-
-            ['id' => 2, 'name' => 'North Campus'],
-
-            ['id' => 3, 'name' => 'South Campus'],
 
         ];
     }

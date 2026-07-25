@@ -16,6 +16,8 @@ window.reportCenter = function(options)
 
         cycles: options.cycles,
 
+        claimTypes: options.claimTypes,
+
         generateUrl: options.generateUrl,
 
 

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Services\ReportService;
 use App\Services\MemberService;
+use App\Services\ClaimService;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
@@ -15,17 +16,20 @@ class ReportController extends Controller
      */
     protected ReportService $reportService;
     protected MemberService $memberService;
+    protected ClaimService $claimService;
 
     /**
      * Constructor.
      */
     public function __construct(
         ReportService $reportService,
-        MemberService $memberService
+        MemberService $memberService,
+        ClaimService $claimService
         )
     {
         $this->reportService = $reportService;
         $this->memberService = $memberService;
+        $this->claimService = $claimService;
     }
 
     /**
@@ -79,6 +83,8 @@ class ReportController extends Controller
              */
 
             'cycles' => $this->reportService->getAllowanceCycles(),
+
+            'claimTypes' => $this->claimService->getClaimType(),
 
         ]);
     }

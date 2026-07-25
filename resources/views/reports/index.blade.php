@@ -8,7 +8,7 @@
         campuses: @js($allCampuses),
         members: @js($members),
         cycles: @js($cycles),
-        {{-- generateUrl: '{{ route('reports.index') }}' --}}
+        claimTypes: @js($claimTypes),
         generateUrl: '{{ route('reports.generate') }}'
     })"
     x-init="initialize()"
@@ -350,13 +350,15 @@
 
                             <option value="">All Status</option>
 
-                            <option value="pending">Pending</option>
+                            <option value="Pending">Pending</option>
 
-                            <option value="approved">Approved</option>
+                            <option value="Processing">Processing</option>
 
-                            <option value="rejected">Rejected</option>
+                            <option value="Approved">Approved</option>
 
-                            <option value="disbursed">Disbursed</option>
+                            <option value="Rejected">Rejected</option>
+
+                            <option value="Disbursed">Disbursed</option>
 
                         </select>
 
@@ -385,14 +387,18 @@
                             class="mt-1 w-full rounded-lg border-gray-300">
 
                             <option value="">All Claim Types</option>
+                            
+                             <template
+                                x-for="claimType in claimTypes"
+                                :key="claimType.id">
 
-                            <option>Medical</option>
+                                <option
+                                    :value="claimType.id"
+                                    x-text="claimType.name">
 
-                            <option>Hospitalization</option>
+                                </option>
 
-                            <option>Burial</option>
-
-                            <option>Educational</option>
+                            </template>
 
                         </select>
 
