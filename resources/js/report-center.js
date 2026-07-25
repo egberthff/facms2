@@ -1,4 +1,4 @@
-function reportCenter(options)
+window.reportCenter = function(options)
 {
     return {
 

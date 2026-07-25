@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Services\ReportService;
+use App\Services\MemberService;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
@@ -13,13 +14,18 @@ class ReportController extends Controller
      * Service responsible for report generation.
      */
     protected ReportService $reportService;
+    protected MemberService $memberService;
 
     /**
      * Constructor.
      */
-    public function __construct(ReportService $reportService)
+    public function __construct(
+        ReportService $reportService,
+        MemberService $memberService
+        )
     {
         $this->reportService = $reportService;
+        $this->memberService = $memberService;
     }
 
     /**
@@ -53,7 +59,7 @@ class ReportController extends Controller
              |
              */
 
-            'campuses' => $this->reportService->getCampuses(),
+            'allCampuses' => $this->memberService->getCampus(),
 
             /*
              |------------------------------------------------------------
@@ -120,42 +126,42 @@ class ReportController extends Controller
      *
      * Placeholder implementation.
      */
-    public function exportPdf(Request $request): BinaryFileResponse
-    {
-        $validated = $request->validate([
+    // public function exportPdf(Request $request): BinaryFileResponse
+    // {
+    //     $validated = $request->validate([
 
-            'report_type' => ['required', 'string']
+    //         'report_type' => ['required', 'string']
 
-        ]);
+    //     ]);
 
-        return $this->reportService->exportPdf(
+    //     return $this->reportService->exportPdf(
 
-            $validated['report_type'],
+    //         $validated['report_type'],
 
-            $request->all()
+    //         $request->all()
 
-        );
-    }
+    //     );
+    // }
 
     /**
      * Export report as Excel.
      *
      * Placeholder implementation.
      */
-    public function exportExcel(Request $request): BinaryFileResponse
-    {
-        $validated = $request->validate([
+    // public function exportExcel(Request $request): BinaryFileResponse
+    // {
+    //     $validated = $request->validate([
 
-            'report_type' => ['required', 'string']
+    //         'report_type' => ['required', 'string']
 
-        ]);
+    //     ]);
 
-        return $this->reportService->exportExcel(
+    //     return $this->reportService->exportExcel(
 
-            $validated['report_type'],
+    //         $validated['report_type'],
 
-            $request->all()
+    //         $request->all()
 
-        );
-    }
+    //     );
+    // }
 }

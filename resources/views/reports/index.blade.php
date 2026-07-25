@@ -5,10 +5,11 @@
 <div
     x-data="reportCenter({
         configuration: @js($reportConfiguration),
-        campuses: @js($campuses),
+        campuses: @js($allCampuses),
         members: @js($members),
         cycles: @js($cycles),
-        generateUrl: '{{ route('dashboard') }}'
+        {{-- generateUrl: '{{ route('reports.index') }}' --}}
+        generateUrl: '{{ route('reports.generate') }}'
     })"
     x-init="initialize()"
     class="max-w-7xl mx-auto px-4 py-6 space-y-6">
@@ -171,7 +172,7 @@
 
                             <option
                                 :value="campus.id"
-                                x-text="campus.name">
+                                x-text="campus.acronym">
 
                             </option>
 

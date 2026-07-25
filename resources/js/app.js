@@ -1,5 +1,4 @@
 import './bootstrap';
-import './report-center';
 import Alpine from 'alpinejs';
 // import ApexCharts from 'apexcharts';
 
@@ -27,6 +26,8 @@ window.Swal = Swal;
 import Chart from 'chart.js/auto';
 
 window.Chart = Chart;
+
+import './report-center';
 
 // Initialize components on DOM ready
 document.addEventListener('DOMContentLoaded', () => {

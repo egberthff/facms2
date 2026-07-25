@@ -5,6 +5,7 @@ use App\Services\Reports\DisbursementSummaryReport;
 use App\Services\Reports\MemberAllowanceReport;
 use App\Services\Reports\MonthlySummaryReport;
 use App\Services\Reports\AllowanceForfeitureReport;
+use App\Services\ReportService;
 
 return [
 
@@ -64,7 +65,7 @@ return [
 
             'category' => 'operational',
 
-            'handler' => MonthlySummaryReport::class,
+            'handler' => ReportService::class,
 
             'filters' => [
 
@@ -108,7 +109,8 @@ return [
 
             'category' => 'operational',
 
-            'handler' => CampusClaimsReport::class,
+            // 'handler' => CampusClaimsReport::class,
+            'handler' => ReportService::class,
 
             'filters' => [
 
@@ -150,7 +152,8 @@ return [
 
             'category' => 'financial',
 
-            'handler' => DisbursementSummaryReport::class,
+            // 'handler' => DisbursementSummaryReport::class,
+            'handler' => ReportService::class,
 
             'filters' => [
 
@@ -190,7 +193,8 @@ return [
 
             'category' => 'allowance',
 
-            'handler' => MemberAllowanceReport::class,
+            // 'handler' => MemberAllowanceReport::class,
+            'handler' => ReportService::class,
 
             'filters' => [
 
@@ -232,7 +236,8 @@ return [
 
             'category' => 'allowance',
 
-            'handler' => AllowanceForfeitureReport::class,
+            // 'handler' => AllowanceForfeitureReport::class,
+            'handler' => ReportService::class,
 
             'filters' => [
 
