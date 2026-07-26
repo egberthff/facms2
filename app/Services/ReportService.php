@@ -4,6 +4,7 @@ namespace App\Services;
 
 use Carbon\Carbon;
 use App\Models\Claim;
+use App\Models\Campus;
 use InvalidArgumentException;
 
 class ReportService
@@ -333,8 +334,61 @@ class ReportService
 
     protected function campusSummary(array $filters): array
     {
-        return [
+        // 1. Fetch campuses and dynamically apply the campus filter if present
+        $campuses = Campus::query()
+            ->where('is_active', true)
+            ->when(!empty($filters['campus_id']), function ($query) use ($filters) {
+                return $query->where('id', $filters['campus_id']);
+            })
+            ->get();
 
+        $rows = [];
+        $totalMembers = 0;
+        $totalClaims = 0;
+        $totalAmount = 0;
+
+        // 2. Loop through each campus to aggregate values dynamically
+        foreach ($campuses as $campus) {
+
+            // Count members tied to this campus
+            $membersCount = $campus->members()
+                ->when(!empty($filters['member_id']), function ($query) use ($filters) {
+                    return $query->where('id', $filters['member_id']);
+                })
+                ->count();
+
+            // Build a subquery for claims filtered by our global contexts
+            $claimsQuery = Claim::whereHas('member', function ($query) use ($campus) {
+                    return $query->where('campus_id', $campus->id);
+                })
+                ->when(!empty($filters['claim_type']), function ($query) use ($filters) {
+                    return $query->where('claim_type_id', $filters['claim_type']);
+                })
+                ->when(!empty($filters['member_id']), function ($query) use ($filters) {
+                    return $query->where('member_id', $filters['member_id']);
+                })
+                ->when(!empty($filters['status']), function ($query) use ($filters) {
+                    return $query->where('status', $filters['status']);
+                });
+
+            // Get count and sum values from the query
+            $claimsCount = (clone $claimsQuery)->count();
+            $claimsAmount = (clone $claimsQuery)->sum('requested_amount'); // Replace 'amount' with your actual column name
+
+            // Accumulate baseline totals for top cards
+            $totalMembers += $membersCount;
+            $totalClaims += $claimsCount;
+            $totalAmount += $claimsAmount;
+
+            $rows[] = [                                         
+                'campus' => $campus->acronym, // Replace 'name' with your actual campus name column
+                'members' => $membersCount,
+                'claims' => $claimsCount,
+                'amount' => $claimsAmount,
+            ];
+        }
+
+        return [
             'context' => $this->buildContext(
                 'Campus Claims Summary',
                 'Claims grouped by campus.',
@@ -342,88 +396,39 @@ class ReportService
             ),
 
             'cards' => [
-
                 [
                     'key' => 'campus',
                     'label' => 'Campuses',
-                    'value' => 3,
+                    'value' => $campuses->count(),
                 ],
-
                 [
                     'key' => 'members',
                     'label' => 'Members',
-                    'value' => 280,
+                    'value' => $totalMembers,
                 ],
-
                 [
                     'key' => 'claims',
                     'label' => 'Claims',
-                    'value' => 145,
+                    'value' => $totalClaims,
                 ],
-
                 [
                     'key' => 'amount',
                     'label' => 'Claim Amount',
-                    'value' => 548000,
+                    'value' => $totalAmount,
                 ],
-
             ],
 
             'columns' => [
-
-                [
-                    'key' => 'campus',
-                    'label' => 'Campus',
-                    'type' => 'text',
-                ],
-
-                [
-                    'key' => 'members',
-                    'label' => 'Members',
-                    'type' => 'number',
-                ],
-
-                [
-                    'key' => 'claims',
-                    'label' => 'Claims',
-                    'type' => 'number',
-                ],
-
-                [
-                    'key' => 'amount',
-                    'label' => 'Amount',
-                    'type' => 'currency',
-                ],
-
+                ['key' => 'campus', 'label' => 'Campus', 'type' => 'text'],
+                ['key' => 'members', 'label' => 'Members', 'type' => 'number'],
+                ['key' => 'claims', 'label' => 'Claims', 'type' => 'number'],
+                ['key' => 'amount', 'label' => 'Amount', 'type' => 'currency'],
             ],
 
-            'rows' => [
-
-                [
-                    'campus' => 'Main Campus',
-                    'members' => 120,
-                    'claims' => 60,
-                    'amount' => 235000,
-                ],
-
-                [
-                    'campus' => 'North Campus',
-                    'members' => 90,
-                    'claims' => 45,
-                    'amount' => 168000,
-                ],
-
-                [
-                    'campus' => 'South Campus',
-                    'members' => 70,
-                    'claims' => 40,
-                    'amount' => 145000,
-                ],
-
-            ],
-
+            'rows' => $rows,
         ];
     }
+
 
     /*
     |--------------------------------------------------------------------------

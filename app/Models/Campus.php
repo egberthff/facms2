@@ -42,7 +42,12 @@ class Campus extends Model
         return $this->hasMany(TreasuryLedger::class);
     }
 
-        protected static function booted(): void
+    public function settings()
+    {
+        return $this->hasMany(SystemSetting::class);
+    }
+
+    protected static function booted(): void
     {
         static::addGlobalScope(new CampusMemberScope);
     }

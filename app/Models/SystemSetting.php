@@ -19,6 +19,7 @@ class SystemSetting extends Model
         'setting_key',
         'setting_value',
         'description',
+        'campus_id'
     ];
 
         /*
@@ -31,11 +32,19 @@ class SystemSetting extends Model
     //     return 'id';
     // }
 
+    // 
+    // /Relationships
+    // /*
+    public function campus(){
+        return $this->belongsTo(Campus::class);
+    }
+
     /**
      * Scope to filter down to the annual limit row.
      */
-    public function scopeAnnualLimit($query)
+    public function scopeAnnualLimit($query, ?string $campusId)
     {
+
         return $query->where('setting_key', 'annual_claim_limit');
     }
 

@@ -12,18 +12,19 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('system_settings', function (Blueprint $table) {
-
             $table->uuid('id')->primary();
-
-            $table->string('setting_key')->unique();
-
+            $table->string('setting_key');
             $table->text('setting_value');
-
-            $table->text('description')
-                ->nullable();
-
+            $table->text('description')->nullable();
+            $table->foreignUuid('campus_id')
+                ->constrained('campuses', 'id')
+                ->cascadeOnDelete(); 
             $table->timestamps();
+            $table->unique(['setting_key', 'campus_id']);
+            // Index for fast lookups when querying settings by campus
+            $table->index('campus_id');
         });
+
     }
 
     /**
