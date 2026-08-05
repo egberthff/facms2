@@ -19,8 +19,8 @@ class DashboardPolicy
      */
     public function view(User $user): bool
     {
-        // Example: Only admins or managers can see this combined view
-        return $user->hasRole('admin') || $user->hasRole('manager');
+        // Allow users with the 'view all metrics' permission or leadership roles
+        return $user->can('view all metrics') || $user->hasAnyRole(['President', 'Treasurer']);
     }
 
     /**

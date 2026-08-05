@@ -13,7 +13,7 @@ class ClaimPaymentPolicy
      */
     public function viewAny(User $user): bool
     {
-        return false;
+        return $user->can('view disbursment') || $user->hasAnyRole(['President', 'Treasurer']);
     }
 
     /**
@@ -21,7 +21,7 @@ class ClaimPaymentPolicy
      */
     public function view(User $user, ClaimPayment $claimPayment): bool
     {
-        return false;
+        return $user->can('view disbursment') || $user->hasAnyRole(['President', 'Treasurer']);
     }
 
     /**

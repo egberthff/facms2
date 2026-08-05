@@ -93,7 +93,7 @@ class ClaimPolicy
      */
     public function viewDashboardDashboardMetrics(User $user, User $targetMember): bool
     {
-        // Users can only view their own stats, unless they are an administrator
-        return $user->user_id === $targetMember->user_id || $user->hasRole('admin');
+        // Users can view their own stats; leadership or permission holders can view others'
+        return $user->user_id === $targetMember->user_id || $user->can('view all metrics') || $user->hasAnyRole(['President', 'Treasurer']);
     }
 }
