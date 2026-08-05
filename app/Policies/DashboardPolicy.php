@@ -34,6 +34,6 @@ class DashboardPolicy
     // public function viewMetrics(User $user, User $targetUser): bool
     // {
     //     // Users can only view their own dashboard data, unless they have administrative access
-    //     return $user->id === $targetUser->id || $user->hasRole('President' || "Treasurer");
+    //     return $user->user_id === $targetUser->user_id || $user->hasAnyRole(['President', 'Treasurer']);
     // }
 }
