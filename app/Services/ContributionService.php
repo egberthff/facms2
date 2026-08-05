@@ -142,7 +142,7 @@ class ContributionService
      */
     public function getClaimsContributionData(?string $selectedCampusId = null): array
     {
-        $isPresident = Auth::user()->hasRole('President') || Auth::user()->can('view all campus data');
+        $isPresident = Auth::user()->can('view all campus data') || Auth::user()->hasAnyRole(['President', 'Treasurer']);
         // 1. Prepare base query builder instance
         $query = ContributionBatch::with([
             'claim.member', 
