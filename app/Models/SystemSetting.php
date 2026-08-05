@@ -45,7 +45,10 @@ class SystemSetting extends Model
     public function scopeAnnualLimit($query, ?string $campusId)
     {
 
-        return $query->where('setting_key', 'annual_claim_limit');
+        return $query->where('setting_key', 'annual_claim_limit')
+            ->when($campusId, function ($query, $campusId) {
+                return $query->where('campus_id', $campusId);
+            });
     }
 
      /**
@@ -54,7 +57,7 @@ class SystemSetting extends Model
     public static function getGlobalLimit(): float
     {
         // Safely resolve the query builder scope, defaulting to 23000.00 if the DB row doesn't exist
-        $setting = self::annualLimit()->first();
-        return $setting ? (float) $setting->setting_value : 23000.00;
+        $setting = self::annualLimit()->first();    
+        return $setting ? (float) $setting->setting_value : 23000.00; 
     }
 }
