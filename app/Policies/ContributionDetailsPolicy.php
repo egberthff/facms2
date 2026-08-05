@@ -16,7 +16,7 @@ class ContributionDetailsPolicy
     {
         // return false;
 
-        if ($user->hasRole([
+        if ($user->hasAnyRole([
             'President',
             'Treasurer'
         ])){

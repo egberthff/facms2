@@ -36,9 +36,7 @@ class ClaimPolicy
      */
     public function create(User $user): bool
     {
-        return $user->hasRole([
-            'Member',
-        ]);
+        return $user->hasRole('Member');
     }
 
     /**
