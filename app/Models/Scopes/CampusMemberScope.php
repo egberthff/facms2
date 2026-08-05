@@ -18,9 +18,9 @@ class CampusMemberScope implements Scope
 
         $user = Auth::user();
 
-        // 2. President/Admin Global Bypass
-        // Note: Ensure your role package works directly with the User model
-        if ($user->hasRole('President') || $user->can('view all campus data')) {
+        // 2. Permission-driven global bypass
+        // Users granted the `view all campus data` permission may see all campuses
+        if ($user->can('view all campus data')) {
             return;
         }
 
