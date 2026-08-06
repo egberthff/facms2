@@ -42,7 +42,7 @@ class SystemSetting extends Model
     /**
      * Scope to filter down to the annual limit row.
      */
-    public function scopeAnnualLimit($query, ?string $campusId)
+    public function scopeAnnualLimit($query, ?string $campusId = null)
     {
 
         return $query->where('setting_key', 'annual_claim_limit')

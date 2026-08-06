@@ -66,9 +66,17 @@ class DisbursementService
 
     public function getYearOptions(): array
     {
+        $driver = ClaimPayment::query()->getConnection()->getDriverName();
+
+        $yearExpression = match ($driver) {
+            'sqlite' => "CAST(strftime('%Y', COALESCE(released_at, created_at)) AS INTEGER)",
+            'pgsql' => "DATE_PART('year', COALESCE(released_at, created_at))",
+            default => "YEAR(COALESCE(released_at, created_at))",
+        };
+
         return ClaimPayment::query()
-            ->selectRaw('YEAR(COALESCE(released_at, created_at)) as year')
-            ->groupByRaw('YEAR(COALESCE(released_at, created_at))')
+            ->selectRaw("{$yearExpression} as year")
+            ->groupByRaw($yearExpression)
             ->orderByDesc('year')
             ->pluck('year')
             ->filter()
