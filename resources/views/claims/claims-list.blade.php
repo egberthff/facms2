@@ -25,6 +25,19 @@
             <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                 <!-- Filters -->
                 <div class="flex flex-wrap gap-2">
+                    @if($isPresident)
+                        <form method="GET" action="{{ url()->current() }}" class="flex flex-wrap gap-2 items-center">
+                            <div>
+                                <label for="campus_filter" class="sr-only">Campus</label>
+                                <select id="campus_filter" name="campus_filter" onchange="this.form.submit()" class="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                    <option value="">All Campuses</option>
+                                    @foreach($allCampuses as $campus)
+                                        <option value="{{ $campus->id }}" {{ ($selectedCampusId ?? '') == $campus->id ? 'selected' : '' }}>{{ $campus->acronym }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </form>
+                    @endif
                     <template x-for="status in ['all', 'Pending', 'Processing', 'Approved', 'Disbursed', 'Rejected']">
                         <button 
                             type="button"

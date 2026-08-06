@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Campus;
 use App\Models\ClaimPayment;
 use App\Services\DisbursementService;
-use App\Http\Requests\StoreDisbursementRequest;
-use App\Http\Requests\UpdateDisbursementRequest;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class DisbursementController extends Controller
 {
@@ -27,13 +27,22 @@ class DisbursementController extends Controller
             'claim_type' => $request->input('claim_type'),
             'status' => $request->input('status'),
             'search' => $request->input('search'),
+            'campus_filter' => $request->input('campus_filter'),
         ];
 
-        $data['disbursements'] = $this->disbursementService->getDisbursmentAll($filters);
-        $data['summary'] = $this->disbursementService->getDisbursementSummary();
+        $data['isPresident'] = Auth::user()->can('view all campus data') || Auth::user()->hasAnyRole(['President', 'Treasurer']);
+        $selectedCampusId = $data['isPresident'] ? $filters['campus_filter'] : null;
+
+        $data['disbursements'] = $this->disbursementService->getDisbursmentAll(array_merge($filters, ['campus_filter' => $selectedCampusId]));
+        $data['summary'] = $this->disbursementService->getDisbursementSummary($selectedCampusId);
         $data['filters'] = $filters;
         $data['yearOptions'] = $this->disbursementService->getYearOptions();
         $data['claimTypeOptions'] = $this->disbursementService->getClaimTypeOptions();
+
+        if ($data['isPresident']) {
+            $data['allCampuses'] = Campus::where('is_active', true)->get();
+            $data['selectedCampusId'] = $selectedCampusId;
+        }
 
         return view('disbursements.index', $data);
     }
@@ -49,7 +58,7 @@ class DisbursementController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreDisbursementRequest $request)
+    public function store(Request $request)
     {
         //
     }
@@ -75,7 +84,7 @@ class DisbursementController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    // public function update(UpdateDisbursementRequest $request, Disbursement $disbursement)
+    // public function update(Request $request, Disbursement $disbursement)
     // {
     //     //
     // }

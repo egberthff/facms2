@@ -3,14 +3,27 @@ namespace App\Services;
 
 use App\Models\Claim;
 use App\Models\ClaimPayment;
+use App\Models\Scopes\CampusMemberScope;
 use App\Enums\ClaimStatus;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\Auth;
 
 class DisbursementService
 {
     public function getDisbursmentAll(array $filters = []): Collection
     {
-        $query = ClaimPayment::query()->with(['paymentMethod', 'claim.claimType', 'claim.member']);
+        $campusFilter = $filters['campus_filter'] ?? null;
+        $isPresident = Auth::user()?->can('view all campus data') || Auth::user()?->hasAnyRole(['President', 'Treasurer']);
+
+        $query = ClaimPayment::query()->with([
+            'paymentMethod',
+            'claim.claimType',
+            'claim.member' => function ($query) use ($isPresident) {
+                if ($isPresident) {
+                    $query->withoutGlobalScope(CampusMemberScope::class);
+                }
+            },
+        ]);
 
         if (!empty($filters['year'])) {
             $year = (int) $filters['year'];
@@ -35,6 +48,16 @@ class DisbursementService
             } elseif ($filters['status'] === 'pending') {
                 $query->whereNull('released_at');
             }
+        }
+
+        if (!empty($campusFilter)) {
+            $query->whereHas('claim.member', function ($query) use ($campusFilter, $isPresident) {
+                if ($isPresident) {
+                    $query->withoutGlobalScope(CampusMemberScope::class);
+                }
+
+                $query->where('campus_id', $campusFilter);
+            });
         }
 
         if (!empty($filters['search'])) {
@@ -98,21 +121,48 @@ class DisbursementService
             ->all();
     }
 
-    public function getDisbursementSummary(): array
+    public function getDisbursementSummary(?string $selectedCampusId = null): array
     {
-        $approvedClaims = Claim::whereIn('status', [ClaimStatus::Approved->value, ClaimStatus::Disbursed->value])
+        $isPresident = Auth::user()?->can('view all campus data') || Auth::user()?->hasAnyRole(['President', 'Treasurer']);
+
+        $approvedClaims = Claim::when($selectedCampusId, function ($query) use ($selectedCampusId, $isPresident) {
+                $query->whereHas('member', function ($query) use ($selectedCampusId, $isPresident) {
+                    if ($isPresident) {
+                        $query->withoutGlobalScope(CampusMemberScope::class);
+                    }
+
+                    $query->where('campus_id', $selectedCampusId);
+                });
+            })
+            ->whereIn('status', [ClaimStatus::Approved->value, ClaimStatus::Disbursed->value])
             ->get();
 
         $approvedAmount = (float) $approvedClaims->sum('approved_amount');
-        $releasedAmount = (float) ClaimPayment::sum('amount');
+
+        $releasedAmountQuery = ClaimPayment::join('claims', 'claim_payments.claim_id', '=', 'claims.id')
+            ->join('members', 'claims.member_id', '=', 'members.id');
+
+        if ($selectedCampusId) {
+            $releasedAmountQuery->where('members.campus_id', $selectedCampusId);
+        }
+
+        $releasedAmount = (float) $releasedAmountQuery->sum('claim_payments.amount');
         $pendingAmount = max(0, $approvedAmount - $releasedAmount);
+
+        $releasedCountQuery = ClaimPayment::query();
+
+        if ($selectedCampusId) {
+            $releasedCountQuery->join('claims', 'claim_payments.claim_id', '=', 'claims.id')
+                ->join('members', 'claims.member_id', '=', 'members.id')
+                ->where('members.campus_id', $selectedCampusId);
+        }
 
         return [
             'approved_claims' => $approvedClaims->count(),
             'approved_amount' => $approvedAmount,
             'released_amount' => $releasedAmount,
             'pending_amount' => $pendingAmount,
-            'released_count' => ClaimPayment::whereNotNull('released_at')->count(),
+            'released_count' => $releasedCountQuery->whereNotNull('released_at')->count(),
         ];
     }
 
