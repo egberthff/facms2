@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Models\Member;
+use App\Models\Campus;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -38,9 +39,12 @@ class MemberController extends Controller
     public function index(Request $request)
     {
         $data['title'] = "Members List";
+        $data['isPresident'] = Auth::user()->can('view all campus data') || Auth::user()->hasAnyRole(['President', 'Treasurer']);
+        $data['allCampuses'] = Campus::where('is_active', true)->get();
+        $data['selectedCampusId'] = $data['isPresident'] ? $request->input('campus_filter') : null;
 
         $data['campuses'] = $this->memberService->getCampus();
-        $data['members'] = $this->memberService->getMembers($request);
+        $data['members'] = $this->memberService->getMembers($request, $data['selectedCampusId']);
 
         return view('members.index',  $data);
     }

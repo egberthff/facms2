@@ -18,12 +18,14 @@ use Exception;
 class MemberService
 
 {
-    public function getMembers(Request $request): LengthAwarePaginator
+    public function getMembers(Request $request, ?string $selectedCampusId = null): LengthAwarePaginator
     {
-
         $search = $request->search;
 
          return Member::query()
+            ->when($selectedCampusId, function ($query) use ($selectedCampusId) {
+                $query->where('campus_id', $selectedCampusId);
+            })
             ->when($search, function ($query) use ($search) {
                 $query->where(function ($query) use ($search) {
                     $query->where('employee_number', 'like', "%{$search}%")

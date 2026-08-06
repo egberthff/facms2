@@ -1,5 +1,31 @@
 <x-app-layout>
    
+    @if(isset($isPresident) && $isPresident)
+        <div class="p-6 bg-gray-50 dark:bg-zinc-800/40 rounded-xl border border-gray-200 dark:border-zinc-800/80 mb-6">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h4 class="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Campus Member Filter</h4>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Filter members by campus for leadership review.</p>
+                </div>
+                <form method="GET" action="{{ route('members.index') }}" class="flex items-center gap-2">
+                    <select name="campus_filter" onchange="this.form.submit()" class="text-sm rounded-lg bg-white dark:bg-zinc-900 border-gray-300 dark:border-zinc-700 text-gray-700 dark:text-gray-300 focus:ring-blue-500 focus:border-blue-500 min-w-52">
+                        <option value="">All Campuses (Global View)</option>
+                        @foreach($allCampuses as $campus)
+                            <option value="{{ $campus->id }}" {{ ($selectedCampusId ?? '') == $campus->id ? 'selected' : '' }}>{{ $campus->acronym }}</option>
+                        @endforeach
+                    </select>
+                </form>
+            </div>
+            <div class="flex gap-3 overflow-x-auto mt-4 pb-2 scrollbar-none">
+                @foreach($allCampuses as $campus)
+                    <div class="shrink-0 bg-white dark:bg-zinc-900 px-3 py-1.5 rounded-lg border {{ ($selectedCampusId ?? '') == $campus->id ? 'border-blue-500 bg-blue-50/10' : 'border-gray-200 dark:border-zinc-800' }} text-xs">
+                        <span class="font-bold text-gray-500 dark:text-gray-400">{{ $campus->acronym }}</span>
+                    </div>
+                @endforeach
+            </div>
+        </div>
+    @endif
+
     <div class="p-4 bg-white border border-blue-200 rounded-xl shadow-sm dark:bg-gray-900 dark:border-gray-800">
         <div class="flex justify-between items-center mb-4 w-full p-2">
             <!-- Left End: Filter Dropdown -->
