@@ -151,16 +151,7 @@ return [
 
             [
                 'label' => 'Settings',
-                // 'route' => 'settings.index',
-                'route' => 'dashboard',
-                'roles' => [
-                    'Member',
-                    'President',
-                    'Vice President',
-                    'Secretary',
-                    'Treasurer',
-                    'Auditor',
-                ],
+                    'route' => 'settings.index',
             ],
 
         ],

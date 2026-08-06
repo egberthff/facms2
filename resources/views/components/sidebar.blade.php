@@ -131,10 +131,20 @@
         <div>
             <ul class="space-y-2">
                 <li>
-                    <a href="#"
-                        class="flex items-center p-3 rounded-lg text-white hover:bg-slate-700">
+                    <a href="{{ route('settings.index') }}"
+                        class="flex items-center p-3 rounded-lg transition
+                        {{ request()->routeIs('settings.*')
+                            ? 'bg-slate-700 text-white'
+                            : 'text-white hover:bg-slate-700' }}">
+
                         <x-heroicon-o-cog-6-tooth class="w-5 h-5"/>
-                        <span class="ml-3">Settings</span>
+
+                        <span class="ml-3">
+
+                            Settings
+
+                        </span>
+
                     </a>
                 </li>
             </ul>

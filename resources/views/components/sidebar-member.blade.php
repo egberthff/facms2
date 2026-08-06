@@ -267,8 +267,7 @@
 
                 <li>
 
-                    {{-- <a href="{{ route('settings.index') }}" --}}
-                    <a href="{{ route('dashboard') }}"
+                    {{-- <a href="{{ route('settings.index') }}"
                         class="flex items-center p-3 rounded-lg transition
                         {{ request()->routeIs('settings.*')
                             ? 'bg-slate-700 text-white'
@@ -282,7 +281,7 @@
 
                         </span>
 
-                    </a>
+                    </a> --}}
 
                 </li>
 
