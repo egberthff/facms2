@@ -1,5 +1,5 @@
 <x-app-layout>
-<div class="max-w-7xl mx-auto p-4" 
+<div class="max-w-auto mx-auto p-2" 
     x-data="{ 
             currentStatus: 'all', 
             searchText: '',
@@ -16,128 +16,80 @@
             }
          }"  @close-modal.window="openModal = false">
     
-    <!-- ========================================= -->
-    <!-- CLAIMS LIST CARD -->
-    <!-- ========================================= -->
-    <div class="bg-white border border-blue-700 rounded-2xl shadow-sm">
-        <!-- Header -->
-        <div class="p-4 border-b">
-            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                @if($isPresident)
-                    <div class="w-full mb-4">
-                        <div class="p-6 bg-gray-50 dark:bg-zinc-800/40 rounded-xl border border-gray-200 dark:border-zinc-800/80">
-                            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                                <div>
-                                    <h4 class="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Campus Claim Filter</h4>
-                                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Filter claim records by campus for leadership review.</p>
-                                </div>
-                                <form method="GET" action="{{ url()->current() }}" class="flex items-center gap-2">
-                                    <select name="campus_filter" onchange="this.form.submit()" class="text-sm rounded-lg bg-white dark:bg-zinc-900 border-gray-300 dark:border-zinc-700 text-gray-700 dark:text-gray-300 focus:ring-blue-500 focus:border-blue-500 min-w-[200px]">
-                                        <option value="">All Campuses (Global View)</option>
-                                        @foreach($allCampuses as $campus)
-                                            <option value="{{ $campus->id }}" {{ ($selectedCampusId ?? '') == $campus->id ? 'selected' : '' }}>{{ $campus->acronym }}</option>
-                                        @endforeach
-                                    </select>
-                                </form>
-                            </div>
-                            <div class="flex gap-3 overflow-x-auto mt-4 pb-2 scrollbar-none">
-                                @foreach($allCampuses as $campus)
-                                    <div class="shrink-0 bg-white dark:bg-zinc-900 px-3 py-1.5 rounded-lg border {{ ($selectedCampusId ?? '') == $campus->id ? 'border-blue-500 bg-blue-50/10' : 'border-gray-200 dark:border-zinc-800' }} text-xs">
-                                        <span class="font-bold text-gray-500 dark:text-gray-400">{{ $campus->acronym }}</span>
-                                    </div>
-                                @endforeach
-                            </div>
-                        </div>
+        <!-- ========================================= -->
+        <!-- CAMPUS FILTER -->
+        <!-- ========================================= -->
+         @include('claims.partials.campus-filter')
+
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+    <!-- ===================================================== -->
+    <!-- HEADER -->
+    <!-- ===================================================== -->
+    <div class="px-6 py-5 border-b border-slate-200">
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            <div>
+                <h2 class="text-xl font-semibold text-slate-900">
+                    Claims Management
+                </h2>
+                <p class="mt-1 text-sm text-slate-500">
+                    Review, approve, reject, and monitor submitted claims.
+                </p>
+            </div>
+            <div class="flex items-center gap-3">
+                <div class="text-right">
+                    <div class="text-2xl font-bold text-slate-900">
+                        {{ $claims->count() }}
                     </div>
-                @endif
+                    <div class="text-xs uppercase tracking-wide text-slate-500">
+                        Total Claims
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- ===================================================== -->
+    <!-- FILTER TOOLBAR -->
+    <!-- ===================================================== -->
+    <div class="px-6 py-4 bg-slate-50 border-b border-slate-200">
+        <div class="flex flex-col xl:flex-row gap-3 xl:items-center">
+            {{-- Search --}}
+            <div class="flex-1">
+                <input
+                    x-model="searchText"
+                    type="search"
+                    placeholder="Search claim number, member, description..."
+                    class="w-full rounded-lg border-slate-300 focus:border-blue-500 focus:ring-blue-500">
+            </div>
+            {{-- Status --}}
                 <div class="flex flex-wrap gap-2">
                     <template x-for="status in ['all', 'Pending', 'Processing', 'Approved', 'Disbursed', 'Rejected']">
                         <button 
                             type="button"
                             @click="currentStatus = status"
                             :class="currentStatus === status 
-                                ? 'bg-blue-600 text-white border-blue-600' 
+                                ? 'bg-blue-400 text-blue-600 border-blue-600' 
                                 : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'"
                             class="px-4 py-2 text-sm rounded-lg border transition font-medium capitalize"
                             x-text="status">
                         </button>
                     </template>
                 </div>
-                <!-- Search -->
-                <div class="relative w-full lg:w-72">
-                    <input
-                        type="search"
-                        x-model="searchText"
-                        placeholder="Search claim..."
-                        class="w-full rounded-lg border border-gray-300 pl-10 pr-4 py-2 text-sm focus:ring-2 focus:ring-orange-400 focus:border-orange-400">
-                    <svg
-                        xmlns="http://w3.org"
-                        class="absolute left-3 top-2.5 w-4 h-4 text-gray-400"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35m1.35-5.65a7 7 0 11-14 0a7 7 0 0114 0z"/>
-                    </svg>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Table -->
-        <div class="overflow-x-auto">
-            <table class="min-w-full text-sm">
-                <thead class="bg-gray-100">
-                    <tr>
-                        <th class="px-4 py-3 text-left font-semibold">Ref #</th>
-                        <th class="px-4 py-3 text-left font-semibold">Claim Type</th>
-                        <th class="px-4 py-3 text-left font-semibold">Description</th>
-                        <th class="px-4 py-3 text-right font-semibold">Amount</th>
-                        <th class="px-4 py-3 text-center font-semibold">Date Filed</th>
-                        <th class="px-4 py-3 text-center font-semibold">Status</th>
-                        <th class="px-4 py-3 text-center font-semibold">Action</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-100">
-                    @foreach($claims as $claim)
-                    <tr x-show="matches(
-                            '{{ $claim->status }}', 
-                            '{{ $claim->claim_number }}', 
-                            '{{ addslashes($claim->remarks ?? $claim->description) }}', 
-                            '{{ $claim->claimType->name }}'
-                        )"
-                        x-transition:enter="transition ease-out duration-200"
-                        x-transition:enter-start="opacity-0 transform scale-95"
-                        x-transition:enter-end="opacity-100 transform scale-100">
-                        <td class="px-4 py-3 whitespace-nowrap font-medium text-slate-900">{{ $claim->claim_number }}</td>
-                        <td class="px-4 py-3 text-slate-600">{{ $claim->claimType->name }}</td>
-                        <td class="px-4 py-3 text-slate-500">{{ Str::limit($claim->description ?? $claim->remarks, 40) }}</td>
-                        <td class="px-4 py-3 text-right font-semibold text-slate-900">{{ number_format($claim->requested_amount, 2) }}</td>
-                        <td class="px-4 py-3 text-center text-slate-500">{{ $claim->submitted_at->format('M d, Y') }}</td>
-                        <td class="px-4 py-3 text-center">
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                                {{ $claim->status === 'Pending' ? 'bg-amber-100 text-amber-800' : '' }}
-                                {{ $claim->status === 'Approved' ? 'bg-emerald-100 text-emerald-800' : '' }}
-                                {{ $claim->status === 'Rejected' ? 'bg-rose-100 text-rose-800' : '' }}
-                                {{ $claim->status === 'Processing' ? 'bg-blue-100 text-blue-800' : '' }}
-                                {{ $claim->status === 'Disbursed' ? 'bg-purple-100 text-purple-800' : '' }}
-                            ">
-                                {{ $claim->status }}
-                            </span>
-                        </td>
-                        <td class="px-4 py-3 text-center whitespace-nowrap">
-                            <button
-                                type="button"
-                                @click="activeClaim = @js($claim); openModal = true;"
-                                class="inline-flex items-center px-3 py-1.5 bg-blue-50 border border-blue-200 text-blue-700 rounded-lg text-xs font-semibold hover:bg-blue-100 transition">
-                                View Details
-                            </button>
-                        </td>
-                    </tr>
-                    @endforeach
-                </tbody>
-            </table>
+            {{-- Refresh --}}
+            <button
+                @click="window.location.reload()"
+                class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-300 bg-white hover:bg-slate-100">
+                <x-heroicon-o-arrow-path class="size-5 text-black text-solid" />
+                Refresh
+            </button>
         </div>
     </div>
-    
+    <!-- ===================================================== -->
+    <!-- TABLE -->
+    <!-- ===================================================== -->
+    <div class="overflow-x-auto p-2">
+        @include('claims.partials.claims-admin-table')
+    </div>
+    </div>
     <!--========================================= -->
     <!-- ALPINE DETAILS MODAL OVERLAY -->
     <!-- ========================================= -->
@@ -310,32 +262,50 @@
 
                 <!-- Modal Action Footer Buttons Area -->
                 <div class="flex justify-end gap-2 border-t border-slate-100 pt-4 mt-5">
-                   @hasrole("President")
-                    <button 
-                        type="button" 
-                        x-show="activeClaim.status !== 'Disbursed'" 
-                        @click="updateClaimStatus(activeClaim.id, 'Disbursed', activeClaim)" 
-                        class="px-5 py-2 text-sm font-semibold text-emerald-600 bg-emerald-100 hover:bg-emerald-200 border border-emerald-400 rounded-xl transition">
-                        Disburse
-                    </button>
-                    <button 
-                        type="button" 
-                        x-show="activeClaim.status !== 'Approved'" 
-                        @click="updateClaimStatus(activeClaim.id, 'Approved', activeClaim)" 
-                        class="px-5 py-2 text-sm font-semibold text-blue-600 bg-blue-100 hover:bg-blue-200 border border-blue-400 rounded-xl transition">
-                        Approve
-                    </button>
-                     <button 
-                        type="button" 
-                         @click="updateClaimStatus(activeClaim.id, 'Rejected', activeClaim)" 
-                        class="px-5 py-2 text-sm font-semibold text-red-600 bg-red-100 hover:bg-red-200 border border-red-400 rounded-xl transition">
-                        Reject
-                    </button>
-                    @endrole
+                    @if(Auth::user()->hasAnyRole(['President', 'Treasurer']))
+
+                        <!-- PENDING STATE: Show only Processing -->
+                        <button 
+                            type="button" 
+                            x-show="activeClaim.status && activeClaim.status.toLowerCase().trim() === 'pending'" 
+                            @click="updateClaimStatus(activeClaim.id, 'Processing', activeClaim)" 
+                            class="px-5 py-2 text-sm font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-xl transition">
+                            Process Claim
+                        </button>
+
+                        <!-- PROCESSING STATE: Show Approved and Reject -->
+                        <button 
+                            type="button" 
+                            x-show="activeClaim.status && activeClaim.status.toLowerCase().trim() === 'processing'" 
+                            @click="updateClaimStatus(activeClaim.id, 'Approved', activeClaim)" 
+                            class="px-5 py-2 text-sm font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-xl transition">
+                            Approve
+                        </button>
+
+                        <button 
+                            type="button" 
+                            x-show="activeClaim.status && activeClaim.status.toLowerCase().trim() === 'processing'" 
+                            @click="updateClaimStatus(activeClaim.id, 'Rejected', activeClaim)" 
+                            class="px-5 py-2 text-sm font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-xl transition">
+                            Reject
+                        </button>
+
+                        <!-- APPROVED STATE: Show Disbursed -->
+                        <button 
+                            type="button" 
+                            x-show="activeClaim.status && activeClaim.status.toLowerCase().trim() === 'approved'" 
+                            @click="updateClaimStatus(activeClaim.id, 'Disbursed', activeClaim)" 
+                            class="px-5 py-2 text-sm font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-xl transition">
+                            Disburse
+                        </button>
+
+                    @endif
+
+                    <!-- ALWAYS VISIBLE: Close Button (Active in all states: Pending, Processing, Approved, Rejected, Disbursed) -->
                     <button 
                         type="button" 
                         @click="openModal = false" 
-                        class="px-5 py-2 text-sm font-semibold text-slate-600 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl transition">
+                        class="px-5 py-2 text-sm font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl transition">
                         Close Sheet Overview
                     </button>
                 </div>

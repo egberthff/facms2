@@ -2,6 +2,7 @@
 @import 'tailwindcss';
 @plugin "@tailwindcss/forms";
 @import 'prismjs/themes/prism.min.css';
+@import "simple-datatables/dist/style.css";
 
 
 

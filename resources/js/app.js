@@ -1,5 +1,6 @@
 import './bootstrap';
 import Alpine from 'alpinejs';
+import {DataTable} from "simple-datatables";
 // import ApexCharts from 'apexcharts';
 
 // flatpickr
@@ -14,7 +15,6 @@ window.Alpine = Alpine;
 // window.ApexCharts = ApexCharts;
 // window.flatpickr = flatpickr;
 // window.FullCalendar = Calendar;
-
 Alpine.start();
 
 import 'flowbite';
@@ -28,9 +28,26 @@ import Chart from 'chart.js/auto';
 window.Chart = Chart;
 
 import './report-center';
+import { all } from 'axios';
 
 // Initialize components on DOM ready
 document.addEventListener('DOMContentLoaded', () => {
+
+    //Datatables 
+    const tables = document.querySelectorAll(".dt-table");
+     tables.forEach(tableElement => {
+        // 3. Initialize the library directly on the specific element
+        new DataTable(tableElement, {
+            searchable: false,
+            paging: true,
+            perPage: 2,
+            perPageSelect: [5, 10, 15, 20, 25, all],
+            sortable: true,
+            firstLast: true,
+            nextPrev: true,
+        });
+    });
+
     // Map imports
     // if (document.querySelector('#mapOne')) {
     //     import('./components/map').then(module => module.initMap());
