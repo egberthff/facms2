@@ -38,13 +38,17 @@ document.addEventListener('DOMContentLoaded', () => {
      tables.forEach(tableElement => {
         // 3. Initialize the library directly on the specific element
         new DataTable(tableElement, {
-            searchable: false,
+            searchable: true,
             paging: true,
-            perPage: 10,
-            perPageSelect: [5, 10, 15, 20, 25, all],
+            perPage: 5,
             sortable: true,
             firstLast: true,
             nextPrev: true,
+            classes: {
+                wrapper: "datatable-wrapper sans-serif",
+                table: "w-full text-md text-left text-gray-500", 
+                thead: "text-md text-gray-700 uppercase bg-gray-50", 
+            }
         });
     });
 

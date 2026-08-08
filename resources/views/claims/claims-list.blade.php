@@ -21,7 +21,7 @@
         <!-- ========================================= -->
          @include('claims.partials.campus-filter')
 
-    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+    <div class="bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden">
     <!-- ===================================================== -->
     <!-- HEADER -->
     <!-- ===================================================== -->
@@ -29,10 +29,10 @@
         <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             <div>
                 <h2 class="text-xl font-semibold text-slate-900">
-                    Claims Management
+                    Claims @if(Auth::user()->hasRole("Member") === false)Management @else History @endif
                 </h2>
                 <p class="mt-1 text-sm text-slate-500">
-                    Review, approve, reject, and monitor submitted claims.
+                    @if(Auth::user()->hasRole("Member") === false)Review, approve, reject, and monitor submitted claims.@endif
                 </p>
             </div>
             <div class="flex items-center gap-3">
@@ -53,13 +53,13 @@
     <div class="px-6 py-4 bg-slate-50 border-b border-slate-200">
         <div class="flex flex-col xl:flex-row gap-3 xl:items-center">
             {{-- Search --}}
-            <div class="flex-1">
+            {{-- <div class="flex-1">
                 <input
                     x-model="searchText"
                     type="search"
                     placeholder="Search claim number, member, description..."
                     class="w-full rounded-lg border-slate-300 focus:border-blue-500 focus:ring-blue-500">
-            </div>
+            </div> --}}
             {{-- Status --}}
                 <div class="flex flex-wrap gap-2">
                     <template x-for="status in ['all', 'Pending', 'Processing', 'Approved', 'Disbursed', 'Rejected']">
@@ -75,18 +75,20 @@
                     </template>
                 </div>
             {{-- Refresh --}}
-            <button
-                @click="window.location.reload()"
-                class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-300 bg-white hover:bg-slate-100">
-                <x-heroicon-o-arrow-path class="size-5 text-black text-solid" />
-                Refresh
-            </button>
+            <div class="flex-1 flex">
+                <button
+                    @click="window.location.reload()"
+                    class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-300 bg-white hover:bg-slate-100">
+                    <x-heroicon-o-arrow-path class="size-5 text-black text-solid" />
+                    Refresh
+                </button>
+            </div>
         </div>
     </div>
     <!-- ===================================================== -->
     <!-- TABLE -->
     <!-- ===================================================== -->
-    <div class="overflow-x-auto p-2">
+    <div class="overflow-x-auto p-8">
         @include('claims.partials.claims-table')
     </div>
     </div>

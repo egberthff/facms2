@@ -1,28 +1,27 @@
 <table class="dt-table min-w-full divide-y divide-slate-200">
-    <thead
-        class="bg-slate-100 sticky top-0 z-10">
+    <thead class="bg-slate-100 sticky top-0 z-10 text-md-center font-semibold text-slate-700">
         <tr>
             {{-- <th class="w-14 px-5 py-4">
                 <input
                     type="checkbox"
                     class="rounded border-slate-300">
             </th> --}}
-            <th class="px-5 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-600">
+            <th class="px-5 py-4 text-center text-md font-bold uppercase tracking-wdier text-slate-600">
                 Claim
             </th>
-            <th class="px-5 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-600">
+            <th class="px-5 py-4 text-center text-md font-bold uppercase tracking-wdier text-slate-600">
                 Member
             </th>
-            <th class="px-5 py-4 text-right text-xs font-bold uppercase tracking-wider text-slate-600">
+            <th class="px-5 py-4 text-center text-md font-bold uppercase tracking-wdier text-slate-600">
                 Amount
             </th>
-            <th class="px-5 py-4 text-center text-xs font-bold uppercase tracking-wider text-slate-600">
+            <th class="px-5 py-4 text-center text-md font-bold uppercase tracking-wider text-slate-600">
                 Submitted
             </th>
-            <th class="px-5 py-4 text-center text-xs font-bold uppercase tracking-wider text-slate-600">
+            <th class="px-5 py-4 text-center text-md font-bold uppercase tracking-wider text-slate-600">
                 Status
             </th>
-            <th class="px-5 py-4 text-center text-xs font-bold uppercase tracking-wider text-slate-600">
+            <th class="px-5 py-4 text-center text-md font-bold uppercase tracking-wider text-slate-600">
                 Action
             </th>
         </tr>
@@ -39,7 +38,7 @@
             x-transition:enter="transition ease-out duration-200"
             x-transition:enter-start="opacity-0 translate-y-1"
             x-transition:enter-end="opacity-100 translate-y-0"
-            class="hover:bg-blue-50/40 transition-colors duration-150 even:bg-slate-50/30">
+            class="hover:bg-blue-50/40 transition-colors text-center duration-150 even:bg-slate-50/30">
             <!-- ============================================== -->
             <!-- SELECT -->
             <!-- ============================================== -->
