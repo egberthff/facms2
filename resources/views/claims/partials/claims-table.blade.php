@@ -163,38 +163,41 @@
                                 <x-heroicon-o-eye class="size-6 text-blue-600" />
                                 <span class="ml-3">View Details</span>
                             </button>
+                            <!-- ADMINISTRATOR BUTTON ONLY -->
                             <!-- PENDING STATE: Show Process Claim -->
-                            @if($claim->status && strtolower(trim($claim->status)) === 'pending')
-                                <button
-                                    @click="updateClaimStatus('{{ $claim->id }}', 'Processing', @js($claim))"
-                                    class="flex w-full items-center px-4 py-2.5 text-sm text-amber-700 hover:bg-amber-50">
-                                    <x-heroicon-o-arrow-path class="size-5 text-amber-500" />
-                                    <span class="ml-3">Process Claim</span>
-                                </button>
-                            @endif
-                            <!-- PROCESSING STATE: Show Approve and Reject -->
-                            @if($claim->status && strtolower(trim($claim->status)) === 'processing')
-                                <button
-                                    @click="updateClaimStatus('{{ $claim->id }}', 'Approved', @js($claim))"
-                                    class="flex w-full items-center px-4 py-2.5 text-sm text-blue-700 hover:bg-blue-50">
-                                    <x-heroicon-o-check class="size-5 text-blue-500" />
-                                    <span class="ml-3">Approve</span>
-                                </button>
-                                <button
-                                    @click="updateClaimStatus('{{ $claim->id }}', 'Rejected', @js($claim))"
-                                    class="flex w-full items-center px-4 py-2.5 text-sm text-rose-700 hover:bg-rose-50">
-                                    <x-heroicon-o-x-mark class="size-5 text-rose-500" />
-                                    <span class="ml-3">Reject</span>
-                                </button>
-                            @endif
-                            <!-- APPROVED STATE: Show Mark as Disbursed -->
-                            @if($claim->status && strtolower(trim($claim->status)) === 'approved')
-                                <button
-                                    @click="updateClaimStatus('{{ $claim->id }}', 'Disbursed', @js($claim))"
-                                    class="flex w-full items-center px-4 py-2.5 text-sm text-emerald-700 hover:bg-emerald-50">
-                                    <x-heroicon-o-credit-card class="size-5 text-emerald-500" />
-                                    <span class="ml-3">Mark as Disbursed</span>
-                                </button>
+                            @if(Auth::user()->hasAnyRole(['President', 'Treasurer']) || Auth::user()->can('update claims'))
+                                @if($claim->status && strtolower(trim($claim->status)) === 'pending')
+                                    <button
+                                        @click="updateClaimStatus('{{ $claim->id }}', 'Processing', @js($claim))"
+                                        class="flex w-full items-center px-4 py-2.5 text-sm text-amber-700 hover:bg-amber-50">
+                                        <x-heroicon-o-arrow-path class="size-5 text-amber-500" />
+                                        <span class="ml-3">Process Claim</span>
+                                    </button>
+                                @endif
+                                <!-- PROCESSING STATE: Show Approve and Reject -->
+                                @if($claim->status && strtolower(trim($claim->status)) === 'processing')
+                                    <button
+                                        @click="updateClaimStatus('{{ $claim->id }}', 'Approved', @js($claim))"
+                                        class="flex w-full items-center px-4 py-2.5 text-sm text-blue-700 hover:bg-blue-50">
+                                        <x-heroicon-o-check class="size-5 text-blue-500" />
+                                        <span class="ml-3">Approve</span>
+                                    </button>
+                                    <button
+                                        @click="updateClaimStatus('{{ $claim->id }}', 'Rejected', @js($claim))"
+                                        class="flex w-full items-center px-4 py-2.5 text-sm text-rose-700 hover:bg-rose-50">
+                                        <x-heroicon-o-x-mark class="size-5 text-rose-500" />
+                                        <span class="ml-3">Reject</span>
+                                    </button>
+                                @endif
+                                <!-- APPROVED STATE: Show Mark as Disbursed -->
+                                @if($claim->status && strtolower(trim($claim->status)) === 'approved')
+                                    <button
+                                        @click="updateClaimStatus('{{ $claim->id }}', 'Disbursed', @js($claim))"
+                                        class="flex w-full items-center px-4 py-2.5 text-sm text-emerald-700 hover:bg-emerald-50">
+                                        <x-heroicon-o-credit-card class="size-5 text-emerald-500" />
+                                        <span class="ml-3">Mark as Disbursed</span>
+                                    </button>
+                                @endif
                             @endif
                             
                             {{-- <button class="flex w-full items-center px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-100">

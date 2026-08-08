@@ -108,14 +108,14 @@ class ClaimService
     public function getClaimsForUser(User $user): Collection
     {
         $member = $user->member;
-
+        // $member->load('campus');
         // Return empty Eloquent collection instead of crashing if member doesn't exist
         if (!$member) {
             return new Collection();
         }
 
         return Claim::forMember($member->id)
-            ->with(['claimType', 'paymentMethod', 'reviewer', 'documents'])
+            ->with(['claimType', 'paymentMethod', 'reviewer', 'documents','member.campus'])
             ->latest('submitted_at')
             ->get();
     }

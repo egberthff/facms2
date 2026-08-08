@@ -87,7 +87,7 @@
     <!-- TABLE -->
     <!-- ===================================================== -->
     <div class="overflow-x-auto p-2">
-        @include('claims.partials.claims-admin-table')
+        @include('claims.partials.claims-table')
     </div>
     </div>
     <!--========================================= -->
@@ -262,7 +262,7 @@
 
                 <!-- Modal Action Footer Buttons Area -->
                 <div class="flex justify-end gap-2 border-t border-slate-100 pt-4 mt-5">
-                    @if(Auth::user()->hasAnyRole(['President', 'Treasurer']))
+                    @if(Auth::user()->hasAnyRole(['President', 'Treasurer']) || Auth::user()->can('update claims'))
 
                         <!-- PENDING STATE: Show only Processing -->
                         <button 

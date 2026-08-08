@@ -5,6 +5,7 @@ namespace App\Policies;
 use App\Models\Claim;
 use App\Models\User;
 use Illuminate\Auth\Access\Response;
+use Illuminate\Support\Facades\Auth;
 
 class ClaimPolicy
 {
@@ -77,13 +78,15 @@ class ClaimPolicy
     /**
     * Determine whether the user can view their own claims.
     */
-    public function viewMyClaims(User $user, User $targetUser = null): bool
+    public function viewMyClaims(User $user): bool
     {
         // Presidents and Treasurers can see anyone's claim list
         if ($user->hasAnyRole(['President', 'Treasurer'])) {
             return true;
         }
-    
+
+        $targetUser = Auth::user();
+
         // Members can only see their own claim list
         return $user->hasRole('Member') && $user->user_id === $targetUser?->user_id;
     }

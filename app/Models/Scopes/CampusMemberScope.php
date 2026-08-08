@@ -4,6 +4,7 @@ namespace App\Models\Scopes;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Eloquent\Scope;
 use Illuminate\Support\Facades\Auth;
 
@@ -26,13 +27,23 @@ class CampusMemberScope implements Scope
 
         // 3. Get the cached Campus ID from the user session
         $campusId = $user->getCachedCampusId();
-
         if (!$campusId) {
             $builder->whereRaw('1 = 0'); // Secure fallback: returns empty dataset if unassigned
             return;
         }
 
-        // 4. Inject direct column filter using the active model's table name
-        $builder->where($model->getTable() . '.campus_id', $campusId);
+        $tableName = $model->getTable();
+
+        // If the query is running directly on the Campuses table itself, 
+        // filter by its primary key column (id).
+        if ($tableName === 'campuses') {
+            $builder->where('campuses.id', $campusId);
+            return;
+        }
+
+        // If it's running on members (or any other table), verify it has a 'campus_id' column
+        if (Schema::hasColumn($tableName, 'campus_id')) {
+            $builder->where($tableName . '.campus_id', $campusId);
+        }
     }
 }

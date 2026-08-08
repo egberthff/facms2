@@ -8,7 +8,7 @@ Route::middleware(['auth', 'active'])
         // Route::resource('claims', ClaimController::class)->middleware('can:viewAny,claim');
         //Member claim routes
         // Uses ClaimPolicy::viewMyClaims(User $user, User $targetUser)
-        Route::get('claims/my-list/{user}', [ClaimController::class, 'myClaims'])->middleware('can:viewMyClaims,user')->name('claim.my');
+        Route::get('claims/my-list/{user}', [ClaimController::class, 'myClaims'])->middleware('can:view own claims,user')->name('claim.my');
         // Use standard ability names to map to ClaimPolicy::create
         Route::get('claims/create', [ClaimController::class, 'create'])->middleware('can:create,App\\Models\\Claim')->name('claim.create');
         Route::post('claims/store', [ClaimController::class, 'store'])->middleware('can:create,App\\Models\\Claim')->name('claim.store');

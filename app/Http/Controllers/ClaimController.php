@@ -147,9 +147,16 @@ class ClaimController extends Controller
 
     public function myClaims(User $user)
     {
+    //      dd(
+    //     $user->member()->toSql(), 
+    //     $user->member()->getBindings(),
+    //     $user->user_id
+    // );
+        // dd($user);
         Gate::authorize('viewMyClaims', [Claim::class, $user]);
-
+        $user->load(['member']); 
         $data['claims'] = $this->claimService->getClaimsForUser($user);
+        // dd($data['claims']);   
         $data['isPresident'] = Auth::user()->can('view all campus data') || Auth::user()->hasAnyRole(['President', 'Treasurer']);
 
         if ($data['isPresident']) {

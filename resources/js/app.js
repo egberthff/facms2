@@ -40,7 +40,7 @@ document.addEventListener('DOMContentLoaded', () => {
         new DataTable(tableElement, {
             searchable: false,
             paging: true,
-            perPage: 2,
+            perPage: 10,
             perPageSelect: [5, 10, 15, 20, 25, all],
             sortable: true,
             firstLast: true,
