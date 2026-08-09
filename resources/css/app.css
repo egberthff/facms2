@@ -1,5 +1,5 @@
 /* 1. Third-party vendor stylesheets */
-@import url('https://googleapis.com');
+/* @import url('https://googleapis.com'); */
 @import 'prismjs/themes/prism.min.css';
 @import "simple-datatables/dist/style.css";
 

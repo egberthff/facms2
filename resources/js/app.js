@@ -10,7 +10,7 @@ import {DataTable} from "simple-datatables";
 // import { Calendar } from '@fullcalendar/core';
 
 
-
+window.simpleDatatables = { DataTable };
 window.Alpine = Alpine;
 // window.ApexCharts = ApexCharts;
 // window.flatpickr = flatpickr;
