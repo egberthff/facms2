@@ -26,12 +26,12 @@
         </div>
     @endif
 
-    <div class="p-4 bg-white border border-blue-200 rounded-xl shadow-sm dark:bg-gray-900 dark:border-gray-800">
+    <div class="p-4 bg-white border border-blue-200 rounded-xl shadow-sm ">
         <div class="flex justify-between items-center mb-4 w-full p-2">
             <!-- Left End: Filter Dropdown -->
-            <div class="flex items-center">
+            <div class="flex items-center bg-blue-100 border border-blue-300 rounded-xl">
                 <label for="member-status-filter" class="sr-only">Filter by Status</label>
-                <select id="member-status-filter" class="bg-slate-700 text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
+                <select id="member-status-filter" class=" text-black text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
                     <option value="">All Members</option>
                     <option value="Active" selected>Active Members</option>
                     <option value="Inactive">Inactive Members</option>
@@ -73,24 +73,12 @@
             //Members Table Initialization
             const tableElement = document.getElementById("members-table");
             if (tableElement && typeof simpleDatatables.DataTable !== 'undefined') {
-                const dataTable = new simpleDatatables.DataTable("#members-table", {
-                    searchable: true,
-                    paging: true,
-                    perPage: 5,
-                    perPageSelect: [5, 10, 15, 20, -1], 
-                    sortable: true, 
-                    labels: { 
-                        placeholder: "Search components...",
-                        perPage: "Entries per page",
-                        noRows: "No entries found",
-                        info: "Showing {start} to {end} of {rows} entries"
-                    }
-                });
                 document.getElementById('member-status-filter').addEventListener('change', function(e) {
                     const selectedValue = e.target.value;
     
                         // If 'All Members' is selected, value is "". It resets the visible dataset rows.
-                        dataTable.search(selectedValue);
+                        // const dataTable = event.target.closest('[class="dt-table"]')
+                        tableElement.dataTableInstance.search(selectedValue);
                         });
 
                 // Attach a single listener to the entire table wrapper

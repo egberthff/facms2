@@ -1,4 +1,4 @@
-<x-table id="members-table" class="dt-responsive">
+<x-table id="members-table" class="dt-table dt-responsive">
                 <thead>
                     {{-- <tr class="text-xs uppercase tracking-wider text-gray-700 bg-gray-50 dark:bg-gray-800 dark:text-gray-300"> --}}
                         <th class="px-6 py-4 font-semibold">Employee ID</th>

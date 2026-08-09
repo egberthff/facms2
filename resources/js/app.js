@@ -37,7 +37,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const tables = document.querySelectorAll(".dt-table");
      tables.forEach(tableElement => {
         // 3. Initialize the library directly on the specific element
-        new DataTable(tableElement, {
+        const dtInstance = new DataTable(tableElement, {
             searchable: true,
             paging: true,
             perPage: 5,
@@ -50,6 +50,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 thead: "text-md text-gray-700 uppercase bg-gray-50", 
             }
         });
+         tableElement.dataTableInstance = dtInstance;
     });
 
     // Map imports
