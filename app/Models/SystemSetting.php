@@ -19,7 +19,8 @@ class SystemSetting extends Model
         'setting_key',
         'setting_value',
         'description',
-        'campus_id'
+        'campus_id',
+        'cycle_label'
     ];
 
         /*

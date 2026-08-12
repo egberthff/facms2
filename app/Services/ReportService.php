@@ -604,39 +604,75 @@ class ReportService
 
     protected function allowanceForfeiture(array $filters): array
     {
+        // 1. Resolve cycle boundaries and label (e.g., "2024-2026")
         [$cycleStart, $cycleEnd, $cycleLabel] = $this->resolveCycleBounds($filters['cycle'] ?? 'current');
+        // Construct the explicit target cycle string to search against the settings table
+        $startYear = $cycleStart->year;
+        $endYear = $startYear + 2;
+        $targetCycle = "{$startYear}-{$endYear}";
 
+        // 2. Fetch active members and eager load claims to eliminate the N+1 query performance bottleneck
         $members = Member::query()
             ->active()
             ->when(!empty($filters['campus_id']), fn($query) => $query->where('campus_id', $filters['campus_id']))
             ->when(!empty($filters['member_id']), fn($query) => $query->where('id', $filters['member_id']))
-            ->with('campus')
+            ->with(['campus', 'claims']) 
             ->get();
 
-        $rows = $members->map(function (Member $member) use ($cycleStart, $cycleEnd, $cycleLabel) {
-            $cycleClaims = $member->claims()
-                ->whereBetween('submitted_at', [$cycleStart, $cycleEnd]);
+        // 3. Eager load annual_limit configurations for all applicable campuses
+        $campusIds = $members->pluck('campus_id')->unique()->filter()->toArray();
+        \Log::info("Fetching annual_limit settings for campuses: " . implode(', ', $campusIds)); // Debugging line to inspect campus IDs
+        $settingsMap = SystemSetting::whereIn('campus_id', $campusIds)
+            ->where('setting_key', 'annual_limit')
+            ->where(fn($q) => $q->whereNull('cycle_label')->orWhere('cycle_label', $targetCycle))
+            ->get()
+            ->groupBy('campus_id');
 
-            $latestClaim = (clone $cycleClaims)
-                ->latest('submitted_at')
-                ->first();
+        \Log::error("Settings Map: " . $settingsMap->toJson()); // Debugging line to inspect the settings map
+        // 4. Map values strictly using secure, in-memory computations
+        $rows = $members->map(function (Member $member) use ($cycleStart, $cycleEnd, $cycleLabel, $settingsMap, $targetCycle) {
 
-            $baseLimit = $latestClaim && $latestClaim->annual_limit
-                ? (float) $latestClaim->annual_limit
-                : (float) SystemSetting::annualLimit($member->campus_id)->first()?->setting_value ?? 23000.00;
+            // Isolate claims submitted strictly inside this cycle's date boundaries
+            $cycleClaims = $member->claims->filter(function ($claim) use ($cycleStart, $cycleEnd) {
+                return $claim->submitted_at >= $cycleStart && $claim->submitted_at <= $cycleEnd;
+            });
 
-            $claimedAmount = (float) (clone $cycleClaims)
+            // --- THE FIXED LOGIC HIERARCHY ---
+            $campusSettings = $settingsMap->get($member->campus_id) ?? collect();
+
+            // Priority 1: Check for an explicit historical setting recorded for this specific cycle
+            $matchedSetting = $campusSettings->firstWhere('cycle_label', $targetCycle);
+
+            if ($matchedSetting) {
+                $baseLimit = (float) $matchedSetting->setting_value;
+            } else {
+                // Priority 2: Fall back to the snapshot on the latest claim if no cycle setting is found
+                $latestClaim = $cycleClaims->sortByDesc('submitted_at')->first();
+
+                if ($latestClaim && $latestClaim->annual_limit) {
+                    $baseLimit = (float) $latestClaim->annual_limit;
+                } else {
+                    // Priority 3: Fall back to the global active system setting row as a last resort
+                    $activeSetting = $campusSettings->firstWhere('cycle_label', null);
+                    $baseLimit = $activeSetting ? (float) $activeSetting->setting_value : 0.00;
+                }
+            }
+            // ---------------------------------
+
+            // 5. Aggregate financial metrics accurately
+            $claimedAmount = (float) $cycleClaims
                 ->whereIn('status', ['Approved', 'Disbursed'])
                 ->sum('approved_amount');
 
+            // Ensure forfeited allowance never drops below zero
             $forfeited = max(0, $baseLimit - $claimedAmount);
 
             return [
-                'member' => $member->full_name,
-                'campus' => $member->campus?->acronym ?? 'Unassigned',
-                'cycle' => $cycleLabel,
+                'member'    => $member->full_name,
+                'campus'    => $member->campus?->acronym ?? 'Unassigned',
+                'cycle'     => $cycleLabel,
                 'allowance' => $baseLimit,
-                'claimed' => $claimedAmount,
+                'claimed'   => $claimedAmount,
                 'forfeited' => $forfeited,
             ];
         })->toArray();

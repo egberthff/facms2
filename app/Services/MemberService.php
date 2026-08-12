@@ -86,6 +86,52 @@ class MemberService
         });
     }
 
+    /**
+     * Create member from CSV data. This method assumes that the CSV has been validated and parsed into an array of associative arrays.
+     */
+    public function createMemberCSV(Request $request): Collection
+    {
+        $createdMembers = collect();
+    
+        if ($request->hasFile('member_csv_file')) {
+            $file = $request->file('member_csv_file');
+            $path = $file->getRealPath();
+            
+            // Parse CSV into associative arrays
+            $data = array_map('str_getcsv', file($path));
+            $header = array_shift($data);
+    
+            // FIX: Strip BOM and trim whitespaces from header columns
+            $header = array_map(function ($head) {
+                // Remove UTF-8 BOM if present
+                $head = preg_replace('/^[\xef\xbb\xbf\xff\xfe]/', '', $head);
+                return trim($head);
+            }, $header);
+    
+            $csvData = array_map(function ($row) use ($header) {
+                // Ensure row lengths match header lengths to prevent mismatch errors
+                if (count($header) !== count($row)) {
+                    $row = array_pad($row, count($header), null);
+                }
+                return array_combine($header, $row);
+            }, $data);
+    
+            // Process everything inside a database transaction
+            return DB::transaction(function () use ($csvData, $createdMembers) {
+                foreach ($csvData as $row) {
+                    // Pass row array data to your working createMember method
+                    $member = $this->createMember($row);
+                    $createdMembers->push($member);
+                }
+                
+                return $createdMembers;
+            });
+        }
+    
+        return $createdMembers; // Returns empty collection if no file is present
+    }
+
+
      public function updateMember(Member $member, array $data): Member
     {
         return DB::transaction(function () use ($member, $data) {

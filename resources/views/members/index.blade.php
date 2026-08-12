@@ -39,7 +39,17 @@
             </div>  
 
             <!-- Right End: Add Action -->
-            <div class="flex">  
+            <div class="flex gap-2">  
+                <x-button
+                    id="add-new-member-btn-csv"
+                    type="button"
+                    class="add-new-member-btn-csv btn warning bg-amber-500 hover:bg-brand-strong text-white focus:ring-4 focus:ring-brand-medium shadow-xs font-medium leading-5 rounded-base text-sm px-4 py-2.5 focus:outline-none transition-colors" 
+                    data-action="add-new-member-csv"
+                    data-modal-target="member-modal-csv" 
+                    data-modal-toggle="member-modal-csv">
+                    Upload CSV
+                </x-button>
+
                  <x-button
                     id="add-new-member-btn"
                     type="button" 
@@ -363,6 +373,35 @@
             });
 
         });
+
+        function handleFormSubmitCSV(event) {
+            event.preventDefault();
+            const form = event.target;
+            const formData = new FormData(form);
+
+            $.ajax({
+                url: "members/add-new-member-csv",
+                method: form.method,
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(response) {
+                    if( response.status === 200 ) {
+                        Swal.file({
+                            icon: "success",
+                            title: "Success",
+                            text: response.message,
+                            showConfirmButton: true,
+                        }).then(() => {
+                            form.reset();
+                            $("#member-modal-csv").prop(false);
+                            window.location.reload();
+                        })
+                    }
+                }
+            });
+
+        }
 
         //Function to handle form submission via AJAX
         function handleFormSubmit(event) {

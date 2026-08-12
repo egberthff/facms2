@@ -15,12 +15,15 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->string('setting_key');
             $table->text('setting_value');
+            $table->string('cycle_label')->nullable();
             $table->text('description')->nullable();
             $table->foreignUuid('campus_id')
                 ->constrained('campuses', 'id')
                 ->cascadeOnDelete(); 
             $table->timestamps();
-            $table->unique(['setting_key', 'campus_id']);
+
+
+            $table->unique(['setting_key', 'campus_id', 'cycle_label'], 'system_settings_key_campus_cycle_unique');
             // Index for fast lookups when querying settings by campus
             $table->index('campus_id');
         });

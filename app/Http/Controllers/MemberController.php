@@ -59,6 +59,37 @@ class MemberController extends Controller
     }
 
     /**
+     * Store member through CSV
+     */
+    public function storeCSV(Request $request, MemberService $memberService): JsonResponse
+    {
+        try {
+            // Only pass $request since the service handles the logic
+            $members = $memberService->createMemberCSV($request);
+    
+            return response()->json([
+                'status' => 200,
+                'message' => 'Members Added Successfully',
+                'members' => $members, // Pluralized since it's a batch collection
+            ], 200);
+        } catch (Exception $e) {
+            // Safe input logging that won't crash on standard Requests
+            $logInput = $request->except(['password', 'member_csv_file']);
+    
+            Log::error('Member CSV creation failed: ' . $e->getMessage(), [
+                'input' => $logInput,
+                'trace' => $e->getTraceAsString()
+            ]);
+    
+            return response()->json([
+                'status' => 500,
+                'message' => "Failed to create members from CSV. The operation was safely rolled back.",
+                'error' => app()->environment('local', 'testing') ? $e->getMessage() : 'Internal Server Error'
+            ], 500);
+        }
+    }
+
+    /**
      * Store a newly created member.
      */
    public function store(StoreMemberRequest $request, MemberService $memberService): JsonResponse

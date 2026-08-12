@@ -129,3 +129,40 @@
         </div>
     </div>
 </div>
+
+
+<!-- Main modal for CSV uploading -->
+<div id="member-modal-csv" tabindex="-1" aria-hidden="true" class="hidden fixed inset-0 z-50 justify-center items-center w-full h-full">
+    
+    <!-- Backdrop Overlay: This darkens the screen and separates the modal from the background -->
+    <div class="fixed inset-0 bg-gray-900/50 backdrop-blur-sm" data-modal-hide="member-modal-csv"></div>
+
+    <!-- Modal Content Wrapper (Elevated relative to the backdrop) -->
+    <div class="relative p-4 w-full max-w-md max-h-full z-10">
+        <!-- Modal card structure -->
+        <!-- NOTE: If bg-neutral-primary-soft is transparent in your custom config, change it to bg-white -->
+        <div class="relative bg-neutral-primary-soft border bg-white border-default rounded-base shadow-lg p-4 md:p-6">
+            <!-- Modal header -->
+            <div class="flex items-center justify-between border-b border-default pb-4 md:pb-5">
+                <h3 class="text-lg font-medium text-heading">
+                    Upload CSV File
+                </h3>
+                <button type="button" class="text-body bg-transparent hover:bg-neutral-tertiary hover:text-heading rounded-base text-sm w-9 h-9 ms-auto inline-flex justify-center items-center" data-modal-hide="member-modal-csv">
+                    <svg class="w-5 h-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18 17.94 6M18 18 6.06 6"/></svg>
+                    <span class="sr-only">Close modal</span>
+                </button>
+            </div>
+            <!-- Modal body -->
+            <form action="#" class="pt-4 md:pt-6" method="POST" enctype="multipart/form-data" onsubmit="handleFormSubmitCSV(event)">
+                @csrf
+                <div class="mb-4">
+                    <label for="member_csv_file" class="block mb-2.5 text-sm font-medium text-heading">Select CSV File</label>
+                    <input type="file" name="member_csv_file" id="csv_file" class="bg-neutral-tertiary border border-default text-body text-sm rounded-base focus:ring-primary focus:border-primary block w-full p-2.5">
+                    <p class="mt-1 text-sm text-gray-500 dark:text-gray-300" id="file_input_help">CSV (10MB).</p>
+                </div>
+                <button type="submit" class="text-white bg-brand box-border border border-transparent hover:bg-brand-strong focus:ring-4 focus:ring-brand-medium shadow-xs font-medium leading-5 rounded-base text-sm px-4 py-2.5 focus:outline-none w-full mb-3">Upload File</button>
+            </form>
+        </div>
+    </div>
+</div>
+

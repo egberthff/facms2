@@ -70,17 +70,38 @@ class SettingController extends Controller
             'setting_value' => ['required', 'string'],
             'campus_filter' => ['nullable', 'string'],
         ]);
-
+    
         if (! Auth::user()->can('view all campus data') && Auth::user()->getCachedCampusId() !== $setting->campus_id) {
             abort(403);
         }
-
+    
+        // 1. Calculate the current 2-year business cycle label dynamically
+        $now = \Carbon\Carbon::now();
+        $startYear = $now->month >= 10 ? $now->year : $now->year - 1;
+        $endYear = $startYear + 2;
+        $currentCycleLabel = "{$startYear}-{$endYear}";
+    
+        // 2. Automatically snapshot this historical value for the current cycle
+        SystemSetting::updateOrCreate(
+            [
+                'campus_id'   => $setting->campus_id,
+                'setting_key' => $setting->setting_key, // Dynamically keeps 'annual_limit', 'contribution_limit', etc.
+                'cycle_label' => $currentCycleLabel,    // Scopes it to this cycle row
+            ],
+            [
+                'setting_value' => $request->input('setting_value'),
+                'description'   => "Historical snapshot of {$setting->setting_key} for cycle {$currentCycleLabel}",
+            ]
+        );
+    
+        // 3. Update the primary live configuration row (where cycle_label is NULL)
         $setting->update(['setting_value' => $request->input('setting_value')]);
-
+    
         return redirect()
             ->route('settings.index', ['campus_filter' => $request->input('campus_filter')])
             ->with('success', 'System setting updated successfully.');
     }
+
 
     /**
      * Remove the specified resource from storage.
