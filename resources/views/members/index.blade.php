@@ -435,7 +435,6 @@
                     // Optionally, display an error message to the user
                 }
             });
-            // Here you can add your AJAX request or any other logic to handle the form submission
         }
         
     </script>

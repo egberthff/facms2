@@ -113,6 +113,16 @@ class User extends Authenticatable
         );
     }
 
+    /**
+     * Get an array of permission names assigned directly to the user.
+     *
+     * @return array
+     */
+    public function getDirectPermissionNames(): array
+    {
+        return $this->permissions()->pluck('name')->toArray();
+    }
+
 }
 
 
