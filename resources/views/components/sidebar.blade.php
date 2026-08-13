@@ -108,10 +108,9 @@
                     </a>
                 </li>
                 @endrole
-                @role('President')
+                @role('President' )
                 <li>
-                    {{-- <a href="{{ route('users.index') }}" --}}
-                    <a href="{{ route('treasury.index') }}"
+                    <a href="{{ route('admin.permissions.index') }}"
                         class="flex items-center p-3 rounded-lg text-white hover:bg-slate-700">
                         <x-heroicon-o-shield-exclamation class="w-5 h-5"/>
                         <span class="ml-3">Roles & Permissions</span>
