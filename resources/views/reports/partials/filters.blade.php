@@ -131,6 +131,29 @@
                     </div>
                 </template>
 
+                {{-- Reporting Year --}}
+                <template 
+                    x-if="showFilter('year_range')">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">
+                            Reporting year:
+                        </label>
+
+                        <!-- Corrected select without an internal x-if -->
+                        <select 
+                            x-model="filters.reporting_year"
+                            id="year-select">
+                            <option value="">--Select Year--</option>
+
+                            <!-- Pure Alpine way to loop from 2026 down to 1900 -->
+                            <template x-for="year in Array.from({length: new Date().getFullYear() - 2010 + 1}, (_, i) => new Date().getFullYear() - i)">
+                                <option :value="year" x-text="year"></option>
+                            </template>
+                        </select>
+                    </div>
+                </template>
+
+
                 {{-- Allowance Cycle --}}
 
                 <template

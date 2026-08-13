@@ -58,6 +58,9 @@ class ReportService
             })
             ->when(!empty($filters['member_id']), function ($query) use ($filters) {
                 return $query->where('member_id', $filters['member_id']);
+            })
+            ->when(!empty($filters['reporting_year']), function ($query) use ($filters) {
+                return $query->whereYear('submitted_at', $filters['reporting_year']);
             });
 
         // 2. Define the months loop config
@@ -88,10 +91,8 @@ class ReportService
 
         // 3. Loop through months to calculate data
         foreach ($months as $month) {
-            $year = (!empty($filters['date_from'])) ? date('Y', strtotime($filters['date_from'])) : date('Y');
 
             $claimsCount = (clone $baseQuery)
-                ->whereYear('submitted_at', $year)
                 ->whereMonth('submitted_at', $month['num'])
                 ->when(!empty($filters['status']), function ($query) use ($filters) {
                     return $query->where('status', $filters['status']);
@@ -99,31 +100,26 @@ class ReportService
                 ->count();
 
             $pendingCount = ($targetStatus === null || $targetStatus === 'Pending') ? (clone $baseQuery)
-                ->whereYear('submitted_at', $year)
                 ->whereMonth('submitted_at', $month['num'])
                 ->where('status', 'Pending')
                 ->count() : 0;
 
             $processingCount = ($targetStatus === null || $targetStatus === 'Processing') ? (clone $baseQuery)
-                ->whereYear('submitted_at', $year)
                 ->whereMonth('submitted_at', $month['num'])
                 ->where('status', 'Processing')
                 ->count() : 0;
 
             $approvedCount = ($targetStatus === null || $targetStatus === 'Approved') ? (clone $baseQuery)
-                ->whereYear('submitted_at', $year)
                 ->whereMonth('submitted_at', $month['num'])
                 ->where('status', 'Approved')
                 ->count() : 0;
 
             $rejectedCount = ($targetStatus === null || $targetStatus === 'Rejected') ? (clone $baseQuery)
-                ->whereYear('submitted_at', $year)
                 ->whereMonth('submitted_at', $month['num'])
                 ->where('status', 'Rejected')
                 ->count() : 0;
 
             $disbursedCount = ($targetStatus === null || $targetStatus === 'Disbursed') ? (clone $baseQuery)
-                ->whereYear('submitted_at', $year)
                 ->whereMonth('submitted_at', $month['num'])
                 ->where('status', 'Disbursed')
                 ->count() : 0;
@@ -195,145 +191,6 @@ class ReportService
             'rows' => $rows,
         ];
     }
-
-
-    // protected function monthlySummary(array $filters): array
-    // {
-    //     // 1. Build a base query that applies all global filters
-    //     $baseQuery = Claim::query()
-    //         ->when(!empty($filters['campus_id']), function ($query) use ($filters) {
-    //             return $query->whereHas('member', function ($subQuery) use ($filters) {
-    //                 return $subQuery->where('campus_id', $filters['campus_id']);
-    //             });
-    //         })
-    //         ->when(!empty($filters['claim_type']), function ($query) use ($filters) {
-    //             return $query->where('claim_type_id', $filters['claim_type']);
-    //         })
-    //         ->when(!empty($filters['member_id']), function ($query) use ($filters) {
-    //             return $query->where('member_id', $filters['member_id']);
-    //         })
-    //          ->when(!empty($filters['status']), function ($query) use ($filters) {
-    //             return $query->where('status', $filters['status']);
-    //         });
-
-    //     // 2. Define the months you want to loop through
-    //     $months = [
-    //         ['name' => 'January', 'num' => '01'],
-    //         ['name' => 'February', 'num' => '02'],
-    //         ['name' => 'March', 'num' => '03'],
-    //         ['name' => 'April', 'num' => '04'],
-    //         ['name' => 'May', 'num' => '05'],
-    //         ['name' => 'June', 'num' => '06'],
-    //         ['name' => 'July', 'num' => '07'],
-    //         ['name' => 'August', 'num' => '08'],
-    //         ['name' => 'September', 'num' => '09'],
-    //         ['name' => 'October', 'num' => '10'],
-    //         ['name' => 'November', 'num' => '11'],
-    //         ['name' => 'December', 'num' => '12'],
-    //     ];
-
-    //     $rows = [];
-    //     $totalClaims = 0;
-    //     $totalPending = 0;
-    //     $totalProcessing = 0;
-    //     $totalApproved = 0;
-    //     $totalRejected = 0;
-    //     $totalDisbursed = 0;
-
-    //     $targetStatus = !empty($filters['status']) ? $filters['status'] : null;
-
-    //     // 3. Loop through months to calculate dynamic rows
-    //     foreach ($months as $month) {
-    //         $year = (!empty($filters['date_from'])) ? date('Y', strtotime($filters['date_from'])) : date('Y');
-
-    //         // Clone base query to prevent query pollution across iterations
-    //         $claimsCount = (clone $baseQuery)
-    //             ->whereYear('submitted_at', $year)
-    //             ->whereMonth('submitted_at', $month['num'])
-    //             ->count();
-
-    //         // Dynamically compute columns or zero them out if filtered out
-    //         $pendingCount = ($targetStatus === null || $targetStatus === 'Pending') ? (clone $baseQuery)
-    //             ->whereYear('submitted_at', $year)
-    //             ->whereMonth('submitted_at', $month['num'])
-    //             ->where('status', 'Pending')
-    //             ->count() : 0;
-
-    //         $processingCount = ($targetStatus === null || $targetStatus === 'Processing') ? (clone $baseQuery)
-    //             ->whereYear('submitted_at', $year)
-    //             ->whereMonth('submitted_at', $month['num'])
-    //             ->where('status', 'Processing') // Example status match
-    //             ->count() : 0;
-
-
-    //         $approvedCount = ($targetStatus === null || $targetStatus === 'Approved') ? (clone $baseQuery)
-    //             ->whereYear('submitted_at', $year)
-    //             ->whereMonth('submitted_at', $month['num'])
-    //             ->where('status', 'Approved') // Example status match
-    //             ->count() : 0;
-
-    //         $rejectedCount = ($targetStatus === null || $targetStatus === 'Rejected') ? (clone $baseQuery)
-    //             ->whereYear('submitted_at', $year)
-    //             ->whereMonth('submitted_at', $month['num'])
-    //             ->where('status', 'Rejected')
-    //             ->count() : 0;
-
-    //         $disbursedCount = ($targetStatus === null || $targetStatus === 'Disbursed') ? (clone $baseQuery)
-    //             ->whereYear('submitted_at', $year)
-    //             ->whereMonth('submitted_at', $month['num'])
-    //             ->where('status', 'Disbursed')
-    //             ->count() : 0;
-
-    //         // Accumulate totals for top-level summary cards
-    //         $totalClaims += $claimsCount;
-    //         $totalPending += $pendingCount;
-    //         $totalProcessing += $processingCount;
-    //         $totalApproved += $approvedCount;
-    //         $totalRejected += $rejectedCount;
-    //         $totalDisbursed += $disbursedCount;
-
-    //         $rows[] = [
-    //             'month' => $month['name'],
-    //             'claims' => $claimsCount,
-    //             'pending' => $totalPending,
-    //             'processing' => $totalProcessing,
-    //             'approved' => $approvedCount,
-    //             'rejected' => $rejectedCount,
-    //             'disbursed' => $disbursedCount,
-    //         ];
-    //     }
-
-    //     return [
-    //         'context' => $this->buildContext(
-    //             'Monthly Claims Summary',
-    //             'Monthly claim statistics.',
-    //             $filters
-    //         ),
-
-    //         'cards' => [
-    //             ['key' => 'claims', 'label' => 'Claims Filed', 'value' => $totalClaims,],
-    //             ['key' => 'pending', 'label' => 'Pending', 'value' => $totalPending,],
-    //             ['key' => 'processing', 'label' => 'Processing', 'value' => $totalProcessing,],
-    //             ['key' => 'approved', 'label' => 'Approved', 'value' => $totalApproved,],
-    //             ['key' => 'rejected', 'label' => 'Rejected', 'value' => $totalRejected,],
-    //             ['key' => 'disbursed', 'label' => 'Disbursed', 'value' => $totalDisbursed,],
-    //         ],
-
-    //         'columns' => [
-    //             ['key' => 'month', 'label' => 'Month', 'type' => 'text'],
-    //             ['key' => 'claims', 'label' => 'Claims', 'type' => 'number'],
-    //             ['key' => 'pending', 'label' => 'Pending', 'type' => 'number'],
-    //             ['key' => 'processing', 'label' => 'Processing', 'type' => 'number'],
-    //             ['key' => 'approved', 'label' => 'Approved', 'type' => 'number'],
-    //             ['key' => 'rejected', 'label' => 'Rejected', 'type' => 'number'],
-    //             ['key' => 'disbursed', 'label' => 'Disbursed', 'type' => 'number'],
-    //         ],
-
-    //         'rows' => $rows,
-    //     ];
-    // }
-
-
     protected function campusSummary(array $filters): array
     {
         // 1. Fetch campuses and dynamically apply the campus filter if present
@@ -621,14 +478,12 @@ class ReportService
 
         // 3. Eager load annual_limit configurations for all applicable campuses
         $campusIds = $members->pluck('campus_id')->unique()->filter()->toArray();
-        \Log::info("Fetching annual_limit settings for campuses: " . implode(', ', $campusIds)); // Debugging line to inspect campus IDs
         $settingsMap = SystemSetting::whereIn('campus_id', $campusIds)
             ->where('setting_key', 'annual_limit')
             ->where(fn($q) => $q->whereNull('cycle_label')->orWhere('cycle_label', $targetCycle))
             ->get()
             ->groupBy('campus_id');
 
-        \Log::error("Settings Map: " . $settingsMap->toJson()); // Debugging line to inspect the settings map
         // 4. Map values strictly using secure, in-memory computations
         $rows = $members->map(function (Member $member) use ($cycleStart, $cycleEnd, $cycleLabel, $settingsMap, $targetCycle) {
 

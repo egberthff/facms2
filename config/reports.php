@@ -69,7 +69,8 @@ return [
 
             'filters' => [
 
-                'date_range',
+                // 'date_range',
+                'year_range', 
 
                 'campus',
 

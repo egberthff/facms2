@@ -139,6 +139,10 @@
             type="hidden"
             name="date_to"
             :value="filters.date_to">
+        <input
+            type="hidden"
+            name="reporting_year"
+            :value="filters.reporting_year">    
 
     </form>
 

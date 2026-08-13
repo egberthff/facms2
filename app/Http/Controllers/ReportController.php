@@ -112,6 +112,8 @@ class ReportController extends Controller
 
             'date_to' => ['nullable', 'date'],
 
+            'reporting_year' => ['nullable', 'string'],
+
             'cycle' => ['nullable', 'string'],
 
         ]);
