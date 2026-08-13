@@ -47,7 +47,16 @@ class ReportService
     protected function monthlySummary(array $filters): array
     {
         // 1. Build a base query that applies all global filters
-        $baseQuery = Claim::query()
+        $monthlyStats = Claim::query()
+            ->selectRaw("
+                MONTH(submitted_at) as month_num,
+                COUNT(*) as total_claims,
+                SUM(CASE WHEN status = 'Pending' THEN 1 ELSE 0 END) as pending_count,
+                SUM(CASE WHEN status = 'Processing' THEN 1 ELSE 0 END) as processing_count,
+                SUM(CASE WHEN status = 'Approved' THEN 1 ELSE 0 END) as approved_count,
+                SUM(CASE WHEN status = 'Rejected' THEN 1 ELSE 0 END) as rejected_count,
+                SUM(CASE WHEN status = 'Disbursed' THEN 1 ELSE 0 END) as disbursed_count
+            ")
             ->when(!empty($filters['campus_id']), function ($query) use ($filters) {
                 return $query->whereHas('member', function ($subQuery) use ($filters) {
                     return $subQuery->where('campus_id', $filters['campus_id']);
@@ -61,7 +70,13 @@ class ReportService
             })
             ->when(!empty($filters['reporting_year']), function ($query) use ($filters) {
                 return $query->whereYear('submitted_at', $filters['reporting_year']);
-            });
+            })
+            ->when(!empty($filters['status']), function ($query) use ($filters) {
+                return $query->where('status', $filters['status']);
+            })
+            ->groupByRaw('MONTH(submitted_at)')
+            ->get()
+            ->keyBy('month_num'); // Keys the data by month integer (1 to 12)
 
         // 2. Define the months loop config
         $months = [
@@ -87,42 +102,37 @@ class ReportService
         $totalRejected = 0;
         $totalDisbursed = 0;
 
-        $targetStatus = !empty($filters['status']) ? $filters['status'] : null;
+        $targetStatus = !empty($filters['status']) ? $filters['status'] : null;                                                                                                                                         
 
-        // 3. Loop through months to calculate data
+        // 2. Loop your months array to cleanly map the data with defaults
         foreach ($months as $month) {
-
-            $claimsCount = (clone $baseQuery)
-                ->whereMonth('submitted_at', $month['num'])
-                ->when(!empty($filters['status']), function ($query) use ($filters) {
-                    return $query->where('status', $filters['status']);
-                })
-                ->count();
-
-            $pendingCount = ($targetStatus === null || $targetStatus === 'Pending') ? (clone $baseQuery)
-                ->whereMonth('submitted_at', $month['num'])
-                ->where('status', 'Pending')
-                ->count() : 0;
-
-            $processingCount = ($targetStatus === null || $targetStatus === 'Processing') ? (clone $baseQuery)
-                ->whereMonth('submitted_at', $month['num'])
-                ->where('status', 'Processing')
-                ->count() : 0;
-
-            $approvedCount = ($targetStatus === null || $targetStatus === 'Approved') ? (clone $baseQuery)
-                ->whereMonth('submitted_at', $month['num'])
-                ->where('status', 'Approved')
-                ->count() : 0;
-
-            $rejectedCount = ($targetStatus === null || $targetStatus === 'Rejected') ? (clone $baseQuery)
-                ->whereMonth('submitted_at', $month['num'])
-                ->where('status', 'Rejected')
-                ->count() : 0;
-
-            $disbursedCount = ($targetStatus === null || $targetStatus === 'Disbursed') ? (clone $baseQuery)
-                ->whereMonth('submitted_at', $month['num'])
-                ->where('status', 'Disbursed')
-                ->count() : 0;
+            // Cast month number string '01' to integer 1 to match the database key
+            $monthInt = (int)$month['num'];
+            
+            // Grab the database row for this month, or fallback to an empty object if no rows exist
+            $data = $monthlyStats->get($monthInt);
+        
+            $claimsCount = $data ? $data->total_claims : 0;
+        
+            $pendingCount = ($targetStatus === null || $targetStatus === 'Pending') 
+                ? ($data ? (int)$data->pending_count : 0) 
+                : 0;
+        
+            $processingCount = ($targetStatus === null || $targetStatus === 'Processing') 
+                ? ($data ? (int)$data->processing_count : 0) 
+                : 0;
+        
+            $approvedCount = ($targetStatus === null || $targetStatus === 'Approved') 
+                ? ($data ? (int)$data->approved_count : 0) 
+                : 0;
+        
+            $rejectedCount = ($targetStatus === null || $targetStatus === 'Rejected') 
+                ? ($data ? (int)$data->rejected_count : 0) 
+                : 0;
+        
+            $disbursedCount = ($targetStatus === null || $targetStatus === 'Disbursed') 
+                ? ($data ? (int)$data->disbursed_count : 0) 
+                : 0;
 
             $totalClaims += $claimsCount;
             $totalPending += $pendingCount;
@@ -617,38 +627,52 @@ class ReportService
         string $description,
         array $filters
     ): array {
+        // 1. Resolve readable names for IDs
+        $campusName = 'All Campuses';
+        if (!empty($filters['campus_id'])) {
+            $campus = Campus::find($filters['campus_id']);
+            $campusName = $campus ? $campus->name : 'All Campuses';
+        }
+
+        // 2. Format a clean date range string based on dates or reporting year
+        $dateRange = 'All Dates';
+
+        if (!empty($filters['date_from']) || !empty($filters['date_to'])) {
+            // User explicitly picked specific date boundaries
+            $from = !empty($filters['date_from']) ? Carbon::parse($filters['date_from'])->format('M d, Y') : 'Beginning';
+            $to = !empty($filters['date_to']) ? Carbon::parse($filters['date_to'])->format('M d, Y') : 'Present';
+            $dateRange = "{$from} to {$to}";
+        } elseif (!empty($filters['reporting_year'])) {
+            // No custom dates picked, fall back to the selected reporting year scope
+            $year = $filters['reporting_year'];
+            $dateRange = "January {$year} to December {$year}";
+        }
 
         return [
-
             'title' => $title,
-
             'description' => $description,
-
             'generated_at' => Carbon::now()->format('F d, Y h:i A'),
-
             'filters' => [
-
+                [
+                    'label' => 'Reporting Year',
+                    'value' => $filters['reporting_year'] ?? 'All Years',
+                ],
                 [
                     'label' => 'Campus',
-                    'value' => $filters['campus_id'] ?? 'All Campuses',
+                    'value' => $campusName,
                 ],
-
-                [
-                    'label' => 'Cycle',
-                    'value' => $filters['cycle'] ?? 'Current Cycle',
-                ],
-
+                // [
+                //     'label' => 'Cycle',
+                //     'value' => !empty($filters['cycle']) ? ucfirst($filters['cycle']) : 'Current Cycle',
+                // ],
                 [
                     'label' => 'Date Range',
-                    'value' => ($filters['date_from'] ?? '-')
-                        .' to '.
-                        ($filters['date_to'] ?? '-'),
+                    'value' => $dateRange,
                 ],
-
             ],
-
         ];
     }
+
 
     public function getMembers(): array
     {
