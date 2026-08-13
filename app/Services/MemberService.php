@@ -18,7 +18,7 @@ use Exception;
 class MemberService
 
 {
-    public function getMembers(Request $request, ?string $selectedCampusId = null): LengthAwarePaginator
+    public function getMembers(Request $request, ?string $selectedCampusId = null)
     {
         $search = $request->search;
 
@@ -35,9 +35,46 @@ class MemberService
                 });
             })
             ->latest()
-            ->paginate(10)
-            ->withQueryString();
+            ->get();
+            // ->paginate(10)
+            // ->withQueryString();
     }
+
+    // public function getMembers(
+    //     Request $request, 
+    //     ?string $selectedCampusId = null, 
+    //     int $perPage = 30, 
+    //     int $offset = 0
+    // ): LengthAwarePaginator {
+    //     $search = $request->input('search');
+    
+    //     // 1. Build the base query
+    //     $query = Member::query()
+    //         ->with(['campus'])
+    //         ->when($selectedCampusId, fn ($q) => $q->where('campus_id', $selectedCampusId))
+    //         ->when($search, fn ($q) => $q->where(
+    //             fn ($sub) => $sub->where('employee_number', 'like', "%{$search}%")
+    //                 ->orWhere('first_name', 'like', "%{$search}%")
+    //                 ->orWhere('last_name', 'like', "%{$search}%")
+    //                 ->orWhere('department', 'like', "%{$search}%")
+    //         ))
+    //         ->latest();
+    
+    //     // 2. Get the total count before applying limit/offset
+    //     $total = $query->count();
+    
+    //     // 3. Fetch the exact slice of data using your custom offset and perPage limit
+    //     $items = $query->skip($offset)->take($perPage)->get();
+    
+    //     // 4. Manually construct the Paginator to keep frontend navigation working
+    //     return new LengthAwarePaginator(
+    //         $items,
+    //         $total,
+    //         $perPage,
+    //         LengthAwarePaginator::resolveCurrentPage(),
+    //         ['path' => LengthAwarePaginator::resolveCurrentPath()]
+    //     );
+    // }
 
    /**
      * Create a new user and their associated member profile.

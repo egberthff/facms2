@@ -43,11 +43,11 @@
                 <x-button
                     id="add-new-member-btn-csv"
                     type="button"
-                    class="add-new-member-btn-csv btn warning bg-amber-500 hover:bg-brand-strong text-white focus:ring-4 focus:ring-brand-medium shadow-xs font-medium leading-5 rounded-base text-sm px-4 py-2.5 focus:outline-none transition-colors" 
+                    class="add-new-member-btn-csv btn-warning bg-amber-500 hover:bg-brand-strong text-white focus:ring-4 focus:ring-brand-medium shadow-xs font-medium leading-5 rounded-base text-sm px-4 py-2.5 focus:outline-none transition-colors" 
                     data-action="add-new-member-csv"
                     data-modal-target="member-modal-csv" 
                     data-modal-toggle="member-modal-csv">
-                    Upload CSV
+                        Upload CSV
                 </x-button>
 
                  <x-button
@@ -58,7 +58,7 @@
                     data-modal-target="member-modal" 
                     data-modal-toggle="member-modal">
                         Add New Member
-                    </x-button>
+                </x-button>
             </div>
         </div>
 

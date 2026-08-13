@@ -1,8 +1,11 @@
 <x-table id="members-table" class="dt-table dt-responsive">
                 <thead>
-                    {{-- <tr class="text-xs uppercase tracking-wider text-gray-700 bg-gray-50 dark:bg-gray-800 dark:text-gray-300"> --}}
+                    <tr class="text-xs uppercase tracking-wider text-gray-700 bg-gray-50 dark:bg-gray-800 dark:text-gray-300"> 
                         <th class="px-6 py-4 font-semibold">Employee ID</th>
                         <th class="px-6 py-4 font-semibold">Member</th>
+                        @if(Auth::user()->hasAnyRole(['President', 'Treasurer']) || Auth::user()->can('view all campus data'))
+                        <th class="px-6 py-4 font-semibold">Campus</th>
+                        @endif
                         <th class="px-6 py-4 font-semibold">Work Details</th>
                         {{-- <th class="px-6 py-4 font-semibold">Employment Status</th> --}}
                         <th class="px-6 py-4 font-semibold">Membership Status</th>
@@ -10,7 +13,7 @@
                         <th class="px-6 py-4 font-semibold">Contributions</th>
                         <th class="px-6 py-4 font-semibold">Action</th>
 
-                    {{-- </tr> --}}
+                     </tr> 
                 </thead>
                 <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
                     @if(isset($members) && count($members) > 0)
@@ -18,6 +21,9 @@
                             <tr class="hover:bg-gray-50/70 dark:hover:bg-gray-800/50 transition-colors duration-150">
                                 <td class="px-6 py-4 font-semibold text-gray-900 dark:text-white whitespace-nowrap">{{ $member->employee_number }}</td>
                                 <td class="px-6 py-4 whitespace-nowrap">{{ ucwords($member->last_name) }}, {{ ucwords($member->first_name) }} {{ ucwords($member->middle_name) }}, {{ ucwords($member->suffex) }}</td>
+                                @if(Auth::user()->hasAnyRole(['President', 'Treasurer']) || Auth::user()->can('view all campus data'))
+                                <th class="px-6 py-4 font-semibold">{{ $member->campus->acronym }}</th>
+                                @endif
                                 <td class="px-6 py-4 whitespace-nowrap">{{ $member->department }} - {{ $member->position }}</td>
                                 {{-- <td class="px-6 py-4 whitespace-nowrap">{{ $member->employment_status }}</td> --}}
                                 <td class="px-6 py-4 whitespace-nowrap">{{ $member->membership_status }}</td>
