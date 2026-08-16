@@ -148,9 +148,10 @@
         
             // Fire data acquisition system processing pipeline
             loadUserPermissionMatrix(userId, userName, userCampus);
+            // loadUserRolesMetrix(userId, userName, userCampus);
         }
 
-        // 3. Request existing configurations via AJAX and cleanly reveal the form view grid
+        // 3. Request existing configurations via AJAX and cleanly reveal the form view grid - request permission
         function loadUserPermissionMatrix(userId, userName, userCampus) {
 
             if (!userId || userId === 'null' || userId === 0) {
@@ -170,7 +171,7 @@
             });
         
             $.ajax({
-                url: `/admin/user-access/${userId}/permissions`,
+                url: `/admin/user-access/${userId}/access`,
                 type: 'GET',
                 dataType: 'json',
                 success: function(response) {
@@ -178,9 +179,14 @@
                 
                     if (response.status === 'success') {
                         // Populate structural IDs and text descriptors
-                        document.getElementById('target-user-id-field').value = userId;
-                        document.getElementById('display-target-username').textContent = `${userName} [${userCampus}]`;
-                    
+                        document.getElementById('target-user-id-field-permission').value = userId;
+                        document.getElementById('display-target-username-permission').textContent = `${userName} [${userCampus}]`;
+
+                        document.getElementById('target-user-id-field-role').value = userId;
+                        document.getElementById('display-target-username-role').textContent = `${userName} [${userCampus}]`;
+
+                        document.getElementById('assignment-card-wrapper').style.display = 'block';
+
                         // Wipe checking markers status fields entirely
                         $('.user-permission-checkbox').prop('checked', false);
                     
@@ -188,9 +194,14 @@
                         response.direct_permissions.forEach(permissionName => {
                             $(`.user-permission-checkbox[value="${permissionName}"]`).prop('checked', true);
                         });
-                    
+
+                        $('.user-role-checkbox').prop('checked', false);
+                        response.roles.forEach(roleName => {
+                            $(`.user-role-checkbox[value="${roleName}"]`).prop('checked', true);
+                        });
+
                         // Clear previous animations and cleanly reveal the form container
-                        $('#user-permissions-form').hide().fadeIn(400);
+                        $('#setup-permissions').hide().fadeIn(400);
                     }
                 },
                 error: function(xhr, status, error) {
@@ -211,6 +222,7 @@
                 const box = document.getElementById('search-suggestion-dataset');
                 if (box) box.style.display = 'none';
             }
+             initTabsEngine();
         });
 
        function toggleForm(value) {
@@ -287,6 +299,33 @@
               }
             });
         }
+
+        function initTabsEngine(user_id = null, userName = null, userCampus = null) {
+            const tabButtons = document.querySelectorAll('.tab-btn');
+            const tabPanels = document.querySelectorAll('.tab-panel');
+
+            tabButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    tabButtons.forEach(btn => {
+                        
+                        btn.classList.remove('text-blue-600', 'border-blue-600', 'bg-white');
+                        btn.classList.add('text-slate-500', 'border-transparent', 'hover:text-slate-700', 'hover:bg-slate-100');
+                    });
+                    tabPanels.forEach(panel => {
+                        panel.classList.remove('block');
+                        panel.classList.add('hidden');
+                    });
+                
+                    button.classList.remove('text-slate-500', 'border-transparent', 'hover:text-slate-700', 'hover:bg-slate-100');
+                    button.classList.add('text-blue-600', 'border-blue-600', 'bg-white');
+                
+                    const targetId = button.getAttribute('data-target');
+                    document.getElementById(targetId).classList.remove('hidden');
+                    document.getElementById(targetId).classList.add('block');
+                });
+            });
+        }
+
     </script>
 
 </x-app-layout>

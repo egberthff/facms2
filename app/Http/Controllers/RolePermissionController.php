@@ -15,7 +15,8 @@ class RolePermissionController extends Controller
         return view('admin.roles-permissions.index', [
             'allUsers' => User::with('member.campus')->get(),
             'roles' => Role::with('permissions')->get(),
-            'permissions' => Permission::all()
+            'permissions' => Permission::all(),
+        
         ]);
     }
 
@@ -50,44 +51,67 @@ class RolePermissionController extends Controller
     }
 
     // Process user based checkbox state updates synchronously - User based fine grained permission assignment
-    public function syncUserPermissions(Request $request)
+    public function syncUserAccess(Request $request)
     {
         // Validate that the targeted user exists
         $request->validate([
-            'user_id' => 'required|exists:users,user_id',
-            'permissions' => 'array', 
+            'user_id'       => 'required|exists:users,user_id',
+            'permissions'   => 'array|nullable|required_if:action_type,permissions',
+            'role'          => 'string|nullable|required_if:action_type,role',
+            'action_type'   => 'required|in:role,permissions', // Added 'in' to restrict valid values
         ]);
 
-        try {
+       try {
             // Find the user being modified
             $user = User::findOrFail($request->input('user_id'));
+            $actionType = $request->input('action_type');       
 
-            // Grab the explicit permissions array (or empty array if none checked)
-            $permissionsToSync = $request->input('permissions', []);
+            // Initialize response variables
+            $status = 'success';
+            $message = '';      
 
-            // Spatie replaces all old direct user permissions with this new set
-            $user->syncPermissions($permissionsToSync);
+            if ($actionType === 'permissions') {
+                // Ensure permissions is an array (validation handles it, but safety check is good)
+                $permissionsToSync = $request->input('permissions', []);        
+
+                // Spatie replaces all old direct user permissions with this new set
+                $user->syncPermissions($permissionsToSync);     
+
+                $message = "Fine-grained permissions updated for user: {$user->name}.";
+            } 
+            elseif ($actionType === 'role') {
+
+                $roleName = $request->input('role');
+                $user->syncRoles($roleName);
+
+                $message = "Role updated for user: {$user->name}.";
+            } 
+            else {
+                throw new \InvalidArgumentException("Invalid action_type provided.");
+            }       
 
             return response()->json([
-                'status'  => 'success',
-                'message' => "Fine-grained permissions updated for user: {$user->name}."
-            ], 200);
+                'status'  => $status,
+                'message' => $message
+            ], 200);        
 
         } catch (\Exception $e) {
-            \Log::error(print_r($e->getMessage(), true));
+            \Log::error('Error updating user permissions or role: ' . $e->getMessage());
+
             return response()->json([
                 'status'  => 'error',
-                'message' => 'Failed to synchronize explicit user permissions.'
+                'message' => "Failed to update user {$actionType}."
             ], 500);
         }
     }
 
     // 1. Fetch user permissions dynamically via AJAX
-    public function getUserPermissions(User $user)
+    public function getUserAccess(User $user)
     {
         return response()->json([
             'status' => 'success',
             'direct_permissions' => $user->getDirectPermissionNames(), // Returns array of permission names
+            'roles' => $user->roles->pluck('name'), // Returns array of role names
         ]);
     }
     
