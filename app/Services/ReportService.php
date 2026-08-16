@@ -189,7 +189,7 @@ class ReportService
             // Always display month and total claims columns alongside the targeted status column
             $columnsOutput = [$allColumns['month'], $allColumns['claims'], $allColumns[$statusKey]];
         }
-
+        \Log::error($filters['campus_id']);
         return [
             'context' => $this->buildContext(
                 'Monthly Claims Summary',
@@ -631,7 +631,7 @@ class ReportService
         $campusName = 'All Campuses';
         if (!empty($filters['campus_id'])) {
             $campus = Campus::find($filters['campus_id']);
-            $campusName = $campus ? $campus->name : 'All Campuses';
+            $campusName = $campus ? $campus->acronym : 'All Campuses';
         }
 
         // 2. Format a clean date range string based on dates or reporting year
