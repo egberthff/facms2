@@ -99,7 +99,7 @@
                 Management
             </div>
             <ul class="space-y-2">
-                @role('President|Treasurer')
+                @role('President|Treasurer|Federated President|Federated Treasurer')
                 <li>
                     <a href="{{ route('members.index') }}"
                         class="flex items-center p-3 rounded-lg text-white hover:bg-slate-700">
@@ -108,7 +108,7 @@
                     </a>
                 </li>
                 @endrole
-                @role('President' )
+                @role('President|Federated President' )
                 <li>
                     <a href="{{ route('admin.permissions.index') }}"
                         class="flex items-center p-3 rounded-lg text-white hover:bg-slate-700">

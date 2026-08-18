@@ -29,7 +29,7 @@ class RolePermissionSeeder extends Seeder
             'manage funds',
             'view member metrics',
             'view all metrics',
-            'view all campus data',
+            'view all campus data', //reserve permission to federated roles
             'view all treasury',
             'view campus treasury',
             'view ledger',
@@ -53,9 +53,10 @@ class RolePermissionSeeder extends Seeder
             'view own contribution'
         ]);
 
-        // Treasurers manage funds and release payments
+        // Treasurers manage funds and release payments - campus treasurer
         $treasurerRole = Role::findOrCreate('Treasurer', 'web');
         $treasurerRole->syncPermissions([
+            'create claims',
             'view own claims',
             'release payments',
             'manage funds',
@@ -71,8 +72,53 @@ class RolePermissionSeeder extends Seeder
 
         ]);
 
-        // Presidents can do everything
+        $federatedTreasurerRole = Role::findOrCreate('Federated Treasurer', 'web');
+        $federatedTreasurerRole->syncPermissions([
+            'create claims', 
+            'view own claims',
+            'release payments',
+            'manage funds',
+            'update claims',
+            'view member metrics',
+            'view all metrics',
+            'view all claims',
+            'view own contribution',
+            'view campus treasury',
+            'view ledger',
+            'view campus treasury',
+            'view reports',
+            'view all campus data'
+        ]);
+
+        //Presudent can do everythin on its scoped campus - campus president
         $presidentRole = Role::findOrCreate('President', 'web');
-        $presidentRole->syncPermissions(Permission::all());
+        $presidentRole->syncPermissions([
+            'create claims', 
+            'view own claims',
+            'view all claims',
+            'create claims',
+            'update claims',
+            'review claims',
+            'view disbursment',
+            'view own contribution',
+            'view all contribution',
+            'update disbursement',
+            'release payments',
+            'manage members',
+            'manage funds',
+            'view member metrics',
+            'view all metrics',
+            'view all treasury',
+            'view campus treasury',
+            'view ledger',
+            'view reports',
+            'manage users',
+        ]);
+
+        // Presidents can do everything - Federated President
+        $federatedPresidentRole = Role::findOrCreate('Federated President', 'web');
+        $federatedPresidentRole->syncPermissions(Permission::all());
     }
+
+
 }

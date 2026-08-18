@@ -85,6 +85,9 @@
 
                 <div class="role-grid grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 my-4">
                     @foreach($roles as $role)
+                        @if(str_contains($role->name, 'Federated') && !$isFederated)
+                           @continue
+                        @endif
                         <label class="flex items-center p-2.5 border border-slate-100 bg-white cursor-pointer rounded hover:bg-slate-50 transition-colors">
                             <input type="radio" 
                                    name="role" 

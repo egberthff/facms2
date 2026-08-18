@@ -30,12 +30,13 @@
 
     {{-- Sidebar --}}
     {{-- <x-layout.sidebar /> --}}
-    @role('President|Treasurer')
+    {{-- @role('President|Federated President|Treasurer|Federated Treasurer')
     <x-sidebar/>
     @endrole
     @role("Member")
     <x-sidebar-member/>
-    @endrole
+    @endrole --}}
+    <x-sidebar-hybrid/>
     {{-- Main Content --}}
     <div class="flex-1 flex flex-col lg:ml-64">
 
