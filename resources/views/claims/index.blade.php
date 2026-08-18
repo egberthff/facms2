@@ -181,7 +181,8 @@
              async submitForm() {
             
                        if (!this.agree) {
-                           alert('Please accept the declaration.');
+                        //    alert('Please accept the declaration.');
+                           Swal.fire('Please accept the declaration.');
                            return;
                        }
                     
@@ -217,45 +218,82 @@
                         this.form.files.forEach(file => {
                             formData.append('documents[]', file);
                         });
-                    
-                       try {
-                        
-                           const response = await fetch(form.action, {
-                            
-                               method: 'POST',
-                            
-                               headers: {
-                                   'X-CSRF-TOKEN': document
-                                       .querySelector('meta[name="csrf-token"]')
-                                       .content,
-                                
-                                   'Accept': 'application/json',
-                                   'X-Requested-With': 'XMLHttpRequest',
-                               },
-                            
-                               body: formData
-                            
-                           });
-                           const data = await response.json();
-                        
-                           if (!response.ok) {
-                            
-                               throw data;
-                            
-                           }
-                        
-                           alert(data.message);
-                        
-                        //    window.location.href = data.redirect;
-                        
-                       } catch (error) {
-                        
-                           console.log(error);
-                        
-                       }
-                    
-                   },
 
+                        Swal.fire({
+                            title: 'Are you sure?',
+                            text: 'Ensure all details are correct. Once submitted, it cannot be edited.',
+                            icon: 'warning',
+                            showCancelButton: true,
+                            confirmButtonText: 'Yes, submit it!'
+                        }).then(async (result) => {
+                            if (result.isConfirmed) {
+
+                                // FORCED SEAMLESS TRANSITION: Re-fire/Update immediately to lock it into a loading state
+                                Swal.fire({
+                                    title: 'Submitting...',
+                                    text: 'Please wait.',
+                                    allowOutsideClick: false,
+                                    allowEscapeKey: false,
+                                    didOpen: () => {
+                                        Swal.showLoading();
+                                    }
+                                });
+
+                                try {
+                                    const response = await fetch(form.action, {
+                                        method: 'POST',
+                                        headers: {
+                                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                                            'Accept': 'application/json',
+                                            'X-Requested-With': 'XMLHttpRequest',
+                                        },
+                                        body: formData
+                                    });
+                                
+                                    const data = await response.json();
+
+                                    if (!response.ok) {
+                                        throw data;
+                                    }
+                                
+                                    // Target the active loader alert and convert it to Success
+                                    Swal.hideLoading();
+                                    Swal.update({
+                                        icon: "success",
+                                        title: "Success!",
+                                        text: data.message,
+                                        showConfirmButton: true,
+                                        allowOutsideClick: true,
+                                        allowEscapeKey: true
+                                    });
+                                
+                                    // Reload page on user acknowledgement
+                                    Swal.getConfirmButton().addEventListener('click', () => {
+                                        window.location.reload();
+                                    });
+                                
+                                } catch (error) {
+                                    let errorMessage = "Something went wrong. Please try again.";
+                                    if (error && error.success === false && error.message) {
+                                        errorMessage = error.message;  
+                                    } else if (error && error.errors) {
+                                        errorMessage = Object.values(error.errors).flat().join('\n'); 
+                                    }
+                                
+                                    // Target the active loader alert and convert it to Error
+                                    Swal.hideLoading();
+                                    Swal.update({
+                                        icon: "error",
+                                        title: "Oops...",
+                                        text: errorMessage,
+                                        showConfirmButton: true,
+                                        allowOutsideClick: true,
+                                        allowEscapeKey: true
+                                    });
+                                }
+                            }
+                        });
+                   },
 
             /* =====================================================
              * STEP NAVIGATION
