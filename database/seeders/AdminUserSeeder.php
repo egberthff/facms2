@@ -23,7 +23,7 @@ class AdminUserSeeder extends Seeder
             ]
         );
 
-        $user->assignRole('President');
+        $user->assignRole('Federated President');
 
         Member::updateOrCreate(
             ['user_id' => $user->user_id],

@@ -47,7 +47,8 @@ class SystemSetting extends Model
     {
 
         return $query->where('setting_key', 'annual_claim_limit')
-            ->when($campusId, function ($query, $campusId) {
+                     ->where('cycle_label', null)
+                     ->when($campusId, function ($query, $campusId) {
                 return $query->where('campus_id', $campusId);
             });
     }
@@ -55,10 +56,10 @@ class SystemSetting extends Model
      /**
      * Static helper to quickly retrieve the raw decimal limit value.
      */
-    public static function getGlobalLimit(): float
+    public static function getGlobalLimit(?string $campusId = null): float
     {
         // Safely resolve the query builder scope, defaulting to 23000.00 if the DB row doesn't exist
-        $setting = self::annualLimit()->first();    
+        $setting = self::annualLimit($campusId)->first();   
         return $setting ? (float) $setting->setting_value : 23000.00; 
     }
 }
