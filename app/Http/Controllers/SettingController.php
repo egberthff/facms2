@@ -71,9 +71,13 @@ class SettingController extends Controller
             'campus_filter' => ['nullable', 'string'],
         ]);
     
-        if (! Auth::user()->can('view all campus data') && Auth::user()->getCachedCampusId() !== $setting->campus_id) {
-            abort(403);
-        }
+        $user = Auth::user();
+
+        $hasFullAccess = $user->can('view all campus data') 
+            || $user->hasAnyRole(['Federated President', 'Federated Treasurer']);
+        
+        abort_if(!$hasFullAccess && $user->getCachedCampusId() !== $setting->campus_id, 403);
+
     
         // 1. Calculate the current 2-year business cycle label dynamically
         $now = \Carbon\Carbon::now();

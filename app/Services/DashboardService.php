@@ -114,9 +114,10 @@ class DashboardService
 
         // If they have a claim this cycle, use its limit snapshot. 
         // Otherwise, dynamically pull the current active System Setting limit!
-        $baseLimit = $latestClaimInCycle 
-            ? (float) $latestClaimInCycle->annual_limit 
-            : SystemSetting::getGlobalLimit();
+        // $baseLimit = $latestClaimInCycle 
+        //     ? (float) $latestClaimInCycle->annual_limit 
+        //     : SystemSetting::getGlobalLimit();
+        $baseLimit = (float) SystemSetting::getGlobalLimit($user->member->campus_id);
 
         // --- STEP 5: AGGREGATE CLAIMS WITHIN THIS SPECIFIC LIFECYCLE WINDOW ---
         $claimsQuery = $member->claims()->where('submitted_at', '>=', $currentCycleStart);
