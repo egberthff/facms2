@@ -31,8 +31,8 @@ class DisbursementController extends Controller
         ];
 
         // $data['isPresident'] = Auth::user()->can('view all campus data') || Auth::user()->hasAnyRole(['President', 'Treasurer']);
-        $data['isPresident'] = Auth::user()->can('view all campus data');
-        dd($data['isPresident']); 
+        $data['isPresident'] = (Auth::user()->can('view all campus data') || Auth::user()->hasAnyRole(['Federated President', 'Federated Treasurer']));
+        // dd($data['isPresident']); 
         $selectedCampusId = $data['isPresident'] ? $filters['campus_filter'] : null;
 
         $data['disbursements'] = $this->disbursementService->getDisbursmentAll(array_merge($filters, ['campus_filter' => $selectedCampusId]));

@@ -1,6 +1,7 @@
 <x-app-layout>
    
-    @if(isset($isPresident) && $isPresident)
+    {{-- @if(isset($isPresident) && $isPresident) --}}
+    @if(Auth::user()->hasAnyRole(['Federated President', 'Federated Treasurer']) || Auth::user()->can('view all campus data'))
         <div class="p-6 bg-gray-50 dark:bg-zinc-800/40 rounded-xl border border-gray-200 dark:border-zinc-800/80 mb-6">
             <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>

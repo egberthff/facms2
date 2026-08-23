@@ -43,7 +43,7 @@ class AdminUserSeeder extends Seeder
                 'address' => 'N/A',
                 'gcash_number' => null,
                 'gcash_account_name' => null,
-                'campus_id' => '019f686b-6d20-711c-b538-433cb3f7b789',
+                'campus_id' => '019f686b-6d0e-7027-98a0-c16ed47b318a',
             ]
         );
 

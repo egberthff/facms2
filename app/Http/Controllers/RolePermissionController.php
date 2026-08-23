@@ -21,32 +21,42 @@ class RolePermissionController extends Controller
     //     ]);
     // }
 
-    public function index()
-    {
-        $user = Auth::user();
-    
-        $usersQuery = User::with('member.campus');
-        
-        $isFederated = $user->hasRole('Federated President');
-        $hasFullAccess = $isFederated || $user->can('view all campus data');
-    
-        if (!$hasFullAccess) {
-            $userCampusId = $user->member->campus_id ?? null;
-            
-            $usersQuery->whereHas('member', function ($query) use ($userCampusId) {
-                $query->where('campus_id', $userCampusId);
-            });
+    public function index() 
+    { 
+        $user = Auth::user(); 
+        $usersQuery = User::with('member.campus'); 
+        $isFederated = $user->hasRole('Federated President'); 
+        $hasFullAccess = $isFederated || $user->can('view all campus data'); 
+
+        if (!$hasFullAccess) { 
+            $userCampusId = $user->member->campus_id ?? null; 
+            $usersQuery->whereHas('member', function ($query) use ($userCampusId) { 
+                $query->where('campus_id', $userCampusId); 
+            }); 
+        } 
+
+        // Filter roles
+        $rolesQuery = Role::with('permissions');
+        if ($user->hasRole('President') && !$isFederated) {
+            $rolesQuery->whereIn('name', ['Member', 'Treasurer', 'President']);
         }
-    
-        // 4. Execute and return to view
-        return view('admin.roles-permissions.index', [
-            'allUsers'    => $usersQuery->get(),
-            'roles'       => Role::with('permissions')->get(),
-            'permissions' => Permission::all(),
-            'isFederated' => $isFederated
-        ]);
+
+        // Filter permissions
+        $permissionsQuery = Permission::query();
+        if ($user->hasRole('President') && !$isFederated) {
+            // Exclude the federated permission
+            $permissionsQuery->whereNotIn('name', ['view all campus data']);
+        }
+
+        // Execute and return to view 
+        return view('admin.roles-permissions.index', [ 
+            'allUsers' => $usersQuery->get(), 
+            'roles' => $rolesQuery->get(), 
+            'permissions' => $permissionsQuery->get(), 
+            'isFederated' => $isFederated 
+        ]); 
     }
-    
+
     // Process massive multi-role checkbox state updates synchronously - Roles based permission assignment
     public function syncMatrix(Request $request)
     {

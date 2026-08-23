@@ -14,7 +14,7 @@ class SettingController extends Controller
      */
     public function index(Request $request)
     {
-        $isPresident = Auth::user()->can('view all campus data') || Auth::user()->hasAnyRole(['President', 'Treasurer']);
+        $isPresident = Auth::user()->can('view all campus data') || Auth::user()->hasAnyRole(['Federated President', 'Federated Treasurer']);
         $selectedCampusId = $isPresident
             ? $request->input('campus_filter')
             : Auth::user()->getCachedCampusId();

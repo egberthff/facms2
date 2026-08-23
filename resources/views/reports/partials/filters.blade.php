@@ -39,6 +39,7 @@
 
             {{-- Campus --}}
 
+            @if(Auth::user()->hasAnyRole(['Federated President', 'Federated Treasurer']) || Auth::user()->hasPermissionTo('view all campus data'))
             <template
                 x-if="showFilter('campus')">
                 <div>
@@ -63,7 +64,9 @@
                     </select>
                 </div>
             </template>
+            @endif
 
+            {{-- Contribution Type --}}
             {{-- Member --}}
 
             <template
