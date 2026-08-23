@@ -11,6 +11,7 @@ use App\Models\PaymentMethod;
 use App\Models\ContributionBatch;
 use App\Models\ContributionDetail;
 use App\Models\ClaimPayment;
+use App\Models\Scopes\CampusMemberScope;
 use App\Enums\ClaimStatus;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
@@ -107,14 +108,14 @@ class ClaimService
     public function getClaimsForUser(User $user): Collection
     {
         $member = $user->member;
-
+        // $member->load('campus');
         // Return empty Eloquent collection instead of crashing if member doesn't exist
         if (!$member) {
             return new Collection();
         }
 
         return Claim::forMember($member->id)
-            ->with(['claimType', 'paymentMethod', 'reviewer', 'documents'])
+            ->with(['claimType', 'paymentMethod', 'reviewer', 'documents','member.campus'])
             ->latest('submitted_at')
             ->get();
     }
@@ -132,12 +133,26 @@ class ClaimService
         ];
     }
 
-    public function getAllClaims(): Collection
+    public function getAllClaims(?string $selectedCampusId = null): Collection
     {
-       return Claim::with(['claimType', 'paymentMethod', 'reviewer', 'documents'])
-            ->latest('submitted_at')
-            ->get();
-        
+        $query = Claim::with([
+            'claimType',
+            'paymentMethod',
+            'reviewer',
+            'documents',
+            'member' => function ($query) {
+                $query->withoutGlobalScope(CampusMemberScope::class);
+            },
+        ]);
+
+        if ($selectedCampusId) {
+            $query->whereHas('member', function ($query) use ($selectedCampusId) {
+                $query->withoutGlobalScope(CampusMemberScope::class)
+                    ->where('campus_id', $selectedCampusId);
+            });
+        }
+
+        return $query->latest('submitted_at')->get();
     }
 
      /**
@@ -308,6 +323,15 @@ class ClaimService
             DB::rollBack();
             throw $e; 
         }
+    }
+
+    public function getClaimType(?string $claimTypeId = null): Collection|ClaimType|null
+    {
+        if ($claimTypeId) {
+            return ClaimType::find($claimTypeId); 
+        }
+
+        return ClaimType::all()->where('is_active', TRUE);
     }
 
 }

@@ -20,3 +20,4 @@ require __DIR__.'/setting.php';
 require __DIR__.'/dashboard.php';
 require __DIR__.'/disbursement.php';
 require __DIR__.'/banking.php';
+require __DIR__.'/rolePermission.php';

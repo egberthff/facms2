@@ -2,6 +2,32 @@
 <div class="p-6 bg-gray-50 min-h-screen text-gray-800 font-sans"
     x-data="{ openModal: false, activeDisbursement: {} }"
     @close-modal.window="openModal = false">
+    {{-- @if($isPresident) --}}
+    @if(Auth::user()->hasAnyRole(['Federated Presidnent', 'Federated Treasurer']) || Auth::user()->can('view all campus data'))
+        <div class="p-6 bg-gray-50 dark:bg-zinc-800/40 rounded-xl border border-gray-200 dark:border-zinc-800/80 mb-6">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h4 class="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Campus Disbursement Filter</h4>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Filter ready-to-release disbursements by campus.</p>
+                </div>
+                <form method="GET" action="{{ url()->current() }}" class="flex items-center gap-2">
+                    <select name="campus_filter" onchange="this.form.submit()" class="text-sm rounded-lg bg-white dark:bg-zinc-900 border-gray-300 dark:border-zinc-700 text-gray-700 dark:text-gray-300 focus:ring-blue-500 focus:border-blue-500 min-w-[200px]">
+                        <option value="">All Campuses (Global View)</option>
+                        @foreach($allCampuses as $campus)
+                            <option value="{{ $campus->id }}" {{ ($selectedCampusId ?? '') == $campus->id ? 'selected' : '' }}>{{ $campus->acronym }}</option>
+                        @endforeach
+                    </select>
+                </form>
+            </div>
+            <div class="flex gap-3 overflow-x-auto mt-4 pb-2 scrollbar-none">
+                @foreach($allCampuses as $campus)
+                    <div class="shrink-0 bg-white dark:bg-zinc-900 px-3 py-1.5 rounded-lg border {{ ($selectedCampusId ?? '') == $campus->id ? 'border-blue-500 bg-blue-50/10' : 'border-gray-200 dark:border-zinc-800' }} text-xs">
+                        <span class="font-bold text-gray-500 dark:text-gray-400">{{ $campus->acronym }}</span>
+                    </div>
+                @endforeach
+            </div>
+        </div>
+    @endif
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-6">
         <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
@@ -9,7 +35,8 @@
                 <p class="text-sm text-gray-500 mt-1">Filter disbursements, search a specific record, and open the details in a modal.</p>
             </div>
             <form method="GET" action="{{ route('disbursement.index') }}" class="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
-                <div class="relative w-full sm:w-64">
+                <input type="hidden" name="campus_filter" value="{{ $selectedCampusId ?? '' }}">
+                {{-- <div class="relative w-full sm:w-64">
                     <input
                         type="search"
                         name="search"
@@ -19,7 +46,7 @@
                     <svg class="absolute left-3 top-2.5 h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35m1.35-5.65a7 7 0 11-14 0a7 7 0 0114 0z" />
                     </svg>
-                </div>
+                </div> --}}
                 <select name="year" class="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400">
                     <option value="">All years</option>
                     @foreach ($yearOptions as $year)
@@ -37,13 +64,21 @@
                     <option value="released" {{ ($filters['status'] ?? '') === 'released' ? 'selected' : '' }}>Released</option>
                     <option value="pending" {{ ($filters['status'] ?? '') === 'pending' ? 'selected' : '' }}>Pending</option>
                 </select>
+                @if($isPresident)
+                    <select name="campus_filter" class="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400">
+                        <option value="">All Campuses</option>
+                        @foreach($allCampuses as $campus)
+                            <option value="{{ $campus->id }}" {{ ($selectedCampusId ?? '') == $campus->id ? 'selected' : '' }}>{{ $campus->acronym }}</option>
+                        @endforeach
+                    </select>
+                @endif
                 <button type="submit" class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700">Apply</button>
                 <a href="{{ route('disbursement.index') }}" class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50">Reset</a>
             </form>
         </div>
 
         <div class="overflow-x-auto min-h-[240px]">
-            <table class="w-full text-left text-sm border-collapse">
+            <table class="dt-table w-full text-left text-sm border-collapse">
                 <thead>
                     <tr class="border-b border-gray-200 bg-gray-50 text-gray-500 font-semibold tracking-wider text-xs uppercase">
                         <th class="px-6 py-3">Ref#</th>

@@ -24,7 +24,7 @@ class DashboardService
             'disbursedClaims'=> Claim::disbursed()->count(),
             'rejectedClaims' => Claim::rejected()->count(),
             'totalClaims'    => Claim::count(),
-            'balance'        => number_format(1000000, 2),
+            'balance'        => (float) SystemSetting::where('setting_key', 'association_fund')->sum('setting_value'),
         ];
     }
 
@@ -48,12 +48,11 @@ class DashboardService
             ];
         }
 
-        // Replace these placeholders with actual queries when your database schema is ready
         return [
             'title'              => 'Main',
-            'totalClaims'        => $member->claims()->count(), 
-            'processing'         => $member->claims()->where('status', 'processing')->count(), // Example status query
-            'disbursed'          => $member->claims()->where('status', 'disbursed')->count(),  // Example status query
+            'totalClaims'        => $member->claims()->count(),
+            'processing'         => $member->claims()->where('status', 'Processing')->count(),
+            'disbursed'          => $member->claims()->where('status', 'Disbursed')->count(),
             'pending'            => $member->claims()->pending()->count(),
             'balance'            => $this->calculateMemberBalanceData($user)['actualBalance'],
             'recentTransactions' => $member->claims()->latest('submitted_at')->take(5)->get(),
@@ -115,9 +114,10 @@ class DashboardService
 
         // If they have a claim this cycle, use its limit snapshot. 
         // Otherwise, dynamically pull the current active System Setting limit!
-        $baseLimit = $latestClaimInCycle 
-            ? (float) $latestClaimInCycle->annual_limit 
-            : SystemSetting::getGlobalLimit();
+        // $baseLimit = $latestClaimInCycle 
+        //     ? (float) $latestClaimInCycle->annual_limit 
+        //     : SystemSetting::getGlobalLimit();
+        $baseLimit = (float) SystemSetting::getGlobalLimit($user->member->campus_id);
 
         // --- STEP 5: AGGREGATE CLAIMS WITHIN THIS SPECIFIC LIFECYCLE WINDOW ---
         $claimsQuery = $member->claims()->where('submitted_at', '>=', $currentCycleStart);

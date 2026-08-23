@@ -11,13 +11,13 @@
         <title>{{ config('app.name', 'FACMS') }}</title>
 
         <!-- Fonts -->
-        <link rel="preconnect" href="https://bunny.net">
+        {{-- <link rel="preconnect" href="https://bunny.net"> --}}
          <!-- Preconnect to speed up the DNS handshake -->
-        <link href="https://bunny.net" rel="stylesheet" />
+        {{-- <link href="https://bunny.net" rel="stylesheet" /> --}}
         {{-- <link href="https://bunny.net/css?family=figtree:400,500,600,700&display=swap" rel="stylesheet" /> --}}
-        <link href="https://cdn.jsdelivr.net/npm/flowbite@4.0.1/dist/flowbite.min.css" rel="stylesheet" />
+        {{-- <link href="https://cdn.jsdelivr.net/npm/flowbite@4.0.1/dist/flowbite.min.css" rel="stylesheet" /> --}}
 
-        <script src="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.3"></script>
+        {{-- <script src="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.3"></script> --}}
         <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js" integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
         <!-- Scripts -->
@@ -30,12 +30,13 @@
 
     {{-- Sidebar --}}
     {{-- <x-layout.sidebar /> --}}
-    @role('President|Treasurer')
+    {{-- @role('President|Federated President|Treasurer|Federated Treasurer')
     <x-sidebar/>
     @endrole
     @role("Member")
     <x-sidebar-member/>
-    @endrole
+    @endrole --}}
+    <x-sidebar-hybrid/>
     {{-- Main Content --}}
     <div class="flex-1 flex flex-col lg:ml-64">
 
@@ -44,7 +45,7 @@
         <x-topbar/>
 
         {{-- Main Content --}}
-        <main class="flex-1 p-6">
+        <main class="flex-1 p-2">
 
             {{ $slot }}
 

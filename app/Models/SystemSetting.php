@@ -19,6 +19,8 @@ class SystemSetting extends Model
         'setting_key',
         'setting_value',
         'description',
+        'campus_id',
+        'cycle_label'
     ];
 
         /*
@@ -31,21 +33,33 @@ class SystemSetting extends Model
     //     return 'id';
     // }
 
+    // 
+    // /Relationships
+    // /*
+    public function campus(){
+        return $this->belongsTo(Campus::class);
+    }
+
     /**
      * Scope to filter down to the annual limit row.
      */
-    public function scopeAnnualLimit($query)
+    public function scopeAnnualLimit($query, ?string $campusId = null)
     {
-        return $query->where('setting_key', 'annual_claim_limit');
+
+        return $query->where('setting_key', 'annual_claim_limit')
+                     ->where('cycle_label', null)
+                     ->when($campusId, function ($query, $campusId) {
+                return $query->where('campus_id', $campusId);
+            });
     }
 
      /**
      * Static helper to quickly retrieve the raw decimal limit value.
      */
-    public static function getGlobalLimit(): float
+    public static function getGlobalLimit(?string $campusId = null): float
     {
         // Safely resolve the query builder scope, defaulting to 23000.00 if the DB row doesn't exist
-        $setting = self::annualLimit()->first();
-        return $setting ? (float) $setting->setting_value : 23000.00;
+        $setting = self::annualLimit($campusId)->first();   
+        return $setting ? (float) $setting->setting_value : 23000.00; 
     }
 }

@@ -16,13 +16,14 @@ class ContributionDetailsPolicy
     {
         // return false;
 
-        if ($user->hasRole([
+        if ($user->hasAnyRole([
             'President',
             'Treasurer'
         ])){
             return true;
-        }else{
-            return $user->hasRole('Member') && $user->id === Auth::user()->id;
+        } else {
+            // Member check: compare against the configured primary key
+            return $user->hasRole('Member') && $user->user_id === Auth::id();
         }
     }
 

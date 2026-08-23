@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate; 
 use Illuminate\Http\JsonResponse;
+use App\Models\Campus;
 
 use Illuminate\Support\Str;
 use App\Http\Requests\StoreClaimRequest;
@@ -35,11 +36,20 @@ class ClaimController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-       $data['claims'] = $this->claimService->getAllClaims();
+        $user = Auth::user();
+        $data['isPresident'] = $user->can('view all campus data') || $user->hasAnyRole(['President', 'Treasurer']);
+        $selectedCampusId = $data['isPresident'] ? $request->input('campus_filter') : null;
 
-       return view('claims.claims-list', $data);
+        $data['claims'] = $this->claimService->getAllClaims($selectedCampusId);
+
+        if ($data['isPresident']) {
+            $data['allCampuses'] = Campus::where('is_active', true)->get();
+            $data['selectedCampusId'] = $selectedCampusId;
+        }
+
+        return view('claims.claims-list', $data);
     }
 
     /**
@@ -137,9 +147,22 @@ class ClaimController extends Controller
 
     public function myClaims(User $user)
     {
+    //      dd(
+    //     $user->member()->toSql(), 
+    //     $user->member()->getBindings(),
+    //     $user->user_id
+    // );
+        // dd($user);
         Gate::authorize('viewMyClaims', [Claim::class, $user]);
-
+        $user->load(['member']); 
         $data['claims'] = $this->claimService->getClaimsForUser($user);
+        // dd($data['claims']);   
+        $data['isPresident'] = Auth::user()->can('view all campus data') || Auth::user()->hasAnyRole(['President', 'Treasurer']);
+
+        if ($data['isPresident']) {
+            $data['allCampuses'] = Campus::where('is_active', true)->get();
+            $data['selectedCampusId'] = null;
+        }
 
         return view('claims.claims-list', $data);
     }

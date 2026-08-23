@@ -13,7 +13,8 @@ class ContributionBatchPolicy
      */
     public function viewAny(User $user): bool
     {
-        return false;
+        // Allow users with the explicit permission or leadership roles
+        return $user->can('view all contribution') || $user->hasAnyRole(['President', 'Treasurer']);
     }
 
     /**
@@ -21,7 +22,7 @@ class ContributionBatchPolicy
      */
     public function view(User $user, ContributionBatch $contributionBatch): bool
     {
-        return false;
+        return $user->can('view all contribution') || $user->hasAnyRole(['President', 'Treasurer']);
     }
 
     /**

@@ -1,19 +1,12 @@
-<?php
-
-return [
-
+<?php return [
     /*
     |--------------------------------------------------------------------------
     | Sidebar Navigation
     |--------------------------------------------------------------------------
     */
-
     [
-
         'title' => 'Dashboard',
-
         'items' => [
-
             [
                 'label' => 'Main',
                 'route' => 'dashboard',
@@ -26,38 +19,29 @@ return [
                     'Auditor',
                 ],
             ],
-
         ],
-
     ],
-
     [
-
         'title' => 'Claims',
-
         'items' => [
-
             [
                 'label' => 'Submit Claim',
                 // 'route' => 'claims.create',
                 'route' => 'dashboard',
                 'roles' => ['Member'],
             ],
-
             [
                 'label' => 'My Claims',
                 // 'route' => 'claims.my',
                 'route' => 'dashboard',
                 'roles' => ['Member'],
             ],
-
             [
                 'label' => 'Balance',
                 // 'route' => 'balance.index',
                 'route' => 'dashboard',
                 'roles' => ['Member'],
             ],
-
             [
                 'label' => 'All Claims',
                 // 'route' => 'claims.index',
@@ -69,7 +53,6 @@ return [
                     'Auditor',
                 ],
             ],
-
             [
                 'label' => 'Disbursement',
                 // 'route' => 'disbursement.index',
@@ -78,17 +61,11 @@ return [
                     'Treasurer',
                 ],
             ],
-
         ],
-
     ],
-
     [
-
         'title' => 'Reports',
-
         'items' => [
-
             [
                 'label' => 'My Reports',
                 // 'route' => 'reports.my',
@@ -97,7 +74,6 @@ return [
                     'Member',
                 ],
             ],
-
             [
                 'label' => 'Reports',
                 // 'route' => 'reports.index',
@@ -109,17 +85,11 @@ return [
                     'Auditor',
                 ],
             ],
-
         ],
-
     ],
-
     [
-
         'title' => 'Management',
-
         'items' => [
-
             [
                 'label' => 'Members',
                 // 'route' => 'members.index',
@@ -129,42 +99,26 @@ return [
                     'Treasurer',
                 ],
             ],
-
             [
-                'label' => 'Banking',
-                // 'route' => 'banking.index',
-                'route' => 'dashboard',
+                'label' => 'Users',
+                'route' => 'users.index',
                 'roles' => [
+                    'President',
                     'Treasurer',
+                    'Finance Partner',
+                    'Campus President',
                 ],
             ],
-
-        ],
-
-    ],
-
-    [
-
-        'title' => 'Settings',
-
-        'items' => [
-
             [
                 'label' => 'Settings',
-                // 'route' => 'settings.index',
-                'route' => 'dashboard',
+                'route' => 'settings.index',
                 'roles' => [
-                    'Member',
                     'President',
-                    'Vice President',
-                    'Secretary',
                     'Treasurer',
-                    'Auditor',
+                    'Finance Partner',
+                    'Campus President',
                 ],
             ],
-
         ],
-
     ],
-
 ];

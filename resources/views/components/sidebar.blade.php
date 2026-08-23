@@ -99,12 +99,21 @@
                 Management
             </div>
             <ul class="space-y-2">
-                @role('President|Treasurer')
+                @role('President|Treasurer|Federated President|Federated Treasurer')
                 <li>
                     <a href="{{ route('members.index') }}"
                         class="flex items-center p-3 rounded-lg text-white hover:bg-slate-700">
                         <x-heroicon-o-users class="w-5 h-5"/>
                         <span class="ml-3">Members</span>
+                    </a>
+                </li>
+                @endrole
+                @role('President|Federated President' )
+                <li>
+                    <a href="{{ route('admin.permissions.index') }}"
+                        class="flex items-center p-3 rounded-lg text-white hover:bg-slate-700">
+                        <x-heroicon-o-shield-exclamation class="w-5 h-5"/>
+                        <span class="ml-3">Roles & Permissions</span>
                     </a>
                 </li>
                 @endrole
@@ -116,7 +125,7 @@
                     </a>
                 </li>
                 <li>
-                    <a href="#"
+                    <a href="{{ route('reports.index') }}"
                         class="flex items-center p-3 rounded-lg text-white hover:bg-slate-700">
                         <x-heroicon-o-chart-bar class="w-5 h-5"/>
                         <span class="ml-3">Reports</span>
@@ -131,10 +140,20 @@
         <div>
             <ul class="space-y-2">
                 <li>
-                    <a href="#"
-                        class="flex items-center p-3 rounded-lg text-white hover:bg-slate-700">
+                    <a href="{{ route('settings.index') }}"
+                        class="flex items-center p-3 rounded-lg transition
+                        {{ request()->routeIs('settings.*')
+                            ? 'bg-slate-700 text-white'
+                            : 'text-white hover:bg-slate-700' }}">
+
                         <x-heroicon-o-cog-6-tooth class="w-5 h-5"/>
-                        <span class="ml-3">Settings</span>
+
+                        <span class="ml-3">
+
+                            Settings
+
+                        </span>
+
                     </a>
                 </li>
             </ul>

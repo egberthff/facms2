@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Models\Member;
+use App\Models\Campus;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -38,9 +39,12 @@ class MemberController extends Controller
     public function index(Request $request)
     {
         $data['title'] = "Members List";
+        $data['isPresident'] = Auth::user()->can('view all campus data') || Auth::user()->hasAnyRole(['President', 'Treasurer']);
+        $data['allCampuses'] = Campus::where('is_active', true)->get();
+        $data['selectedCampusId'] = $data['isPresident'] ? $request->input('campus_filter') : null;
 
         $data['campuses'] = $this->memberService->getCampus();
-        $data['members'] = $this->memberService->getMembers($request);
+        $data['members'] = $this->memberService->getMembers($request, $data['selectedCampusId']);
 
         return view('members.index',  $data);
     }
@@ -52,6 +56,37 @@ class MemberController extends Controller
     {
         $data['campuses'] = $this->memberService->getCampus();
         return view('members.create', $data);
+    }
+
+    /**
+     * Store member through CSV
+     */
+    public function storeCSV(Request $request, MemberService $memberService): JsonResponse
+    {
+        try {
+            // Only pass $request since the service handles the logic
+            $members = $memberService->createMemberCSV($request);
+    
+            return response()->json([
+                'status' => 200,
+                'message' => 'Members Added Successfully',
+                'members' => $members, // Pluralized since it's a batch collection
+            ], 200);
+        } catch (Exception $e) {
+            // Safe input logging that won't crash on standard Requests
+            $logInput = $request->except(['password', 'member_csv_file']);
+    
+            Log::error('Member CSV creation failed: ' . $e->getMessage(), [
+                'input' => $logInput,
+                'trace' => $e->getTraceAsString()
+            ]);
+    
+            return response()->json([
+                'status' => 500,
+                'message' => "Failed to create members from CSV. The operation was safely rolled back.",
+                'error' => app()->environment('local', 'testing') ? $e->getMessage() : 'Internal Server Error'
+            ], 500);
+        }
     }
 
     /**

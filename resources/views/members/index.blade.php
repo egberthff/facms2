@@ -1,11 +1,38 @@
 <x-app-layout>
    
-    <div class="p-4 bg-white border border-blue-200 rounded-xl shadow-sm dark:bg-gray-900 dark:border-gray-800">
+    {{-- @if(isset($isPresident) && $isPresident) --}}
+    @if(Auth::user()->hasAnyRole(['Federated President', 'Federated Treasurer']) || Auth::user()->can('view all campus data'))
+        <div class="p-6 bg-gray-50 dark:bg-zinc-800/40 rounded-xl border border-gray-200 dark:border-zinc-800/80 mb-6">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h4 class="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Campus Member Filter</h4>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Filter members by campus for leadership review.</p>
+                </div>
+                <form method="GET" action="{{ route('members.index') }}" class="flex items-center gap-2">
+                    <select name="campus_filter" onchange="this.form.submit()" class="text-sm rounded-lg bg-white dark:bg-zinc-900 border-gray-300 dark:border-zinc-700 text-gray-700 dark:text-gray-300 focus:ring-blue-500 focus:border-blue-500 min-w-52">
+                        <option value="">All Campuses (Global View)</option>
+                        @foreach($allCampuses as $campus)
+                            <option value="{{ $campus->id }}" {{ ($selectedCampusId ?? '') == $campus->id ? 'selected' : '' }}>{{ $campus->acronym }}</option>
+                        @endforeach
+                    </select>
+                </form>
+            </div>
+            <div class="flex gap-3 overflow-x-auto mt-4 pb-2 scrollbar-none">
+                @foreach($allCampuses as $campus)
+                    <div class="shrink-0 bg-white dark:bg-zinc-900 px-3 py-1.5 rounded-lg border {{ ($selectedCampusId ?? '') == $campus->id ? 'border-blue-500 bg-blue-50/10' : 'border-gray-200 dark:border-zinc-800' }} text-xs">
+                        <span class="font-bold text-gray-500 dark:text-gray-400">{{ $campus->acronym }}</span>
+                    </div>
+                @endforeach
+            </div>
+        </div>
+    @endif
+
+    <div class="p-4 bg-white border border-blue-200 rounded-xl shadow-sm ">
         <div class="flex justify-between items-center mb-4 w-full p-2">
             <!-- Left End: Filter Dropdown -->
-            <div class="flex items-center">
+            <div class="flex items-center bg-blue-100 border border-blue-300 rounded-xl">
                 <label for="member-status-filter" class="sr-only">Filter by Status</label>
-                <select id="member-status-filter" class="bg-slate-700 text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
+                <select id="member-status-filter" class=" text-black text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
                     <option value="">All Members</option>
                     <option value="Active" selected>Active Members</option>
                     <option value="Inactive">Inactive Members</option>
@@ -13,7 +40,17 @@
             </div>  
 
             <!-- Right End: Add Action -->
-            <div class="flex">  
+            <div class="flex gap-2">  
+                <x-button
+                    id="add-new-member-btn-csv"
+                    type="button"
+                    class="add-new-member-btn-csv btn-warning bg-amber-500 hover:bg-brand-strong text-white focus:ring-4 focus:ring-brand-medium shadow-xs font-medium leading-5 rounded-base text-sm px-4 py-2.5 focus:outline-none transition-colors" 
+                    data-action="add-new-member-csv"
+                    data-modal-target="member-modal-csv" 
+                    data-modal-toggle="member-modal-csv">
+                        Upload CSV
+                </x-button>
+
                  <x-button
                     id="add-new-member-btn"
                     type="button" 
@@ -22,7 +59,7 @@
                     data-modal-target="member-modal" 
                     data-modal-toggle="member-modal">
                         Add New Member
-                    </x-button>
+                </x-button>
             </div>
         </div>
 
@@ -47,24 +84,12 @@
             //Members Table Initialization
             const tableElement = document.getElementById("members-table");
             if (tableElement && typeof simpleDatatables.DataTable !== 'undefined') {
-                const dataTable = new simpleDatatables.DataTable("#members-table", {
-                    searchable: true,
-                    paging: true,
-                    perPage: 5,
-                    perPageSelect: [5, 10, 15, 20, -1], 
-                    sortable: true, 
-                    labels: { 
-                        placeholder: "Search components...",
-                        perPage: "Entries per page",
-                        noRows: "No entries found",
-                        info: "Showing {start} to {end} of {rows} entries"
-                    }
-                });
                 document.getElementById('member-status-filter').addEventListener('change', function(e) {
                     const selectedValue = e.target.value;
     
                         // If 'All Members' is selected, value is "". It resets the visible dataset rows.
-                        dataTable.search(selectedValue);
+                        // const dataTable = event.target.closest('[class="dt-table"]')
+                        tableElement.dataTableInstance.search(selectedValue);
                         });
 
                 // Attach a single listener to the entire table wrapper
@@ -350,6 +375,35 @@
 
         });
 
+        function handleFormSubmitCSV(event) {
+            event.preventDefault();
+            const form = event.target;
+            const formData = new FormData(form);
+
+            $.ajax({
+                url: "members/add-new-member-csv",
+                method: form.method,
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(response) {
+                    if( response.status === 200 ) {
+                        Swal.file({
+                            icon: "success",
+                            title: "Success",
+                            text: response.message,
+                            showConfirmButton: true,
+                        }).then(() => {
+                            form.reset();
+                            $("#member-modal-csv").prop(false);
+                            window.location.reload();
+                        })
+                    }
+                }
+            });
+
+        }
+
         //Function to handle form submission via AJAX
         function handleFormSubmit(event) {
             event.preventDefault(); // Prevent the default form submission
@@ -382,7 +436,6 @@
                     // Optionally, display an error message to the user
                 }
             });
-            // Here you can add your AJAX request or any other logic to handle the form submission
         }
         
     </script>

@@ -20,7 +20,10 @@ class StoreClaimRequest extends FormRequest
     public function authorize(): bool
     {
         // return false;
-        return Auth::user()->hasRole('Member');
+        // return Auth::user()->hasRole('Member');
+        // $this->authorize('create claims', Claim::class);
+        return Auth::user()->can('create claims');
+
     }
 
     /**

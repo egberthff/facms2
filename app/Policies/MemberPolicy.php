@@ -26,8 +26,7 @@ class MemberPolicy
     public function view(User $user, Member $member): bool
     {
         // return false;
-        return $user->hasRole('President')
-        || $user->hasRole('Treasurer')
+        return $user->hasAnyRole(['President', 'Treasurer'])
         || $user->member?->id === $member->id;
     }
 
@@ -36,7 +35,7 @@ class MemberPolicy
      */
     public function create(User $user): bool
     {
-       return $user->hasRole('President');
+         return $user->hasRole('President');
     }
 
     /**

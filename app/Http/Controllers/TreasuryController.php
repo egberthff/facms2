@@ -33,7 +33,7 @@ class TreasuryController extends Controller
         $user = Auth::user();
         $selectedCampusId = $request->input('campus_filter');
         // 1. Check permissions and return the appropriate service payload
-        if ($user->hasRole('president') || $user->can('view all campus data')) {
+        if ($user->can('view all campus data') || $user->hasAnyRole(['Federated President', 'Federated Treasurer'])) {
             $data = $this->treasuryService->getPresidentialMetrics(
                 $request->input('campus_filter')
             );
