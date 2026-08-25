@@ -9,6 +9,7 @@ use App\Models\Campus;
 use App\Models\Scopes\CampusMemberScope;
 use App\Models\ContributionBatch;
 use App\Models\ContributionDetail;
+use App\Models\AnnualContribution;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\Eloquent\Collection;
@@ -142,7 +143,7 @@ class ContributionService
      */
     public function getClaimsContributionData(?string $selectedCampusId = null): array
     {
-        $isPresident = Auth::user()->can('view all campus data') || Auth::user()->hasAnyRole(['President', 'Treasurer']);
+        $hasFullAccess = Auth::user()->can('view all campus data') || Auth::user()->hasAnyRole(['President', 'Treasurer']);
         // 1. Prepare base query builder instance
         $query = ContributionBatch::with([
             'claim.member', 
@@ -151,7 +152,7 @@ class ContributionService
         ]);
 
         // 2. Apply Presidential Campus Filter logic
-        if ($isPresident) {
+        if ($hasFullAccess) {
             // Bypass Laravel Global Scopes if viewing global multi-campus matrix
             $query->withoutGlobalScope(CampusMemberScope::class);
             
@@ -195,9 +196,9 @@ class ContributionService
 
         // 4. Return clean, raw view value payloads
         return [
-            'isPresident'      => $isPresident,
+            'isPresident'      => $hasFullAccess,
             'selectedCampusId' => $selectedCampusId,
-            'allCampuses'   => Campus::where('is_active', true)->get(), // Reused your variable naming structure for alignment 
+            'allCampuses'      => Campus::where('is_active', true)->get(), // Reused your variable naming structure for alignment 
             'batches'          => $batches->values()->all(),
         ];
     }
@@ -209,17 +210,14 @@ class ContributionService
      */
     public function getAnnualContributionData(?string $selectedCampusId = null): array
     {
-        // Pro-Tip: You can extract the common $allCampuses query logic into a private 
-        // service helper method to avoid duplicating it across these two functions!
-        // $allCampuses = $this->getAllCampusesWithBalances(); 
-        // $allCampuses = []; 
+        $hasFullAccess = Auth::user()->can('view all campus data') || Auth::user()->hasAnyRole(['President', 'Treasurer']);
+        $batches = AnnualContribution::with(['claim.member.campus', 'details']);
 
-        // Build out your annual structural arrays here...
         return [
-            'isPresident' => true,
-            // 'allCampuses' => $allCampuses,
-            // 'filteredCampuses' => $selectedCampusId ? $allCampuses->where('id', $selectedCampusId) : $allCampuses,
-            // ... include totalGlobalBalance, currentBalance, entries, etc.
+            'isPresident' => $hasFullAccess,
+            'selectedCampusId' => $selectedCampusId,
+            'allCampuses' => Campus::where('is_active', true)->get(),
+            'batches'     => $batches->values->all(),  
         ];
     }
 

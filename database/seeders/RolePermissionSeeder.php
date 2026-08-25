@@ -20,7 +20,7 @@ class RolePermissionSeeder extends Seeder
             'create claims',
             'update claims',
             'review claims',
-            'view disbursment',
+            'view disbursement',
             'view own contribution',
             'view all contribution',
             'update disbursement',
@@ -68,7 +68,8 @@ class RolePermissionSeeder extends Seeder
             'view campus treasury',
             'view ledger',
             'view campus treasury',
-            'view reports'
+            'view reports',
+            'view disbursement'
 
         ]);
 
@@ -87,7 +88,8 @@ class RolePermissionSeeder extends Seeder
             'view ledger',
             'view campus treasury',
             'view reports',
-            'view all campus data'
+            'view all campus data',
+            'view disbursement'
         ]);
 
         //Presudent can do everythin on its scoped campus - campus president

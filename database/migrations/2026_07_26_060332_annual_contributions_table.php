@@ -14,8 +14,8 @@ return new class extends Migration
         Schema::create('annual_contributions', function (Blueprint $table) {
             $table->uuid('id')->primary();
 
-            // Human-readable transaction reference
-            $table->string('reference_number')->unique();
+            // Human-readable transaction reference code for this transaction
+            $table->string('reference_number')->unique()->description("Human-readable transaction reference code for this record");
 
             // Relationships
             $table->foreignUuid('member_id')
@@ -26,6 +26,8 @@ return new class extends Migration
                 ->nullable()
                 ->constrained('payment_methods', 'id')
                 ->nullOnDelete();
+
+            $table->string('payment_reference_number')->default(null)->description('Reference number from the payment gateway or bank transaction');    
 
             // Tracking the specific year this payment covers
             $table->year('contribution_year');
