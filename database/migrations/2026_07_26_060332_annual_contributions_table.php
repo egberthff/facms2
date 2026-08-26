@@ -27,7 +27,7 @@ return new class extends Migration
                 ->constrained('payment_methods', 'id')
                 ->nullOnDelete();
 
-            $table->string('payment_reference_number')->default(null)->description('Reference number from the payment gateway or bank transaction');    
+            $table->string('payment_reference_number')->nullable()->description('Reference number from the payment gateway or bank transaction');    
 
             // Tracking the specific year this payment covers
             $table->year('contribution_year');

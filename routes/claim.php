@@ -27,6 +27,7 @@ Route::middleware(['auth', 'active'])
         Route::get('claims/list', [ClaimController::class, 'index'])
             ->middleware('can:viewAny,App\\Models\\Claim')
             ->name('claim.list');
+
     });
 
 

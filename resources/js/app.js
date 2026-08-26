@@ -166,7 +166,7 @@ window.markContributionAsPaid = function(detailId) {
 
     Swal.fire({
         title: 'Mark as paid?',
-        text: 'This will override the selected contribution detail to Paid.',
+        text: 'This will mark the selected contribution detail to Paid.',
         icon: 'warning',
         showCancelButton: true,
         confirmButtonColor: '#2563eb',
@@ -246,4 +246,127 @@ window.markContributionAsPaid = function(detailId) {
                 console.error(error);
             });
         }
+
+    /**
+    * Processes and submits the Annual Contribution Batch Setup Form.
+    * @param {HTMLFormElement} formElement - The submitted form DOM reference.
+    */
+    window.sendAnnualContributionBatchSetup = function(formElement) {
+        // 1. Prevent native page refresh reload
+        if (window.event) window.event.preventDefault();
+    
+        // 2. Extract input values directly from Form Data
+        const formData = new FormData(formElement);
+        const contributionYear = formData.get('contributionYear'); 
+        
+        // 3. Fallback Client-side Sanity Check Validation
+        const parsedYear = parseInt(contributionYear, 10);
+    
+        if (!contributionYear || isNaN(parsedYear) || parsedYear < 2000 || parsedYear > 2099) {
+            Swal.fire({
+                icon: 'widthdraw', // or 'error'
+                title: 'Invalid Year',
+                text: 'Please enter a valid 4-digit setup year between 2000 and 2099.',
+                confirmButtonColor: '#3b82f6'
+            });
+            return false;
+        }
+    
+        // 4. Prompt SweetAlert2 Confirmation Modal Before Submitting
+        Swal.fire({
+            title: 'Are you sure?',
+            text: `You are about to initialize the batch setup configuration for the year ${parsedYear}.`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#2563eb', // Tailwind bg-blue-600
+            cancelButtonColor: '#6b7280',  // Tailwind bg-gray-500
+            confirmButtonText: 'Yes, start setup!',
+            cancelButtonText: 'Cancel'
+        }).then((result) => {
+            // If user cancelled, drop execution context gracefully
+            if (!result.isConfirmed) return;
+    
+            // 5. Visual loading state feedback (Button Spinner + Swal Loading Screen)
+            const submitBtn = formElement.querySelector('button[type="submit"]');
+            let originalBtnText = '';
+            
+            if (submitBtn) {
+                originalBtnText = submitBtn.innerHTML;
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = `
+                    <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline-block" xmlns="http://w3.org" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                    Processing...
+                `;
+            }
+    
+            Swal.fire({
+                title: 'Generating Batch Setup',
+                text: 'Please wait while the system processes the annual configurations...',
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+    
+            // 6. Send Network Request to your Laravel Destination
+            fetch(formElement.action, {
+                method: formElement.method,
+                body: formData,
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                    'Accept': 'application/json'
+                }
+            })
+            .then(async (response) => {
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.message || 'Something went wrong during form initialization.');
+                }
+    
+                // 7. Success State Execution UI Updates
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Success!',
+                    text: data.message || `Annual batch setup for ${parsedYear} has been generated successfully.`,
+                    confirmButtonColor: '#2563eb'
+                }).then(() => {
+                    // Safely close Alpine modal overlay using element references
+                    if (typeof Alpine !== 'undefined') {
+                        const alpineContainer = formElement.closest('[x-data]');
+                        if (alpineContainer) {
+                            // Works for Alpine v3 ($data) and v2 (__x) configurations
+                            const dataStore = alpineContainer.__x ? alpineContainer.__x.$data : Alpine.$data(alpineContainer);
+                            if (dataStore) {
+                                dataStore.openAnnualContributionSetupModal = false;
+                                dataStore.contributionYear = ''; 
+                            }
+                        }
+                    }
+                    
+                    // Optional: window.location.reload(); 
+                });
+            })
+            .catch((error) => {
+                // 8. Error/Exception Handling Notification Output
+                console.error('Submission Error:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Setup Failed',
+                    text: error.message || 'Network connectivity fault or system error. Please try again.',
+                    confirmButtonColor: '#ef4444' // Tailwind bg-red-500
+                });
+            })
+            .finally(() => {
+                // 9. Reset button UI state context values
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalBtnText;
+                }
+            });
+        });
+    };
+    
+        
     
