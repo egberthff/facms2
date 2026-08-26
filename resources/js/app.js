@@ -247,26 +247,38 @@ window.markContributionAsPaid = function(detailId) {
             });
         }
 
-    /**
-    * Processes and submits the Annual Contribution Batch Setup Form.
-    * @param {HTMLFormElement} formElement - The submitted form DOM reference.
-    */
+    // /**
+    // * Processes and submits the Annual Contribution Batch Setup Form.
+    // * @param {HTMLFormElement} formElement - The submitted form DOM reference.
+    // */
     window.sendAnnualContributionBatchSetup = function(formElement) {
         // 1. Prevent native page refresh reload
         if (window.event) window.event.preventDefault();
     
         // 2. Extract input values directly from Form Data
         const formData = new FormData(formElement);
-        const contributionYear = formData.get('contributionYear'); 
+        const contributionYear = formData.get('contribution_year'); 
+        const campusFilter = formData.get('campus_filter');
+        const isFederatedUser = formElement.getAttribute('data-user-is-federated') === 'true';
         
         // 3. Fallback Client-side Sanity Check Validation
         const parsedYear = parseInt(contributionYear, 10);
     
         if (!contributionYear || isNaN(parsedYear) || parsedYear < 2000 || parsedYear > 2099) {
             Swal.fire({
-                icon: 'widthdraw', // or 'error'
+                icon: 'error', // or 'error'
                 title: 'Invalid Year',
                 text: 'Please enter a valid 4-digit setup year between 2000 and 2099.',
+                confirmButtonColor: '#3b82f6'
+            });
+            return false;
+        }
+
+         if (isFederatedUser && (!campusFilter || campusFilter.trim() === '')) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Campus Filter Required',
+                text: 'Please select a campus filter before proceeding.',
                 confirmButtonColor: '#3b82f6'
             });
             return false;

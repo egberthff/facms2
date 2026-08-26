@@ -98,6 +98,7 @@
         {{-- Modal details for each contribution row --}}
         @include('contributions.partials.admin-modal-details')
 
+        {{-- Modal for Annual Contribution Setup --}}
         @include('contributions.partials.admin-annual-contribution-setup')
         
     </div>

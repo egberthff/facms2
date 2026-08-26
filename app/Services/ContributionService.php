@@ -10,11 +10,13 @@ use App\Models\Scopes\CampusMemberScope;
 use App\Models\ContributionBatch;
 use App\Models\ContributionDetail;
 use App\Models\AnnualContribution;
+use App\Models\SystemSetting;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Str;
 use Exception;
 
 class ContributionService
@@ -64,20 +66,34 @@ class ContributionService
     }
 
     /**
-     * Genereat annual contribution batch record
+     * Generate annual contribution batch record
      */
     public function generateAnnualContributionsBatch(int $year, ?string $campus_filter = null): array
     {
-        return DB::transaction(function () use ($year) {
+        if(blank($year) || $year < 2000 || $year > (now()->year + 1)) {
+            throw new Exception("Invalid year provided for annual contribution generation.");
+        }
+        if (blank($campus_filter)) {
+            // Bulletproof fallback: drops back to null safely if relationships don't exist
+            $campus_filter = Auth::user()->member?->campus?->id;
+        }
+
+        return DB::transaction(function () use ($year, $campus_filter) {
 
             // 1. Strict Fetch for the setup configuration
-            $setting = SystemSetting::where('settings_key', 'annual_contribution')
-                ->where(function($query) use ($year) {
-                    $query->where('cycle_label', (string) $year)
-                          ->orWhereNull('cycle_label');
-                })
-                ->orderByRaw('cycle_label DESC NULLS LAST') 
-                ->first();
+           $setting = SystemSetting::where('setting_key', 'annual_contribution')
+            ->where(function($query) use ($year) {
+                $query->where('cycle_label', (string) $year)
+                      ->orWhereNull('cycle_label');
+            })
+            // FIX: Dynamically appends campus filtering if $campus_filter is not null
+            ->when($campus_filter, function($query, $campus_filter) {
+                return $query->where('campus_id', $campus_filter); 
+            })
+            // MySQL-compatible alternative to NULLS LAST
+            ->orderByRaw('cycle_label IS NULL ASC') 
+            ->orderByDesc('cycle_label')
+            ->first();
 
             // 2. Clear, actionable error message instead of a hardcoded fallback
             if (!$setting) {
@@ -88,10 +104,13 @@ class ContributionService
                 );
             }
 
-            $fixedAmount = (float) $setting->setting_value; 
+            $fixedAmount = (float) $setting->setting_value;
 
             // 3. Fetch active members who do not have records yet for this year
-            $membersToProcess = Member::where('status', 'active')
+            $membersToProcess = Member::where('membership_status', 'active')
+                ->when($campus_filter, function($query, $campus_filter) {
+                    return $query->where('campus_id', $campus_filter); 
+                })
                 ->whereDoesntHave('annualContributions', function ($query) use ($year) {
                     $query->where('contribution_year', $year);
                 })->get();

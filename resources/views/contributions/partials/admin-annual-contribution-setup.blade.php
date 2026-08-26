@@ -31,27 +31,27 @@
 
             <!-- Modal Form Body -->
             <form class="mt-4 space-y-4" method="POST" action="{{ route('contributions.create') }}"
-                onSubmit="sendAnnualContributionBatchSetup(this)">
+                onSubmit="sendAnnualContributionBatchSetup(this)"
+                data-user-is-federated="{{ Auth::user()->hasAnyRole(['Federated President', 'Federated Treasurer']) || Auth::user()->hasPermissionTo('view all campus data') ? 'true' : 'false' }}">
                 <div>
-                    <label class="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1">
+                    @if(Auth::user()->hasAnyRole(['Federated President', 'Federated Treasurer']) || Auth::user()->hasPermissionTo('view all campus data'))
+                        {{-- <div class="flex items-center gap-2"> --}}
+                            <select name="campus_filter" class="text-sm rounded-lg bg-white dark:bg-zinc-900 border-gray-300 dark:border-zinc-700 text-gray-700 dark:text-gray-300 focus:ring-blue-500 focus:border-blue-500 min-w-[200px]">
+                                <option value="">-- Select Campus --</option>
+                                @foreach($allCampuses as $campus)
+                                    <option value="{{ $campus->id }}" {{ $selectedCampusId == $campus->id ? 'selected' : '' }}>
+                                        {{ $campus->acronym }}                                        </option>
+                                @endforeach
+                            </select>
+                        {{-- </div> --}}
+                    @endif
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1 mt-1">
                         Setup Year
                     </label>
                     <div class="relative mt-1">
-                        @if(Auth::user()->hasAnyRole(['Federated President', 'Federated Treasurer']) || Auth::user()->hasPermissionTo('view all campus data'))
-                            {{-- <div class="flex items-center gap-2"> --}}
-                                <select name="campus_filter" class="text-sm rounded-lg bg-white dark:bg-zinc-900 border-gray-300 dark:border-zinc-700 text-gray-700 dark:text-gray-300 focus:ring-blue-500 focus:border-blue-500 min-w-[200px]">
-                                    <option value="">All Campuses (Global View)</option>
-                                    @foreach($allCampuses as $campus)
-                                        <option value="{{ $campus->id }}" {{ $selectedCampusId == $campus->id ? 'selected' : '' }}>
-                                            {{ $campus->acronym }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                            {{-- </div> --}}
-                        @endif
                         <input 
                         type="number" 
-                        name="contributionYear"
+                        name="contribution_year"
                         x-model="contributionYear" 
                         min="2000" 
                         max="2099"
