@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 use App\Services\ClaimService;
 use App\Services\ContributionService;
 
@@ -41,4 +42,22 @@ class AnnualContributionController extends Controller
             ], 422);
         }
     }
-} // Class closes cleanly right here
+
+    public function pay(string $id): JsonResponse
+     {
+        try {
+            $updatedDetail = $this->contributionService->markAsPaid($id, 'annual');
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Contribution payment recorded successfully.',
+                'data'    => $updatedDetail
+            ]);
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unable to record payment line item assignment.'
+            ], 404);
+        }
+    }
+} 

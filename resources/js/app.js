@@ -140,7 +140,6 @@ window.updateClaimStatus = function(claimId, status, claimData = {}) {
 
                 return;
             }
-            console.log(normalizedStatus);
             Swal.fire({
                 title: 'Are you sure?',
                 text: normalizedStatus.toLowerCase() === 'approved'
@@ -161,8 +160,24 @@ window.updateClaimStatus = function(claimId, status, claimData = {}) {
             });
          }
 
-window.markContributionAsPaid = function(detailId) {
-    if (!detailId) return;
+window.markContributionAsPaid = function(id, tag) {
+    if (!id) return;
+
+    let postUrl = "";
+    switch (tag) {
+        case 'claims' : {
+            postUrl = `/contributions/details/${id}/mark-paid`;
+            break;
+        }
+        case 'annual' : {
+            postUrl = `/contributions/annual-contributions/${id}/mark-paid`;
+            break;
+        }
+        
+    }
+
+    console.log(`Tag: ${tag}`);
+    console.log(`Post Url: ${postUrl}`);
 
     Swal.fire({
         title: 'Mark as paid?',
@@ -174,8 +189,7 @@ window.markContributionAsPaid = function(detailId) {
         confirmButtonText: 'Yes, mark as paid'
     }).then((result) => {
         if (!result.isConfirmed) return;
-
-        fetch(`/contributions/details/${detailId}/mark-paid`, {
+        fetch(postUrl, {
             method: 'POST',
             headers: {
                 'Accept': 'application/json',

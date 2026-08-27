@@ -19,6 +19,7 @@ use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 use Exception;
+use InvalidArgumentException;
 
 class ContributionService
 {
@@ -229,17 +230,33 @@ class ContributionService
     /**
      * Record a payment for an individual contribution detail line item.
      */
-    public function markAsPaid(string $detailId): ContributionDetail
+    public function markAsPaid(string $id, string $tag): ContributionDetail | AnnualContribution
     {
-        $detail = ContributionDetail::findOrFail($detailId);
+        switch ($tag) {
+            case 'claims':
+                $detail = ContributionDetail::findOrFail($id);
         
-        $detail->update([
-            'status'  => ContributionStatus::Paid->value,
-            'paid_at' => now(),
-        ]);
-
-
-        return $detail;
+                $detail->update([
+                    'status'  => ContributionStatus::Paid->value,
+                    'paid_at' => now(),
+                ]);
+    
+                return $detail;
+    
+            case 'annual': // Fixed typo from 'annula'
+                $detail = AnnualContribution::findOrFail($id);
+        
+                $detail->update([
+                    'status'  => ContributionStatus::Paid->value,
+                    'paid_at' => now(),
+                ]);
+    
+                return $detail;
+    
+            default:
+                // Throwing an exception prevents a PHP Type Hint violation error
+                throw new InvalidArgumentException("Invalid contribution tag type specified: {$tag}");
+        }
     }
 
      /**

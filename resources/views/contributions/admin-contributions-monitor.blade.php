@@ -4,6 +4,7 @@
         batches: @js($batches),
         selectedBatch: null,
         selectedDetail: null,
+        contributionType: @js($contribution_type),
         openModal: false,
         openDetailModal: false,
         openAnnualContributionSetupModal: false,
@@ -29,8 +30,8 @@
         hasSelectedDetail() {
             return this.selectedDetail !== null && this.selectedDetail !== undefined;
         },
-        markContributionAsPaid(detailId) {
-            window.markContributionAsPaid(detailId);
+        markContributionAsPaid(detailId, contributionType) {
+            window.markContributionAsPaid(detailId, contributionType);
         },
         filteredBatches() {
             const query = this.search.toLowerCase();

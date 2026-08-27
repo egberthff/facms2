@@ -12,6 +12,6 @@ Route::middleware(['auth', 'active'])
     Route::post('contributions/details/{id}/mark-paid', [ContributionDetailsController::class, 'pay'])->name('contributions.details.mark-paid');
 
     Route::post('contributions/annual/create', [AnnualContributionController::class, 'storeBatch'])->name('contributions.create');
-
+    Route::post('contributions/annual-contributions/{id}/mark-paid', [AnnualContributionController::class, 'pay'])->name('contributions.annual.mark-paid');
 
     });

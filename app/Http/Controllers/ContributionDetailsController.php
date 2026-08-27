@@ -154,7 +154,7 @@ class ContributionDetailsController extends Controller
      public function pay(string $id): JsonResponse
     {
         try {
-            $updatedDetail = $this->contributionService->markAsPaid($id);
+            $updatedDetail = $this->contributionService->markAsPaid($id, 'claims');
 
             return response()->json([
                 'success' => true,

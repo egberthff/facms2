@@ -77,14 +77,14 @@
                     @if($item['status'] === 'Unpaid')
                         <button
                             type="button"
-                            @click="activeContribution = @js($item); openPaymentModal = true;"
+                            @click="activeAnnual = @js($item); openAnnualModal = true;"
                             class="inline-flex items-center px-3 py-1.5 bg-blue-600 border border-transparent text-white rounded-lg text-xs font-semibold hover:bg-blue-700 shadow-sm transition">
                             View Details
                         </button>
                     @else
                         <button
                             type="button"
-                            @click="activeContribution = @js($item); openPaymentModal = true;"
+                            @click="activeAnnual = @js($item); openAnnualModal = true;"
                             class="inline-flex items-center px-3 py-1.5 bg-slate-50 border border-slate-200 text-slate-700 rounded-lg text-xs font-semibold hover:bg-slate-100 transition">
                             View Details
                         </button>

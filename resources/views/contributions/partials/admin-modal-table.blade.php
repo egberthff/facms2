@@ -74,7 +74,7 @@
                                                 <button type="button" @click="selectDetail(detail)" class="block w-full text-xs font-semibold text-blue-600 hover:text-blue-700">View Full Details</button>
                                                 <button
                                                     type="button"
-                                                    @click="markContributionAsPaid(detail.id)"
+                                                    @click="markContributionAsPaid(detail.id, contributionType)"
                                                     :disabled="(detail.status || '').toString().toLowerCase() === 'paid'"
                                                     class="block w-full text-xs font-semibold"
                                                     :class="(detail.status || '').toString().toLowerCase() === 'paid' ? 'text-slate-400 cursor-not-allowed' : 'text-emerald-600 hover:text-emerald-700'"
