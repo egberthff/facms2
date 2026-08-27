@@ -11,6 +11,7 @@ use App\Models\ContributionBatch;
 use App\Models\ContributionDetail;
 use App\Models\AnnualContribution;
 use App\Models\SystemSetting;
+USE App\Enums\ContributionStatus;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\Eloquent\Collection;
@@ -208,6 +209,23 @@ class ContributionService
                 ->get();
     }
 
+    public function getUserOwedContributionsAnnual(User $user, string $status = null): Collection
+    {
+        $member = $user->member;
+        
+        if (!$member) {
+            return new Collection();
+        }
+
+        return AnnualContribution::with(['member', 'paymentMethod'])
+                                    ->where('member_id', $member->id)
+                                    ->when($status, function ($query, $status){
+                                        return $query->where('status');
+                                    })
+                                    ->latest('created_at')
+                                    ->get();
+    }
+
     /**
      * Record a payment for an individual contribution detail line item.
      */
@@ -216,9 +234,10 @@ class ContributionService
         $detail = ContributionDetail::findOrFail($detailId);
         
         $detail->update([
-            'status'  => 'Paid',
+            'status'  => ContributionStatus::Paid->value,
             'paid_at' => now(),
         ]);
+
 
         return $detail;
     }

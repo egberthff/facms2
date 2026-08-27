@@ -57,7 +57,7 @@
                                         <th class="px-4 py-3 text-center font-semibold text-slate-600">Action</th>
                                     </tr>
                                 </thead>
-                                <tbody class="divide-y divide-slate-100 bg-white">
+                                <tbody class="dt-table divide-y divide-slate-100 bg-white">
                                     <!-- 3. Your Alpine template loops and clicks will now run perfectly without crashing -->
                                     <template x-for="detail in filteredDetails" :key="detail.id">
                                         <tr class="hover:bg-slate-50/60 transition">

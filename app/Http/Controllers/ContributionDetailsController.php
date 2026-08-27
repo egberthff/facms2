@@ -72,58 +72,84 @@ class ContributionDetailsController extends Controller
 //         }
 //     }    
 
-     public function myOwedContributions(Request $request)
+     
+
+    public function myOwedContributions(Request $request)
     {
         $user = Auth::user();
-        // $status = $request->input('status', 'Unpaid'); // Defaults to 'Unpaid' to see Pending contributions
         $status = null;
-
-        $contributions = $this->contributionService->getUserOwedContributions($user, $status);
-
-        $formattedData = $contributions->map(function ($detail) {
-            $batch = $detail->contributionBatch;
-            $claim = $batch?->claim;
-            $claimant = $claim?->member;
-            $claimType = $claim?->claimType;
-
-            // Build full name helper cleanly
-            $claimantName = trim(sprintf(
-                '%s %s %s %s',
-                $claimant?->first_name,
-                $claimant?->middle_name,
-                $claimant?->last_name,
-                $claimant?->suffix
-            ));
-
-            return [
-                'contribution_id'   => $detail->id,
-                'amount_to_pay'     => (float) $detail->amount,
-                'status'            => $detail->status,
-                'paid_at'           => $detail->paid_at,
-
-                // Batch Info
-                'batch_id'          => $batch?->id,
-                'amount_per_member' => (float) $batch?->amount_per_member,
-                'generated_at'      => $batch?->generated_at?->toFormattedDateString(),
-
-                // Context Info (Who and what they are contributing for)
-                'claim_number'      => $claim?->claim_number,
-                'claimant_name'     => $claimantName ?: 'Unknown Member',
-                'claimant_dept'     => $claimant?->department,
-                'claim_type'        => $claimType?->name ?: 'N/A',
-                'claim_description' => $claim?->description,
-            ];
-        });
-
-        $data['contributions'] = $formattedData;
-        return view('contributions.member-contributions-monitor', $data);
-
-        // return response()->json([
-        //     'success' => true,
-        //     'count'   => $contributions->count(),
-        //     'data'    => $contributions
-        // ]);
+        $contribution_type = $request->input('contribution_type', 'claims');
+    
+        switch ($contribution_type) {
+            case 'claims':
+                $contributions = $this->contributionService->getUserOwedContributions($user, $status);
+                
+                // Format data specifically for the Claims Table layout
+                $formattedData = $contributions->map(function ($detail) {
+                    $batch = $detail->contributionBatch;
+                    $claim = $batch?->claim;
+                    $claimant = $claim?->member;
+                    $claimType = $claim?->claimType;
+            
+                    $claimantName = trim(sprintf(
+                        '%s %s %s %s',
+                        $claimant?->first_name,
+                        $claimant?->middle_name,
+                        $claimant?->last_name,
+                        $claimant?->suffix
+                    ));
+            
+                    return [
+                        'contribution_id'   => $detail->id,
+                        'amount_to_pay'     => (float) $detail->amount,
+                        'status'            => $detail->status,
+                        'paid_at'           => $detail->paid_at,
+                        'batch_id'          => $batch?->id,
+                        'amount_per_member' => (float) $batch?->amount_per_member,
+                        'generated_at'      => $batch?->generated_at?->toFormattedDateString(),
+                        'claim_number'      => $claim?->claim_number,
+                        'claimant_name'     => $claimantName ?: 'Unknown Member',
+                        'claimant_dept'     => $claimant?->department,
+                        'claim_type'        => $claimType?->name ?: 'N/A',
+                        'claim_description' => $claim?->description,
+                    ];
+                });
+                break;
+            
+            case 'annual':
+                $contributions = $this->contributionService->getUserOwedContributionsAnnual($user, $status);
+                
+                // Format data specifically for your newly added Annual Table layout
+                $formattedData = $contributions->map(function ($annual) {
+                    return [
+                        'id'                        => $annual->id,
+                        'reference_number'          => $annual->reference_number ?? 'N/A',
+                        'contribution_year'         => $annual->contribution_year,
+                        'amount_paid'               => (float) $annual->amount_paid,
+                        'status'                    => $annual->status,
+                        'remarks'                   => $annual->remarks,
+                        'paid_at'                   => $annual->paid_at,
+                        'payment_reference_number'  => $annual->payment_reference_number,
+                        
+                        // Eager loaded relationship arrays mapping to Blade components
+                        'payment_method' => $annual->paymentMethod ? [
+                            'id'   => $annual->paymentMethod->id,
+                            'name' => $annual->paymentMethod->name,
+                        ] : null,
+                    ];
+                });
+                break;
+            
+            default:
+                $formattedData = collect();
+        }
+            
+        return view('contributions.member-contributions-monitor', [
+            'contributions'     => $formattedData,
+            'contribution_type' => $contribution_type
+        ]);
     }
+
 
      public function pay(string $id): JsonResponse
     {

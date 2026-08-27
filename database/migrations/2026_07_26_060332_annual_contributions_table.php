@@ -36,11 +36,7 @@ return new class extends Migration
             $table->decimal('amount_paid', 12, 2);
 
             // Workflow / Tracking status
-            $table->enum('status', [
-                'Pending',
-                'Verified',
-                'Failed',
-            ])->default('Pending');
+            $table->string('status', 50)->default('Pending');
 
             $table->text('remarks')->nullable();
 

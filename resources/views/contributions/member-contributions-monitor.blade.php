@@ -2,6 +2,7 @@
 <div class="max-w-7xl mx-auto p-4" 
     x-data="{ 
             currentStatus: 'all', 
+            statuses: ['all', ...{{ json_encode(array_column(App\Enums\ContributionStatus::cases(), 'value')) }}], 
             searchText: '',
             openModal: false,
             openPaymentModal: false,
@@ -21,132 +22,18 @@
     <!-- CLAIMS LIST CARD -->
     <!-- ========================================= -->
     <div class="bg-white border border-blue-700 rounded-2xl shadow-sm">
-        <!-- Header -->
-        <div class="p-4 border-b">
-            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                <!-- Filters -->
-                <div class="flex flex-wrap gap-2">
-                    <template x-for="status in ['all', 'Paid', 'Unpaid']">
-                        <button 
-                            type="button"
-                            @click="currentStatus = status"
-                            :class="currentStatus === status 
-                                ? 'bg-blue-600 text-white border-blue-600' 
-                                : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'"
-                            class="px-4 py-2 text-sm rounded-lg border transition font-medium capitalize"
-                            x-text="status">
-                        </button>
-                    </template>
-                </div>
-                <!-- Search -->
-                <div class="relative w-full lg:w-72">
-                    <input
-                        type="search"
-                        x-model="searchText"
-                        placeholder="Search claim..."
-                        class="w-full rounded-lg border border-gray-300 pl-10 pr-4 py-2 text-sm focus:ring-2 focus:ring-orange-400 focus:border-orange-400">
-                    <svg
-                        xmlns="http://w3.org"
-                        class="absolute left-3 top-2.5 w-4 h-4 text-gray-400"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35m1.35-5.65a7 7 0 11-14 0a7 7 0 0114 0z"/>
-                    </svg>
-                </div>
-            </div>
-        </div>
+        <!-- Header filter -->
+        @include('contributions.partials.member.filter') 
         
         <!-- Table -->
         <div class="overflow-x-auto">
-           <table class="min-w-full text-sm">
-                <thead class="bg-gray-100">
-                    <tr>
-                        <th class="px-4 py-3 text-left font-semibold">Ref #</th>
-                        <th class="px-4 py-3 text-left font-semibold">Claimant (Benefit For)</th>
-                        <th class="px-4 py-3 text-left font-semibold">Claim Type</th>
-                        <th class="px-4 py-3 text-right font-semibold">My Contribution</th>
-                        <th class="px-4 py-3 text-center font-semibold">Issued Date</th>
-                        <th class="px-4 py-3 text-center font-semibold">Contribution Status</th>
-                        <th class="px-4 py-3 text-center font-semibold">Action</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-100">
-                    @foreach($contributions as $item)
-                        <tr x-show="matches(
-                                '{{ $item['status'] }}', 
-                                '{{ $item['claim_number'] ?? '' }}', 
-                                '{{ addslashes($item['claimant_name']) }}', 
-                                '{{ addslashes($item['claim_type']) }}'
-                            )"
-                            x-transition:enter="transition ease-out duration-200"
-                            x-transition:enter-start="opacity-0 transform scale-95"
-                            x-transition:enter-end="opacity-100 transform scale-100">
-
-                            <!-- 1. Claim Reference Number -->
-                            <td class="px-4 py-3 whitespace-nowrap font-medium text-slate-900">
-                                {{ $item['claim_number'] ?? 'N/A' }}
-                            </td>
-
-                            <!-- 2. Claimant Metadata Summary -->
-                            <td class="px-4 py-3 text-slate-600">
-                                <div class="font-medium text-slate-900">{{ $item['claimant_name'] }}</div>
-                                <div class="text-xs text-slate-400">{{ $item['claimant_dept'] ?? 'No Dept' }}</div>
-                            </td>
-
-                            <!-- 3. Type of Claim -->
-                            <td class="px-4 py-3 text-slate-500 font-medium">
-                                {{ $item['claim_type'] }}
-                            </td>
-
-                            <!-- 4. Individual Split Amount Owed -->
-                            <td class="px-4 py-3 text-right font-bold text-slate-900">
-                                ₱{{ number_format($item['amount_to_pay'], 2) }}
-                            </td>
-
-                            <!-- 5. Date the requirement batch was issued -->
-                            <td class="px-4 py-3 text-center text-slate-500">
-                                {{ $item['generated_at'] ?? 'N/A' }}
-                            </td>
-
-                            <!-- 6. Styled Context Payment Badges -->
-                            <td class="px-4 py-3 text-center">
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize
-                                    {{ $item['status'] === 'Unpaid' ? 'bg-amber-100 text-amber-800' : '' }}
-                                    {{ $item['status'] === 'Paid' ? 'bg-emerald-100 text-emerald-800' : '' }}
-                                    {{ !in_array($item['status'], ['Unpaid', 'Paid']) ? 'bg-slate-100 text-slate-800' : '' }}
-                                ">
-                                    {{ $item['status'] ?? 'Unknown' }}
-                                </span>
-                            </td>
-
-                            <!-- 7. Dynamic Action Dispatchers -->
-                            <td class="px-4 py-3 text-center whitespace-nowrap">
-                                @if($item['status'] === 'Unpaid')
-                                    <button
-                                        type="button"
-                                        @click="activeContribution = @js($item); openPaymentModal = true;"
-                                        class="inline-flex items-center px-3 py-1.5 bg-blue-600 border border-transparent text-white rounded-lg text-xs font-semibold hover:bg-blue-700 shadow-sm transition">
-                                        {{-- Pay Now --}}
-                                        View Details
-                                    </button>
-                                @else
-                                    <button
-                                        type="button"
-                                        @click="activeContribution = @js($item); openPaymentModal = true;"
-                                        class="inline-flex items-center px-3 py-1.5 bg-slate-50 border border-slate-200 text-slate-700 rounded-lg text-xs font-semibold hover:bg-slate-100 transition">
-                                        {{-- View Receipt --}}
-                                        View Details
-                                    </button>
-                                @endif
-                            </td>
-
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
-
-
+            @if($contribution_type === 'annual')
+                <!-- ANNUAL CONTRIBUTION TABLE -->
+                @include('contributions.partials.member.annual-table')
+            @else
+                <!-- CLAIMS TABLE (Original Layout) -->
+                @include('contributions.partials.member.claims-table')
+            @endif
         </div>
     </div>
     
