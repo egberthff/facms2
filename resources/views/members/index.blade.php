@@ -44,7 +44,7 @@
                 <x-button
                     id="add-new-member-btn-csv"
                     type="button"
-                    class="add-new-member-btn-csv btn-warning bg-amber-500 hover:bg-brand-strong text-white focus:ring-4 focus:ring-brand-medium shadow-xs font-medium leading-5 rounded-base text-sm px-4 py-2.5 focus:outline-none transition-colors" 
+                    class="member-btn add-new-member-btn-csv btn-warning bg-amber-500 hover:bg-brand-strong text-white focus:ring-4 focus:ring-brand-medium shadow-xs font-medium leading-5 rounded-base text-sm px-4 py-2.5 focus:outline-none transition-colors" 
                     data-action="add-new-member-csv"
                     data-modal-target="member-modal-csv" 
                     data-modal-toggle="member-modal-csv">
@@ -54,7 +54,7 @@
                  <x-button
                     id="add-new-member-btn"
                     type="button" 
-                    class="btn btn-info add-new-member-btn hover:bg-brand-strong focus:ring-4 focus:ring-brand-medium shadow-xs font-medium leading-5 rounded-base text-sm px-4 py-2.5 focus:outline-none" 
+                    class="member-btn btn btn-info add-new-member-btn hover:bg-brand-strong focus:ring-4 focus:ring-brand-medium shadow-xs font-medium leading-5 rounded-base text-sm px-4 py-2.5 focus:outline-none" 
                     data-action="add-new-member"
                     data-modal-target="member-modal" 
                     data-modal-toggle="member-modal">
@@ -305,74 +305,6 @@
             modalElement.classList.remove('hidden');
             modalElement.classList.add('flex');
         }   
-
-
-            //Listener for Dynamic Edit/Add Member button click
-            // Select all buttons that toggle the member modal
-            const toggleButtons = document.querySelectorAll('[data-modal-target="member-modal"]');
-             // Select the modal elements we need to change dynamically
-            const modalTitle = document.getElementById('modal-title');
-            const submitBtn = document.getElementById('submit-btn');
-            const memberForm = document.getElementById('member-form');
-
-             toggleButtons.forEach(button => {
-                button.addEventListener('click', (e) => {
-                    // Find the actual button element (handles nested icon clicks)
-                    const btn = e.target.closest('[data-modal-target="member-modal"]');
-                    if (!btn) return;
-
-                    const action = btn.getAttribute('data-action');
-
-                    if (action === 'edit-member-details') {
-                        // 1. Change text labels for EDIT mode
-                        modalTitle.textContent = 'Edit Member Details';
-                        submitBtn.textContent = 'Update Details';
-
-                        // 2. Dynamically set Laravel update route (example using member UUID)
-                        const memberId = btn.getAttribute('data-member-id');
-                        memberForm.action = `/members/${memberId}`; 
-
-                        // 3. Inject Laravel's PUT method spoofing if it doesn't exist
-                        let methodInput = memberForm.querySelector('input[name="_method"]');
-                        if (!methodInput) {
-                            methodInput = document.createElement('input');
-                            methodInput.type = 'hidden';
-                            methodInput.name = '_method';
-                            methodInput.value = 'PUT';
-                            memberForm.appendChild(methodInput);
-                        }
-
-                        // 4. Fill form inputs with the clicked member's data
-                        document.getElementById('employee_number').value = btn.getAttribute('data-employee-number') || '';
-                        document.getElementById('first_name').value = btn.getAttribute('data-first-name') || '';
-                        document.getElementById('middle_name').value = btn.getAttribute('data-middle-name') || '';
-                        document.getElementById('last_name').value = btn.getAttribute('data-last-name') || '';
-                        document.getElementById('suffix').value = btn.getAttribute('data-suffix') || '';
-                        document.getElementById('birth_date').value = btn.getAttribute('data-birth-date') || '';
-                        document.getElementById('gender').value = btn.getAttribute('data-gender') || '';
-                        document.getElementById('campus_id').selectedValue = btn.getAttribute('campus_id') || '';
-
-                    } else if (action === 'add-new-member') {
-                        // 1. Reset text labels for ADD mode
-                        modalTitle.textContent = 'Add New Member';
-                        submitBtn.textContent = 'Save Details';
-
-                        // 2. Set backend store route
-                        // memberForm.action = '/members.store'; 
-                        memberForm.action = '/members'; 
-
-                        // 3. Remove Laravel's PUT method spoofing so it stays a clean POST request
-                        const methodInput = memberForm.querySelector('input[name="_method"]');
-                        if (methodInput) {
-                            methodInput.remove();
-                        }
-
-                        // 4. Clear form fields completely for fresh input
-                        memberForm.reset();
-                    }
-                });
-            });
-
         });
 
         function handleFormSubmitCSV(event) {
@@ -437,6 +369,125 @@
                 }
             });
         }
+
+        document.addEventListener('click', function (e) {
+            const btn = e.target.closest('[data-modal-target="member-modal"]');
         
+            if (!btn) {
+                return;
+            }
+        
+            const action = btn.getAttribute('data-action');
+        
+            const modalTitle = document.getElementById('modal-title');
+            const submitBtn = document.getElementById('submit-btn');
+            const memberForm = document.getElementById('member-form');
+        
+            if (!modalTitle || !submitBtn || !memberForm) {
+                return;
+            }
+        
+            if (action === 'edit-member-details') {
+            
+                // Change modal labels
+                modalTitle.textContent = 'Edit Member Details';
+                submitBtn.textContent = 'Update Details';
+            
+                // Get member ID
+                const memberId = btn.getAttribute('data-member-id');
+            
+                // Set update route
+                memberForm.action = `/members/${memberId}`;
+            
+                // Add/update PUT method
+                let methodInput = memberForm.querySelector(
+                    'input[name="_method"]'
+                );
+            
+                if (!methodInput) {
+                    methodInput = document.createElement('input');
+                    methodInput.type = 'hidden';
+                    methodInput.name = '_method';
+                    memberForm.appendChild(methodInput);
+                }
+            
+                methodInput.value = 'PUT';
+            
+                // Fill form fields
+                document.getElementById('employee_number').value =
+                    btn.getAttribute('data-member-employee-number') || '';
+            
+                document.getElementById('first_name').value =
+                    btn.getAttribute('data-member-first-name') || '';
+            
+                document.getElementById('middle_name').value =
+                    btn.getAttribute('data-member-middle-name') || '';
+            
+                document.getElementById('last_name').value =
+                    btn.getAttribute('data-member-last-name') || '';
+            
+                document.getElementById('suffix').value =
+                    btn.getAttribute('data-member-suffix') || '';
+            
+                document.getElementById('birth_date').value =
+                    btn.getAttribute('data-member-birth-date') || '';
+            
+                document.getElementById('gender').value =
+                    btn.getAttribute('data-member-gender') || '';
+            
+                document.getElementById('campus_id').value =
+                    btn.getAttribute('data-member-campus-id') || '';
+
+                document.getElementById('department').value =
+                    btn.getAttribute('data-member-department') || '';
+
+                document.getElementById('position').value = 
+                    btn.getAttribute('data-member-position') || ''; 
+
+                document.getElementById('employment_status').value =
+                    btn.getAttribute('data-member-employment-status') || '';
+
+                document.getElementById('membership_status').value =
+                    btn.getAttribute('data-member-membership-status') || '';
+                
+                document.getElementById('contact_number').value =
+                    btn.getAttribute('data-contact-number') || '';
+
+                document.getElementById('address').value =
+                    btn.getAttribute('data-member-address') || '';
+
+                document.getElementById('gcash_number').value =
+                    btn.getAttribute('data-member-gcash-number') || '';
+
+                document.getElementById('gcash_account_name').value =
+                    btn.getAttribute('data-member-gcash-account-name') || '';
+
+                document.getElementById('email').value = 
+                    btn.getAttribute('data-member-email') || '';
+
+            
+            } else if (action === 'add-new-member') {
+            
+                // Reset form first
+                memberForm.reset();
+            
+                // Change modal labels
+                modalTitle.textContent = 'Add New Member';
+                submitBtn.textContent = 'Save Details';
+            
+                // Set store route
+                memberForm.action = '/members';
+            
+                // Remove PUT method
+                const methodInput = memberForm.querySelector(
+                    'input[name="_method"]'
+                );
+            
+                if (methodInput) {
+                    methodInput.remove();
+                }
+            }
+        });
+
     </script>
 </x-app-layout>

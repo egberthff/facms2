@@ -21,7 +21,7 @@
                     <!-- Identification Section -->
                     <div class="col-span-1 sm:col-span-2">
                         <label for="employee_number" class="block mb-2.5 text-sm font-medium text-gray-900 dark:text-white">Employee Number</label>
-                        <input type="text" name="employee_number" value="123456" id="employee_number" class="bg-gray-50 dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full px-3 py-2.5 shadow-xs placeholder:text-gray-400" placeholder="EMP-2026-0001" required>
+                        <input type="text" name="employee_number" value="" id="employee_number" class="bg-gray-50 dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full px-3 py-2.5 shadow-xs placeholder:text-gray-400" placeholder="EMP-2026-0001" required>
                     </div>
                     <div class="col-span-1 sm:col-span-2">
                         <label for="campus_id" class="block mb-2.5 text-sm font-medium text-gray-900 dark:text-white">Assigned Campus</label>
@@ -38,15 +38,15 @@
                     <!-- Name Breakdown Section -->
                     <div class="col-span-1">
                         <label for="first_name" class="block mb-2.5 text-sm font-medium text-gray-900 dark:text-white">First Name</label>
-                        <input type="text" name="first_name" value="Jhon" id="first_name" class="bg-gray-50 dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full px-3 py-2.5 shadow-xs placeholder:text-gray-400" placeholder="John" required>
+                        <input type="text" name="first_name" value="" id="first_name" class="bg-gray-50 dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full px-3 py-2.5 shadow-xs placeholder:text-gray-400" placeholder="John" required>
                     </div>
                     <div class="col-span-1">
                         <label for="middle_name" class="block mb-2.5 text-sm font-medium text-gray-900 dark:text-white">Middle Name</label>
-                        <input type="text" name="middle_name" value="Eric" id="middle_name" class="bg-gray-50 dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full px-3 py-2.5 shadow-xs placeholder:text-gray-400" placeholder="Robert">
+                        <input type="text" name="middle_name" value="" id="middle_name" class="bg-gray-50 dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full px-3 py-2.5 shadow-xs placeholder:text-gray-400" placeholder="Robert">
                     </div>
                     <div class="col-span-1">
                         <label for="last_name" class="block mb-2.5 text-sm font-medium text-gray-900 dark:text-white">Last Name</label>
-                        <input type="text" name="last_name" value="Sage" id="last_name" class="bg-gray-50 dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full px-3 py-2.5 shadow-xs placeholder:text-gray-400" placeholder="Doe" required>
+                        <input type="text" name="last_name" value="" id="last_name" class="bg-gray-50 dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full px-3 py-2.5 shadow-xs placeholder:text-gray-400" placeholder="Doe" required>
                     </div>
                     <div class="col-span-1">
                         <label for="suffix" class="block mb-2.5 text-sm font-medium text-gray-900 dark:text-white">Suffix</label>
@@ -56,7 +56,7 @@
                     <!-- Demographics Section -->
                     <div class="col-span-1 sm:col-span-2 md:col-span-2">
                         <label for="birth_date" class="block mb-2.5 text-sm font-medium text-gray-900 dark:text-white">Birth Date</label>
-                        <input type="date" name="birth_date" value="2003-03-28" id="birth_date" class="bg-gray-50 dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full px-3 py-2.5 shadow-xs">
+                        <input type="date" name="birth_date" value="" id="birth_date" class="bg-gray-50 dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full px-3 py-2.5 shadow-xs">
                     </div>
                     <div class="col-span-1 sm:col-span-2 md:col-span-2">
                         <label for="gender" class="block mb-2.5 text-sm font-medium text-gray-900 dark:text-white">Gender</label>
@@ -69,17 +69,17 @@
 
                     <div class="col-span-1 sm:col-span-2 md:col-span-2">
                         <label for="address" class="block mb-2.5 text-sm font-medium text-gray-900 dark:text-white">Address</label>
-                        <input type="text" name="address" value="123 Main St" id="address" class="bg-gray-50 dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full px-3 py-2.5 shadow-xs placeholder:text-gray-400" placeholder="Enter address" required>
+                        <input type="text" name="address" value="" id="address" class="bg-gray-50 dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full px-3 py-2.5 shadow-xs placeholder:text-gray-400" placeholder="Enter address" required>
                     </div>
 
                     <!-- Employment Section -->
                     <div class="col-span-1 sm:col-span-2 md:col-span-2">
                         <label for="department" class="block mb-2.5 text-sm font-medium text-gray-900 dark:text-white">Department</label>
-                        <input type="text" name="department" value="CCJ" id="department" class="bg-gray-50 dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full px-3 py-2.5 shadow-xs placeholder:text-gray-400" placeholder="Human Resources" required>
+                        <input type="text" name="department" value="" id="department" class="bg-gray-50 dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full px-3 py-2.5 shadow-xs placeholder:text-gray-400" placeholder="Human Resources" required>
                     </div>
                     <div class="col-span-1 sm:col-span-2 md:col-span-2">
                         <label for="position" class="block mb-2.5 text-sm font-medium text-gray-900 dark:text-white">Position</label>
-                        <input type="text" name="position" value="Instructor" id="position" class="bg-gray-50 dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full px-3 py-2.5 shadow-xs placeholder:text-gray-400" placeholder="HR Generalist" required>
+                        <input type="text" name="position" value="" id="position" class="bg-gray-50 dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full px-3 py-2.5 shadow-xs placeholder:text-gray-400" placeholder="HR Generalist" required>
                     </div>
 
                     <!-- Statuses Section -->
@@ -87,7 +87,7 @@
                         <label for="employment_status" class="block mb-2.5 text-sm font-medium text-gray-900 dark:text-white">Employment Status</label>
                         <select name="employment_status" id="employment_status" class="block w-full px-3 py-2.5 bg-gray-50 dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 shadow-xs" required>
                             <option value="" disabled selected>Select Status</option>
-                            <option value="Permanent" selected>Permanent</option>
+                            <option value="Permanent">Permanent</option>
                             <option value="Probationary">Probationary</option>
                             <option value="Contractual">Contractual</option>
                             <option value="Part-time">Part-time</option>
@@ -97,17 +97,17 @@
                         <label for="membership_status" class="block mb-2.5 text-sm font-medium text-gray-900 dark:text-white">Membership Status</label>
                         <select name="membership_status" id="membership_status" class="block w-full px-3 py-2.5 bg-gray-50 dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 shadow-xs" required>
                             <option value="" disabled selected>Select Status</option>
-                            <option value="Active" selected>Active</option>
+                            <option value="Active">Active</option>
                             <option value="Inactive">Inactive</option>
                         </select>
                     </div>
                     <div class="col-span-1 sm:col-span-2 md:col-span-2">
                         <label for="contact_number" class="block mb-2.5 text-sm font-medium text-gray-900 dark:text-white">Contact Number</label>
-                        <input type="text" name="contact_number" value='09876543212' id="contact_number" class="bg-gray-50 dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full px-3 py-2.5 shadow-xs" placeholder="Enter contact number" required>
+                        <input type="text" name="contact_number" value='' id="contact_number" class="bg-gray-50 dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full px-3 py-2.5 shadow-xs" placeholder="Enter contact number" required>
                     </div>
                     <div class="col-span-1 sm:col-span-2 md:col-span-2">
                         <label for="email" class="block mb-2.5 text-sm font-medium text-gray-900 dark:text-white">Email</label>
-                        <input type="email" name="email" value="sample@example.com" id="email" class="bg-gray-50 dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full px-3 py-2.5 shadow-xs" placeholder="Enter email" required>
+                        <input type="email" name="email" value="" id="email" class="bg-gray-50 dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full px-3 py-2.5 shadow-xs" placeholder="Enter email" required>
                     </div>
                     <div class="col-span-1 sm:col-span-2 md:col-span-2">
                         <label for="gcash_number" class="block mb-2.5 text-sm font-medium text-gray-900 dark:text-white">GCash Number</label>
