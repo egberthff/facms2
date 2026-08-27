@@ -89,7 +89,7 @@
                             <span class="text-slate-500 font-medium">Current Settlement Standing</span>
                             <span class="px-2.5 py-0.5 rounded-full font-bold uppercase text-[10px] tracking-wide"
                                   :class="{
-                                      'bg-emerald-100 text-emerald-800': activeAnnual.status === 'Paid' || activeAnnula.status === 'Verified',
+                                      'bg-emerald-100 text-emerald-800': activeAnnual.status === 'Paid' || activeAnnual.status === 'Verified',
                                       'bg-amber-100 text-amber-800': activeAnnual.status === 'Pending' || activeAnnual.status === 'Unpaid',
                                       'bg-rose-100 text-rose-800': activeAnnual.status === 'Failed'
                                   }"

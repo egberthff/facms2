@@ -28,7 +28,7 @@ class ContributionDetailsController extends Controller
         // $this->authorize('viewAny', ContributionDetails::class);
 
         $filters = $request->only(['claim_id', 'start_date', 'end_date']);
-        $batches = $this->contributionService->getFilteredBatches($filters, $request->get('per_page', 15));
+        $batches = $this->contributionService->getFilteredBatches($filters, $request->input('per_page', 15));
 
         return response()->json([
             'success' => true,

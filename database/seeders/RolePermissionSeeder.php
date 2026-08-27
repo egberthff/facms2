@@ -101,7 +101,6 @@ class RolePermissionSeeder extends Seeder
             'create claims',
             'update claims',
             'review claims',
-            'view disbursement',
             'view own contribution',
             'view all contribution',
             'view disbursement',

@@ -15,7 +15,8 @@
                     <div class="p-6" x-show="selectedBatch">
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">
                             <div class="rounded-xl border border-slate-100 bg-slate-50 p-4">
-                                <p class="text-xs uppercase tracking-wide text-slate-400">Claim ID</p>
+                                <p class="text-xs uppercase tracking-wide text-slate-400"
+                                x-text="contributionType === 'claims' ? 'Claim ID' : 'Contribution ID'"></p>
                                 <p class="mt-1 font-semibold text-slate-900" x-text="selectedBatch?.claim_number"></p>
                             </div>
                             <div class="rounded-xl border border-slate-100 bg-slate-50 p-4">
@@ -57,7 +58,7 @@
                                         <th class="px-4 py-3 text-center font-semibold text-slate-600">Action</th>
                                     </tr>
                                 </thead>
-                                <tbody class="dt-table divide-y divide-slate-100 bg-white">
+                                <tbody class="divide-y divide-slate-100 bg-white">
                                     <!-- 3. Your Alpine template loops and clicks will now run perfectly without crashing -->
                                     <template x-for="detail in filteredDetails" :key="detail.id">
                                         <tr class="hover:bg-slate-50/60 transition">

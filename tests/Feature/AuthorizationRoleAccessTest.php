@@ -77,8 +77,8 @@ class AuthorizationRoleAccessTest extends TestCase
     public function test_user_with_view_disbursment_permission_can_access_disbursements_list(): void
     {
         $user = User::factory()->create(['is_active' => true]);
-        Permission::findOrCreate('view disbursment', 'web');
-        $user->givePermissionTo('view disbursment');
+        Permission::findOrCreate('view disbursement', 'web');
+        $user->givePermissionTo('view disbursement');
 
         $response = $this->actingAs($user)->get(route('disbursement.index'));
 

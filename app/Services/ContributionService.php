@@ -354,7 +354,7 @@ class ContributionService
             // Match statuses against your Migration enum values: 'Pending', 'Verified', 'Failed'
             // We use lowercase 'verified' to match your claim details string style standard
             $status = strtolower((string) $annualContribution->status); 
-            $isCollected = $status === 'verified';
+            $isCollected = ($status === 'verified' || $status === 'paid');
 
             // Mock a single-item "details" array so it mirrors the structural signature of a claim batch
             $details = [
@@ -371,8 +371,8 @@ class ContributionService
 
             return [
                 'id'                  => $annualContribution->id,
-                'claim_id'            => null, // Null because it's a fixed annual payment, not a claim
-                'claim_number'        => 'N/A',
+                'claim_id'            => $annualContribution->contribution_year, // Null because it's a fixed annual payment, not a claim
+                'claim_number'        => $annualContribution->reference_number,
                 'claimant'            => trim(sprintf('%s %s %s', $member?->first_name, $member?->middle_name, $member?->last_name)),
                 'claim_type'          => 'Annual Contribution',
                 'campus_acronym'      => $member?->campus?->acronym ?? 'SYS', 
