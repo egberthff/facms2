@@ -6,11 +6,14 @@ use App\Models\User;
 use App\Models\Member;
 use App\Models\Claim;
 use App\Models\SystemSetting;
-use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 
 class DashboardService
 {
+    public function __construct(private CycleService $cycleService)
+    {
+    }
+
     /**
      * Get data tailored for the Admin / Management dashboard.
      */
@@ -77,33 +80,7 @@ class DashboardService
             ];
         }
 
-        // --- STEP 1: FIND WHEN THE COUNTING TRULY STARTED ---
-        $firstClaim = $member->claims()->oldest('submitted_at')->first();
-        $absoluteStart = $firstClaim ? Carbon::parse($firstClaim->submitted_at) : Carbon::parse($member->created_at);
-
-        $now = now();
-
-        // --- STEP 2: CALCULATE NUMBER OF OCTOBER CROSSINGS ---
-        $octoberCrossings = 0;
-        for ($year = $absoluteStart->year; $year <= $now->year; $year++) {
-            $octoberFirst = Carbon::create($year, 10, 1, 0, 0, 0);
-            if ($octoberFirst->greaterThanOrEqualTo($absoluteStart) && $octoberFirst->lessThanOrEqualTo($now)) {
-                $octoberCrossings++;
-            }
-        }
-
-        // --- STEP 3: DETERMINE THE STARTING DATE OF THE CURRENT 2-YEAR CYCLE ---
-        $completedCycles = floor($octoberCrossings / 2);
-
-        if ($completedCycles == 0) {
-            $currentCycleStart = $absoluteStart->startOfDay();
-        } else {
-            $cycleStartYear = $absoluteStart->year + ($completedCycles * 2);
-            if ($absoluteStart->month >= 10) {
-                $cycleStartYear--;
-            }
-            $currentCycleStart = Carbon::create($cycleStartYear, 10, 1, 0, 0, 0);
-        }
+        [$currentCycleStart] = $this->cycleService->current($member->campus_id);
 
         // --- STEP 4: FETCH THE CORRECT RELEVANT LIMIT ---
         // Look for a claim submitted *inside* this specific cycle window

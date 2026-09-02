@@ -12,12 +12,20 @@
                     </div>
                     
                     <!-- Filtering Form Context Trigger -->
-                    <form method="GET" action="{{ url()->current() }}" class="flex items-center gap-2">
-                        <select name="campus_filter" onchange="this.form.submit()" class="text-sm rounded-lg bg-white dark:bg-zinc-900 border-gray-300 dark:border-zinc-700 text-gray-700 dark:text-gray-300 focus:ring-blue-500 focus:border-blue-500 min-w-[200px]">
+                    <form method="GET" action="{{ url()->current() }}" class="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center">
+                        <select name="campus_filter" onchange="this.form.submit()" class="text-sm rounded-lg bg-white dark:bg-zinc-900 border-gray-300 dark:border-zinc-700 text-gray-700 dark:text-gray-300 focus:ring-blue-500 focus:border-blue-500 min-w-50">
                             <option value="">All Campuses (Global View)</option>
                             @foreach($allCampuses as $campus)
                                 <option value="{{ $campus['id'] }}" {{ $selectedCampusId == $campus['id'] ? 'selected' : '' }}>
                                     {{ $campus['acronym'] }} — (₱{{ number_format($campus['latest_balance'], 2) }})
+                                </option>
+                            @endforeach
+                        </select>
+                        <select name="cycle" onchange="this.form.submit()" @disabled(!$selectedCampusId) class="text-sm rounded-lg bg-white dark:bg-zinc-900 border-gray-300 dark:border-zinc-700 text-gray-700 dark:text-gray-300 focus:ring-blue-500 focus:border-blue-500 min-w-50 disabled:cursor-not-allowed disabled:bg-gray-100">
+                            <option value="">All ledger dates</option>
+                            @foreach($cycleOptions as $cycleOption)
+                                <option value="{{ $cycleOption['label'] }}" {{ $selectedCycle === $cycleOption['label'] ? 'selected' : '' }}>
+                                    {{ $cycleOption['label'] }} ({{ $cycleOption['start']->format('M Y') }} - {{ $cycleOption['end']->format('M Y') }})
                                 </option>
                             @endforeach
                         </select>
@@ -42,11 +50,30 @@
             </div>
         @endif
 
+        @if(!$isPresident)
+            <div class="rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-zinc-800 dark:bg-zinc-800/40">
+                <form method="GET" action="{{ url()->current() }}" class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <h4 class="text-sm font-bold text-gray-700 dark:text-gray-300">Claims cycle</h4>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">Filter ledger activity and totals by your campus cycle.</p>
+                    </div>
+                    <select name="cycle" onchange="this.form.submit()" class="text-sm rounded-lg bg-white dark:bg-zinc-900 border-gray-300 dark:border-zinc-700 text-gray-700 dark:text-gray-300 focus:ring-blue-500 focus:border-blue-500 sm:min-w-65">
+                        <option value="">All ledger dates</option>
+                        @foreach($cycleOptions as $cycleOption)
+                            <option value="{{ $cycleOption['label'] }}" {{ $selectedCycle === $cycleOption['label'] ? 'selected' : '' }}>
+                                {{ $cycleOption['label'] }} ({{ $cycleOption['start']->format('M Y') }} - {{ $cycleOption['end']->format('M Y') }})
+                            </option>
+                        @endforeach
+                    </select>
+                </form>
+            </div>
+        @endif
+
         <!-- Top Dashboard Metrics Section -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
 
             <!-- Card: Treasury Fund Balance -->
-            <div class="md:col-span-1 flex flex-col justify-between bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-lg shadow-sm p-6 min-h-[160px]">
+            <div class="md:col-span-1 flex flex-col justify-between bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-lg shadow-sm p-6 min-h-40">
                 <div>
                     <h3 class="text-xs uppercase tracking-wider font-semibold text-gray-500 dark:text-gray-400">
                         {{ $isPresident && !$selectedCampusId ? 'Global Cash Balance Pool' : 'Treasury Fund Balance' }}
@@ -64,7 +91,7 @@
             <div class="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
 
                 <!-- Card: Contributions -->
-                <div class="flex flex-col justify-between bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-lg shadow-sm p-6 min-h-[120px]">
+                <div class="flex flex-col justify-between bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-lg shadow-sm p-6 min-h-30">
                     <div>
                         <h3 class="text-xs uppercase tracking-wider font-semibold text-gray-500 dark:text-gray-400">
                             Contributions
@@ -79,7 +106,7 @@
                 </div>
 
                 <!-- Card: Disbursements -->
-                <div class="flex flex-col justify-between bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-lg shadow-sm p-6 min-h-[120px]">
+                <div class="flex flex-col justify-between bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-lg shadow-sm p-6 min-h-30">
                     <div>
                         <h3 class="text-xs uppercase tracking-wider font-semibold text-gray-500 dark:text-gray-400">
                             Disbursements

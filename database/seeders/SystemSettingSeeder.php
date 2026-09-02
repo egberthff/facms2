@@ -187,6 +187,25 @@ class SystemSettingSeeder extends Seeder
             ],
         ];
 
+        $campusIds = collect($settings)
+            ->pluck('campus_id')
+            ->unique();
+
+        foreach ($campusIds as $campusId) {
+            $settings[] = [
+                'setting_key' => 'claim_cycle_years',
+                'setting_value' => '2',
+                'description' => 'Number of years in the claims cycle.',
+                'campus_id' => $campusId,
+            ];
+            $settings[] = [
+                'setting_key' => 'claim_cycle_start_month',
+                'setting_value' => '10',
+                'description' => 'Month when the claims cycle starts (1-12).',
+                'campus_id' => $campusId,
+            ];
+        }
+
         foreach ($settings as $setting) {
 
             SystemSetting::updateOrCreate(

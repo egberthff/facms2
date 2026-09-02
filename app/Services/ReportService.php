@@ -7,10 +7,15 @@ use App\Models\Claim;
 use App\Models\Campus;
 use App\Models\Member;
 use App\Models\SystemSetting;
+use App\Models\ClaimsCycle;
 use InvalidArgumentException;
 
 class ReportService
 {
+    public function __construct(private CycleService $cycleService)
+    {
+    }
+
     /**
      * Generate report.
      */
@@ -397,8 +402,6 @@ class ReportService
 
     protected function allowanceUtilization(array $filters): array
     {
-        [$cycleStart, $cycleEnd, $cycleLabel] = $this->resolveCycleBounds($filters['cycle'] ?? 'current');
-
         $members = Member::query()
             ->active()
             ->when(!empty($filters['campus_id']), fn($query) => $query->where('campus_id', $filters['campus_id']))
@@ -406,7 +409,11 @@ class ReportService
             ->with('campus')
             ->get();
 
-        $rows = $members->map(function (Member $member) use ($cycleStart, $cycleEnd, $cycleLabel) {
+        $rows = $members->map(function (Member $member) use ($filters) {
+            [$cycleStart, $cycleEnd, $cycleLabel] = $this->resolveCycleBounds(
+                $filters['cycle'] ?? 'current',
+                $member->campus_id
+            );
             $cycleClaims = $member->claims()
                 ->whereBetween('submitted_at', [$cycleStart, $cycleEnd]);
 
@@ -471,14 +478,7 @@ class ReportService
 
     protected function allowanceForfeiture(array $filters): array
     {
-        // 1. Resolve cycle boundaries and label (e.g., "2024-2026")
-        [$cycleStart, $cycleEnd, $cycleLabel] = $this->resolveCycleBounds($filters['cycle'] ?? 'current');
-        // Construct the explicit target cycle string to search against the settings table
-        $startYear = $cycleStart->year;
-        $endYear = $startYear + 2;
-        $targetCycle = "{$startYear}-{$endYear}";
-
-        // 2. Fetch active members and eager load claims to eliminate the N+1 query performance bottleneck
+        // Fetch active members and eager load claims to eliminate the N+1 query performance bottleneck.
         $members = Member::query()
             ->active()
             ->when(!empty($filters['campus_id']), fn($query) => $query->where('campus_id', $filters['campus_id']))
@@ -489,13 +489,19 @@ class ReportService
         // 3. Eager load annual_limit configurations for all applicable campuses
         $campusIds = $members->pluck('campus_id')->unique()->filter()->toArray();
         $settingsMap = SystemSetting::whereIn('campus_id', $campusIds)
-            ->where('setting_key', 'annual_limit')
-            ->where(fn($q) => $q->whereNull('cycle_label')->orWhere('cycle_label', $targetCycle))
+            ->where('setting_key', 'annual_claim_limit')
             ->get()
             ->groupBy('campus_id');
 
         // 4. Map values strictly using secure, in-memory computations
-        $rows = $members->map(function (Member $member) use ($cycleStart, $cycleEnd, $cycleLabel, $settingsMap, $targetCycle) {
+        $rows = $members->map(function (Member $member) use ($filters, $settingsMap) {
+            [$cycleStart, $cycleEnd, $cycleLabel] = $this->resolveCycleBounds(
+                $filters['cycle'] ?? 'current',
+                $member->campus_id
+            );
+            $targetCycle = $cycleLabel === 'Current Cycle'
+                ? $this->cycleService->currentRecord($member->campus_id)->cycle_label
+                : $cycleLabel;
 
             // Isolate claims submitted strictly inside this cycle's date boundaries
             $cycleClaims = $member->claims->filter(function ($claim) use ($cycleStart, $cycleEnd) {
@@ -602,24 +608,9 @@ class ReportService
             });
     }
 
-    private function resolveCycleBounds(?string $cycle): array
+    private function resolveCycleBounds(?string $cycle, ?string $campusId = null): array
     {
-        if (empty($cycle) || $cycle === 'current') {
-            $now = Carbon::now();
-            $startYear = $now->month >= 10 ? $now->year : $now->year - 1;
-            $cycleStart = Carbon::create($startYear, 10, 1, 0, 0, 0);
-            $cycleEnd = (clone $cycleStart)->addYears(2)->subSecond();
-            return [$cycleStart, $cycleEnd, 'Current Cycle'];
-        }
-
-        $parts = explode('-', $cycle);
-        if (count($parts) === 2 && is_numeric($parts[0]) && is_numeric($parts[1])) {
-            $cycleStart = Carbon::create((int) $parts[0], 10, 1, 0, 0, 0);
-            $cycleEnd = (clone $cycleStart)->addYears(2)->subSecond();
-            return [$cycleStart, $cycleEnd, trim($cycle)];
-        }
-
-        return $this->resolveCycleBounds('current');
+        return $this->cycleService->resolve($cycle, $campusId);
     }
 
     protected function buildContext(
@@ -696,14 +687,23 @@ class ReportService
             ['value' => 'current', 'label' => 'Current Cycle'],
         ];
 
-        $now = Carbon::now();
-        $pivotYear = $now->month >= 10 ? $now->year : $now->year - 1;
+        $campusIds = Campus::query()->where('is_active', true)->pluck('id');
+        $storedCycles = collect();
 
-        for ($offset = 2; $offset <= 6; $offset += 2) {
-            $startYear = $pivotYear - $offset;
+        foreach ($campusIds as $campusId) {
+            $this->cycleService->list($campusId);
+            $storedCycles = $storedCycles->merge(
+                ClaimsCycle::where('campus_id', $campusId)
+                    ->orderByDesc('start_date')
+                    ->limit(4)
+                    ->pluck('cycle_label')
+            );
+        }
+
+        foreach ($storedCycles->unique()->values() as $label) {
             $cycles[] = [
-                'value' => "{$startYear}-" . ($startYear + 2),
-                'label' => "{$startYear} - " . ($startYear + 2),
+                'value' => $label,
+                'label' => str_replace('-', ' - ', $label),
             ];
         }
 

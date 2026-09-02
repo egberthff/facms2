@@ -5,12 +5,17 @@ namespace App\Services;
 use App\Models\TreasuryLedger;
 use App\Models\Campus;
 use App\Models\Scopes\CampusMemberScope;
+use App\Services\CycleService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Exception;
 
 class TreasuryLedgerService
 {
+    public function __construct(private CycleService $cycleService)
+    {
+    }
+
     /**
      * Safely record a transaction and update the rolling balance for a campus.
      */
@@ -59,10 +64,15 @@ class TreasuryLedgerService
      /**
      * Fetch standard metrics for a regular campus user.
      */
-        public function getStandardMetrics(): array
+        public function getStandardMetrics(?string $cycle = null, ?string $campusId = null): array
         {
-            $entries = TreasuryLedger::with('campus')->orderBy('created_at', 'desc')->paginate(15);
-            $latestLedger = TreasuryLedger::orderBy('created_at', 'desc')->first();
+            $ledgerQuery = TreasuryLedger::query();
+            if ($cycle) {
+                [$cycleStart, $cycleEnd] = $this->cycleService->resolve($cycle, $campusId);
+                $ledgerQuery->whereBetween('created_at', [$cycleStart, $cycleEnd]);
+            }
+            $entries = (clone $ledgerQuery)->with('campus')->orderBy('created_at', 'desc')->paginate(15);
+            $latestLedger = (clone $ledgerQuery)->orderBy('created_at', 'desc')->first();
 
             return [
                 'isPresident' => false,
@@ -76,7 +86,7 @@ class TreasuryLedgerService
         /**
          * Fetch global aggregate metrics across all campuses for administrators.
          */
-        public function getPresidentialMetrics(?string $selectedCampusId = null): array
+        public function getPresidentialMetrics(?string $selectedCampusId = null, ?string $cycle = null): array
         {
             $allCampuses = Campus::select('campuses.id', 'campuses.acronym')
                 ->where('campuses.is_active', true)
@@ -106,6 +116,11 @@ class TreasuryLedgerService
                 $ledgerQuery->where('campus_id', $selectedCampusId);
             }
 
+            if ($cycle && $selectedCampusId) {
+                [$cycleStart, $cycleEnd] = $this->cycleService->resolve($cycle, $selectedCampusId);
+                $ledgerQuery->whereBetween('created_at', [$cycleStart, $cycleEnd]);
+            }
+
             $entries = $ledgerQuery->with('campus')
                 ->orderBy('created_at', 'desc')
                 ->orderBy('id', 'desc')
@@ -116,7 +131,9 @@ class TreasuryLedgerService
                 'allCampuses' => $allCampuses,             // Populates the entire selection dropdown menu
                 'filteredCampuses' => $filteredCampuses,   // Controls the dynamic balance summary cards
                 'totalGlobalBalance' => $totalGlobalBalance,
-                'currentBalance' => $currentBalance,
+                'currentBalance' => $cycle && $selectedCampusId
+                    ? (float) ($entries->first()?->running_balance ?? 0.00)
+                    : $currentBalance,
                 'entries' => $entries,
                 'selectedCampusId' => $selectedCampusId ? (string) $selectedCampusId : null,
                 'totalContributions' => 0.00, 

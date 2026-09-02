@@ -4,11 +4,16 @@ namespace App\Http\Controllers;
 
 use App\Models\Campus;
 use App\Models\SystemSetting;
+use App\Services\CycleService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class SettingController extends Controller
 {
+    public function __construct(private CycleService $cycleService)
+    {
+    }
+
     /**
      * Display a listing of the resource.
      */
@@ -22,11 +27,30 @@ class SettingController extends Controller
         $allCampuses = Campus::where('is_active', true)->get();
         $settings = SystemSetting::query()
             ->when($selectedCampusId, fn($query) => $query->where('campus_id', $selectedCampusId))
+            ->whereNull('cycle_label')
             ->orderBy('setting_key')
             ->orderBy('campus_id')
             ->get();
 
-        return view('settings.index', compact('settings', 'allCampuses', 'selectedCampusId', 'isPresident'));
+        $cyclesByCampus = collect();
+        if ($selectedCampusId) {
+            $campus = $allCampuses->firstWhere('id', $selectedCampusId);
+            if ($campus) {
+                $cyclesByCampus->put($campus->id, [
+                    'campus' => $campus,
+                    'cycles' => $this->cycleService->list($campus->id),
+                ]);
+            }
+        } elseif ($isPresident) {
+            $cyclesByCampus = $allCampuses->mapWithKeys(fn ($campus) => [
+                $campus->id => [
+                    'campus' => $campus,
+                    'cycles' => $this->cycleService->list($campus->id),
+                ],
+            ]);
+        }
+
+        return view('settings.index', compact('settings', 'allCampuses', 'selectedCampusId', 'isPresident', 'cyclesByCampus'));
     }
 
     /**
@@ -67,7 +91,11 @@ class SettingController extends Controller
     public function update(Request $request, SystemSetting $setting)
     {
         $request->validate([
-            'setting_value' => ['required', 'string'],
+            'setting_value' => $setting->setting_key === 'claim_cycle_years'
+                ? ['required', 'integer', 'between:1,20']
+                : ($setting->setting_key === 'claim_cycle_start_month'
+                    ? ['required', 'integer', 'between:1,12']
+                    : ['required', 'string']),
             'campus_filter' => ['nullable', 'string'],
         ]);
     
@@ -79,11 +107,9 @@ class SettingController extends Controller
         abort_if(!$hasFullAccess && $user->getCachedCampusId() !== $setting->campus_id, 403);
 
     
-        // 1. Calculate the current 2-year business cycle label dynamically
-        $now = \Carbon\Carbon::now();
-        $startYear = $now->month >= 10 ? $now->year : $now->year - 1;
-        $endYear = $startYear + 2;
-        $currentCycleLabel = "{$startYear}-{$endYear}";
+        $currentCycleLabel = $this->cycleService
+            ->currentRecord($setting->campus_id)
+            ->cycle_label;
     
         // 2. Automatically snapshot this historical value for the current cycle
         SystemSetting::updateOrCreate(
@@ -98,14 +124,20 @@ class SettingController extends Controller
             ]
         );
     
-        // 3. Update the primary live configuration row (where cycle_label is NULL)
-        $setting->update(['setting_value' => $request->input('setting_value')]);
+        // Update the live row, even when the route was opened for a historical snapshot.
+        SystemSetting::where('setting_key', $setting->setting_key)
+            ->where('campus_id', $setting->campus_id)
+            ->whereNull('cycle_label')
+            ->update(['setting_value' => $request->input('setting_value')]);
+
+        if (in_array($setting->setting_key, ['claim_cycle_years', 'claim_cycle_start_month'], true)) {
+            $this->cycleService->applyConfiguration($setting->campus_id);
+        }
     
         return redirect()
             ->route('settings.index', ['campus_filter' => $request->input('campus_filter')])
             ->with('success', 'System setting updated successfully.');
     }
-
 
     /**
      * Remove the specified resource from storage.

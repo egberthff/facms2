@@ -404,13 +404,18 @@ class ContributionService
      /**
      * Get the total paid contributions sum, filtered by optional campus.
      */
-    public function getTotalContributions(?string $selectedCampusId = null): float
+    public function getTotalContributions(?string $selectedCampusId = null, ?string $cycle = null): float
     {
         $query = ContributionDetail::where('contribution_details.status', 'Paid')
             ->join('members', 'contribution_details.member_id', '=', 'members.id');
 
         if ($selectedCampusId) {
             $query->where('members.campus_id', $selectedCampusId);
+        }
+
+        if ($cycle && $selectedCampusId) {
+            [$cycleStart, $cycleEnd] = app(\App\Services\CycleService::class)->resolve($cycle, $selectedCampusId);
+            $query->whereBetween('contribution_details.paid_at', [$cycleStart, $cycleEnd]);
         }
 
         return (float) $query->sum('contribution_details.amount');

@@ -169,13 +169,18 @@ class DisbursementService
      /**
      * Get the total released claim payments sum, filtered by optional campus.
      */
-    public function getTotalDisbursements(?string $selectedCampusId = null): float
+    public function getTotalDisbursements(?string $selectedCampusId = null, ?string $cycle = null): float
     {
         $query = ClaimPayment::join('claims', 'claim_payments.claim_id', '=', 'claims.id')
             ->join('members', 'claims.member_id', '=', 'members.id');
 
         if ($selectedCampusId) {
             $query->where('members.campus_id', $selectedCampusId);
+        }
+
+        if ($cycle && $selectedCampusId) {
+            [$cycleStart, $cycleEnd] = app(\App\Services\CycleService::class)->resolve($cycle, $selectedCampusId);
+            $query->whereBetween('claim_payments.released_at', [$cycleStart, $cycleEnd]);
         }
 
         return (float) $query->sum('claim_payments.amount');

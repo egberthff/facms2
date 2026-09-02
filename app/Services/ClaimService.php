@@ -36,17 +36,18 @@ class ClaimService
         try {
             DB::beginTransaction();
             $claimNumber = 'CLM-' . now()->format('Ymd') . '-' . strtoupper(Str::random(6));
-            $annualLimit = SystemSetting::annualLimit()->first();
+            $member = Auth::user()->member;
+            $annualLimit = SystemSetting::annualLimit($member->campus_id)->first();
 
             // 1. Create the Claim record
             $claim = Claim::create([
                 'claim_number'      => $claimNumber,
-                'member_id'         => Auth::user()->member->id,
+                'member_id'         => $member->id,
                 'claim_type_id'     => $data['claimType'],
                 'payment_method_id' => $data['paymentMethod'],
                 'requested_amount'  => $data['amount'],
                 'approved_amount'   => null,
-                'annual_limit'      => $this->toMysqlDecimal($annualLimit->setting_value),
+                'annual_limit'      => $this->toMysqlDecimal($annualLimit?->setting_value ?? 23000),
                 'status'            => ClaimStatus::Pending->value,
                 'description'       => $data['description'] ?? null,
                 'submitted_at'      => now(),
