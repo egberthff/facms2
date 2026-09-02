@@ -320,7 +320,7 @@
                 contentType: false,
                 success: function(response) {
                     if( response.status === 200 ) {
-                        Swal.file({
+                        Swal.fire({
                             icon: "success",
                             title: "Success",
                             text: response.message,
@@ -330,7 +330,22 @@
                             $("#member-modal-csv").prop(false);
                             window.location.reload();
                         })
+                    }else if( response.status === 500 ) {
+                        Swal.fire({ 
+                            icon: 'error',
+                            title: 'Error',
+                            text: response.message,
+                        })
                     }
+                },
+                error: function(xhr, status, error) {
+                    console.error('Form submission failed:', error);
+                    // Optionally, display an error message to the user
+                    Swal.fire({ 
+                            icon: 'error',
+                            title: 'Error',
+                            text: response.message,
+                        })
                 }
             });
 

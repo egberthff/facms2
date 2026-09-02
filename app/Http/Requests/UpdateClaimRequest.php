@@ -15,11 +15,12 @@ class UpdateClaimRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        // return false;
         return Auth::user()->hasAnyRole([
             'President',
+            'Federated President',
             'Treasurer',
-        ]);
+            'Federated Treasurer'
+        ]) || Auth::user()->can('manage user');
     }
 
     /**

@@ -5,12 +5,11 @@ namespace App\Mail;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
-use Illuminate\Mail\Mailables\Attachment;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
-class WelcomeEmail extends Mailable
+class WelcomeEmail extends Mailable implements ShouldQueue 
 {
     use Queueable, SerializesModels;
 
@@ -18,22 +17,16 @@ class WelcomeEmail extends Mailable
     public $email;
     public $password;
     public $url;
-    /**
-     * Create a new message instance.
-     */
-    public function __construct(
-        $name, $email, $password, $url
-    )
+
+    // Only pass the required unique arguments
+    public function __construct($name, $email)
     {
         $this->name = $name;
         $this->email = $email;
-        $this->password = 'password123';
-        $this->url = env('APP_URL').'/forgot-password';
+        $this->password = 'password123'; // Static password string
+        $this->url = config('app.url') . '/forgot-password'; // Use config() helper instead of env() directly
     }
 
-    /**
-     * Get the message envelope.
-     */
     public function envelope(): Envelope
     {
         return new Envelope(
@@ -41,9 +34,6 @@ class WelcomeEmail extends Mailable
         );
     }
 
-    /**
-     * Get the message content definition.
-     */
     public function content(): Content
     {
         return new Content(
@@ -51,11 +41,6 @@ class WelcomeEmail extends Mailable
         );
     }
 
-    /**
-     * Get the attachments for the message.
-     *
-     * @return array<int, Attachment>
-     */
     public function attachments(): array
     {
         return [];

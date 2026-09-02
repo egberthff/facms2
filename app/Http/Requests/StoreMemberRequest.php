@@ -11,8 +11,10 @@ class StoreMemberRequest extends FormRequest
     {
         return Auth::user()->hasAnyRole([
             'President',
+            'Federated President',
             'Treasurer',
-        ]);
+            'Federated Treasurer'
+        ]) || Auth::user()->can('manage user');
     }
 
     public function rules(): array
