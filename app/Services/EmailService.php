@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Mail\WelcomeEMail;
 use App\Mail\ClaimSubmittedAlert;
+use App\Mail\ClaimStatusUpdated;
 use App\Models\User;
 use App\Models\Member;
 use Illuminate\Support\Facades\Mail;
@@ -39,6 +40,9 @@ class EmailService
         }
     }
 
+    /**
+     * Alert notification for presidents
+     */
     public function newSubmittedClaimAlert($claim): void
     {
         // 1. Wrap into a base support collection
@@ -70,13 +74,12 @@ class EmailService
     
                 // Send the email if a president is found
                 if ($presidentMember && $presidentMember->user && $presidentMember->user->email) {
-                    \Log::error(print_r($singleClaim, true));
                     $emailData = [
                         "memberName"     => $member->user ? $member->user->name : 'Unknown Member', 
                         "claimType"      => $singleClaim->claimType ? $singleClaim->claimType->name : 'N/A', 
                         "claimNumber"    => $singleClaim->claim_number,
                         "amount"         => $singleClaim->requested_amount,
-                        "submissionDate" => $singleClaim->submitted_at, 
+                        "submissionDate" => $singleClaim->submitted_at->format('F j, Y, g:i a'), 
                         "url"            => url('/claims/list') 
                     ];
                 
@@ -91,6 +94,50 @@ class EmailService
             }
         }
     }
+ 
+
+    /**
+     * Notification email for Members claim status changed
+     */
+    public function sendClaimStatusUpdate($claim): void
+    {
+        $claimCollection = wrap_into_collection($claim);
+
+        // Ensure relationships are loaded on the collection safely
+        if ($claimCollection->isNotEmpty()) {
+            $claimCollection->first()->newCollection($claimCollection->all())->loadMissing(['member.user', 'claimType']);
+        }
+
+        foreach ($claimCollection as $singleClaim) {
+            try {
+                $member = $singleClaim->member;
+
+                // Ensure the claimant has a linked user account with an email address
+                if ($member && $member->user && $member->user->email) {
+
+                    $emailData = [
+                        "recipientName"  => $member->user->name,
+                        "claimNumber"    => $singleClaim->claim_number,
+                        "claimType"      => $singleClaim->claimType ? $singleClaim->claimType->name : 'N/A',
+                        "status"         => strtoupper($singleClaim->status), // e.g., APPROVED, REJECTED, PENDING
+                        "amount"         =>$singleClaim->requested_amount ?? 0.00,
+                        "remarks"        => $singleClaim->status_remarks ?? 'No additional comments provided.', // Useful for rejection reasons
+                        "updatedAt"      => $singleClaim->updated_at->format('F j, Y, g:i a'),
+                        "url"            => url('claims/my-list/' . $singleClaim->member->user->user_id) // Direct link for the user to view details
+                    ];
+
+                    Mail::to($member->user->email)
+                        ->send(new ClaimStatusUpdated($emailData));
+                } else {
+                    Log::warning("Cannot send status update. Claimant user account or email missing for claim ID: {$singleClaim->id}");
+                }
+
+            } catch (\Exception $e) {
+                Log::error('Failed to send claim status update email: ' . $e->getMessage());
+            }
+        }
+    }
+
 }
 
 /**
