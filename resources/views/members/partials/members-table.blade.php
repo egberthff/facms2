@@ -3,7 +3,7 @@
                     <tr class="text-xs uppercase tracking-wider text-gray-700 bg-gray-50 dark:bg-gray-800 dark:text-gray-300"> 
                         <th class="px-6 py-4 font-semibold">Employee ID</th>
                         <th class="px-6 py-4 font-semibold">Member</th>
-                        @if(Auth::user()->hasAnyRole(['President', 'Treasurer']) || Auth::user()->can('view all campus data'))
+                        @if(Auth::user()->hasAnyRole(['Federated President', 'Federated Treasurer']) || Auth::user()->can('view all campus data'))
                         <th class="px-6 py-4 font-semibold">Campus</th>
                         @endif
                         <th class="px-6 py-4 font-semibold">Work Details</th>
@@ -21,8 +21,8 @@
                             <tr class="hover:bg-gray-50/70 dark:hover:bg-gray-800/50 transition-colors duration-150">
                                 <td class="px-6 py-4 font-semibold text-gray-900 dark:text-white whitespace-nowrap">{{ $member->employee_number }}</td>
                                 <td class="px-6 py-4 whitespace-nowrap">{{ ucwords($member->last_name) }}, {{ ucwords($member->first_name) }} {{ ucwords($member->middle_name) }}, {{ ucwords($member->suffex) }}</td>
-                                @if(Auth::user()->hasAnyRole(['President', 'Treasurer']) || Auth::user()->can('view all campus data'))
-                                <th class="px-6 py-4 font-semibold">{{ $member->campus->acronym }}</th>
+                                @if(Auth::user()->hasAnyRole(['Federated President', 'Federated Treasurer']) || Auth::user()->can('view all campus data'))
+                                <td class="px-6 py-4 font-semibold">{{ $member->campus->acronym }}</td>
                                 @endif
                                 <td class="px-6 py-4 whitespace-nowrap">{{ $member->department }} - {{ $member->position }}</td>
                                 {{-- <td class="px-6 py-4 whitespace-nowrap">{{ $member->employment_status }}</td> --}}
@@ -48,12 +48,13 @@
                                     </x-button>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    <x-button type="button" 
-                                        id="edit-member-btn"
-                                        class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+                                    <x-button
+                                        type="button"
+                                        class="edit-member-btn bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
                                         data-action="edit-member-details"
                                         data-modal-target="member-modal"
                                         data-modal-toggle="member-modal"
+
                                         data-member-id="{{ $member->id }}"
                                         data-member-employee-number="{{ $member->employee_number }}"
                                         data-member-first-name="{{ $member->first_name }}"
@@ -61,7 +62,7 @@
                                         data-member-middle-name="{{ $member->middle_name }}"
                                         data-member-suffix="{{ $member->suffix }}"
                                         data-member-gender="{{ $member->gender }}"
-                                        data-member-birtdate="{{ $member->birth_date }}"
+                                        data-member-birth-date="{{ $member->birth_date }}"
                                         data-member-department="{{ $member->department }}"
                                         data-member-position="{{ $member->position }}"
                                         data-member-employment-status="{{ $member->employment_status }}"
@@ -70,8 +71,9 @@
                                         data-member-address="{{ $member->address }}"
                                         data-member-gcash-number="{{ $member->gcash_number }}"
                                         data-member-gcash-account-name="{{ $member->gcash_account_name }}"
-                                        data-member-campus_id="{{ $member->campus_id }}"
-                                        >
+                                        data-member-campus-id="{{ $member->campus_id }}"
+                                        data-member-email="{{ Auth::user()->email }}"
+                                    >
                                         Edit
                                     </x-button>
                                 </td>
@@ -84,4 +86,4 @@
                     @endif
     
                 </tbody>
-            </x-table>
+        </x-table>

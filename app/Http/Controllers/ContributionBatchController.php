@@ -88,12 +88,7 @@ class ContributionBatchController extends Controller
             // Falls back to your original presidential metrics pipeline
             $data = $this->contributionService->getClaimsContributionData($selectedCampusId);
         }
-        
-        // // 1. Evaluate user privilege profiles 
-        // $selectedCampusId = $request->input('campus_filter');
-
-        // // 2. Fetch data payload arrays using the service container
-        // $data = $this->contributionService->getBatchMonitoringData($selectedCampusId);
+        $data['contribution_type'] = $contributionType;
 
         return view('contributions.admin-contributions-monitor', $data);
     }

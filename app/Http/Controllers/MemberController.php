@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Enums\MembershipStatus;
 use Illuminate\Support\Facades\Log;
 use App\Services\MemberService;
+use App\Services\EmailService;
 use Illuminate\Http\JsonResponse;
 
 // 1. Move the enum here (outside of the class)
@@ -27,10 +28,11 @@ use Exception;
 class MemberController extends Controller
 {
     private MemberService $memberService;
-    public function __construct(MemberService $memberService)
+    public function __construct(MemberService $memberService, EmailService $emailService)
     {
         // $this->authorizeResource(Member::class, 'member');
         $this->memberService = $memberService;
+        $this->emailService = $emailService;
     }
 
     /**
@@ -61,12 +63,14 @@ class MemberController extends Controller
     /**
      * Store member through CSV
      */
-    public function storeCSV(Request $request, MemberService $memberService): JsonResponse
+    public function storeCSV(Request $request, MemberService $memberService, EmailService $emailService): JsonResponse
     {
         try {
             // Only pass $request since the service handles the logic
             $members = $memberService->createMemberCSV($request);
-    
+
+            // 4. Send the email *outside* of the database transaction context
+            $emailService->sendWelcomeEmails($members);
             return response()->json([
                 'status' => 200,
                 'message' => 'Members Added Successfully',
@@ -75,7 +79,7 @@ class MemberController extends Controller
         } catch (Exception $e) {
             // Safe input logging that won't crash on standard Requests
             $logInput = $request->except(['password', 'member_csv_file']);
-    
+            DB::rollBack();
             Log::error('Member CSV creation failed: ' . $e->getMessage(), [
                 'input' => $logInput,
                 'trace' => $e->getTraceAsString()
@@ -92,12 +96,13 @@ class MemberController extends Controller
     /**
      * Store a newly created member.
      */
-   public function store(StoreMemberRequest $request, MemberService $memberService): JsonResponse
+   public function store(StoreMemberRequest $request, MemberService $memberService, EmailService $emailService ): JsonResponse
     {
         try {
 
             $member = $memberService->createMember($request->validated());
 
+            $emailService->sendWelcomeEmails($member);
             return response()->json([
                 'status' => 200,   
                 'message' => "Member Added Successfully",
@@ -105,6 +110,7 @@ class MemberController extends Controller
             ], 200);
 
         } catch (Exception $e) {
+            DB::rollBack();
             Log::error('Member creation failed: ' . $e->getMessage(), [
                 'input' => $request->safe()->except(['password']),
                 'trace' => $e->getTraceAsString()

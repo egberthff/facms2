@@ -16,7 +16,9 @@ class MemberPolicy
         // return false;
         return $user->hasAnyRole([
             'President',
+            'Federated President',
             'Treasurer',
+            'Federated Treasurer'
         ]);
     }
 
@@ -26,7 +28,12 @@ class MemberPolicy
     public function view(User $user, Member $member): bool
     {
         // return false;
-        return $user->hasAnyRole(['President', 'Treasurer'])
+        return $user->hasAnyRole([
+            'President', 
+            'Treasurer', 
+            'Federated President', 
+            'Federated Treasurer'
+            ])
         || $user->member?->id === $member->id;
     }
 
@@ -35,7 +42,10 @@ class MemberPolicy
      */
     public function create(User $user): bool
     {
-         return $user->hasRole('President');
+         return $user->hasAnyRole([
+            'President', 
+            'Federated President'
+            ]);
     }
 
     /**
@@ -45,7 +55,9 @@ class MemberPolicy
     {
         return $user->hasAnyRole([
             'President',
+            'Federated President',
             'Treasurer',
+            'Federated Treasurer'
         ]);
     }
 

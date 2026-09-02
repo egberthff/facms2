@@ -16,8 +16,10 @@ class UpdateMemberRequest extends FormRequest
         // Match the exact same role-based security clearance as creating a member
         return Auth::user()->hasAnyRole([
             'President',
+            'Federated President',
             'Treasurer',
-        ]);
+            'Federated Treasurer'
+        ]) || Auth::user()->can('view all campus data');
     }
 
     /**

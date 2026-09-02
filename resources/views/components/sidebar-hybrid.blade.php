@@ -127,7 +127,7 @@
         <!-- ========================================= -->
         <!-- ADMIN MANAGEMENT ZONE -->
         <!-- ========================================= -->
-        @canany(['view all claims', 'view disbursment', 'release payments', 'view all contribution', 'manage members', 'view campus treasury', 'view reports', 'manage users'])
+        @canany(['view all claims', 'view disbursement', 'release payments', 'view all contribution', 'manage members', 'view campus treasury', 'view reports', 'manage users'])
             <hr class="border-slate-700 my-4">
             <div class="mb-4">
                 <div class="px-3 mb-2 text-xs font-semibold text-amber-500 uppercase tracking-wider">
@@ -145,7 +145,7 @@
                         </li>
                     @endcan
 
-                    @canany(['view disbursment', 'release payments'])
+                    @canany(['view disbursement', 'release payments'])
                         <li>
                             <a href="{{ route('disbursement.index') }}"
                                 class="flex items-center p-3 rounded-lg transition

@@ -19,12 +19,15 @@
                 <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
                     <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-zinc-800 dark:text-gray-400">
                         <tr>
-                            <th scope="col" class="px-4 py-3">Batch ID</th>
-                            <th scope="col" class="px-4 py-3">Claim ID</th>
-                            <th scope="col" class="px-4 py-3">Claimant</th>
+                            <!-- Column 1: Primary System Key -->
+                            <th scope="col" class="px-4 py-3" x-text="contributionType === 'claims' ? 'Batch ID' : 'Contribution ID'"></th>
+                            <th scope="col" class="px-4 py-3" x-text="contributionType === 'claims' ? 'Claim ID' : 'Contribution Year'"></th>
+                            <th scope="col" class="px-4 py-3" x-text="contributionType === 'claims' ? 'Claimant' : 'Member'"></th>
+                            <!-- Column 4: Administrative Scope Profile -->
                             @if($isPresident)
                                 <th scope="col" class="px-4 py-3">Campus</th>
                             @endif
+                            <!-- Financial Columns Metrics -->
                             <th scope="col" class="px-4 py-3 text-right">Collectible Amount</th>
                             <th scope="col" class="px-4 py-3 text-right">Collected Amount</th>
                             <th scope="col" class="px-4 py-3 text-center">Action</th>
@@ -34,21 +37,22 @@
                         <!-- Dynamic Alpine Loop Engine -->
                         <template x-for="batch in paginatedBatches" :key="batch.id">
                             <tr class="bg-white hover:bg-gray-50/70 dark:bg-zinc-900 dark:hover:bg-zinc-800/50 transition-colors duration-150">
-                                {{-- <td class="px-4 py-3.5 font-mono text-xs text-gray-600 dark:text-gray-400" x-text="'BCH-' + String(batch.id).padStart(5, '0')"></td> --}}
-                                <td class="px-4 py-3.5 font-mono text-xs text-gray-600 dark:text-gray-400" x-text="batch.id"></td>
-                                <td class="px-4 py-3.5 font-medium text-gray-900 dark:text-white" x-text="batch.claim_number"></td>
+                                <!-- Column 1: Dynamic Primary Key (Renders in ALL view states) -->
+                                <td class="px-4 py-3.5 font-mono text-xs text-gray-600 dark:text-gray-400" x-text="contributionType === 'claims' ? batch.id : batch.claim_number"></td>
+                                <td class="px-4 py-3.5 font-mono text-xs text-gray-600 dark:text-gray-400" x-text="contributionType === 'claims' ? batch.claim_number || 'N/A' : batch.claim_id || 'N/A'"></td>
                                 <td class="px-4 py-3.5">
-                                    <div class="font-medium text-gray-900 dark:text-white" x-text="batch.claimant || 'N/A'"></div>
-                                    <div class="text-xs text-gray-500 dark:text-gray-400" x-text="batch.claim_type"></div>
+                                    <div class="font-medium text-gray-900 dark:text-white" x-text="batch.claimant || batch.member_name || 'N/A'"></div>
+                                    <div class="text-xs text-gray-500 dark:text-gray-400" x-text="batch.claim_type || batch.contribution_type_label || 'Standard'"></div>
                                 </td>
-                                
-                                <!-- Optional Campus context flag column for Administrative access profiles -->
+                                <!-- Column 4: Optional Campus context flag column for Administrative access profiles -->
                                 @if($isPresident)
                                     <td class="px-4 py-3.5 font-bold text-xs tracking-wide text-blue-600 dark:text-blue-400" x-text="batch.campus_acronym || 'SYS'"></td>
                                 @endif
-                                
-                                <td class="px-4 py-3.5 text-right font-semibold text-gray-900 dark:text-white" x-text="'₱' + Number(batch.collectible_amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })"></td>
-                                <td class="px-4 py-3.5 text-right font-semibold" :class="Number(batch.collected_amount) >= Number(batch.collectible_amount) ? 'text-green-600 dark:text-green-400' : 'text-amber-600 dark:text-amber-400'" x-text="'₱' + Number(batch.collected_amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })"></td>
+                                <!-- Financial Values Formatting Cells -->
+                                <td class="px-4 py-3.5 text-right font-semibold text-gray-900 dark:text-white" x-text="'₱' + Number(batch.collectible_amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })"></td>
+                                <td class="px-4 py-3.5 text-right font-semibold" :class="Number(batch.collected_amount) >= Number(batch.collectible_amount) ? 'text-green-600 dark:text-green-400' : 'text-amber-600 dark:text-amber-400'" x-text="'₱' + Number(batch.collected_amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })"></td>
+
+                                <!-- Action Interactive Trigger Element Button -->
                                 <td class="px-4 py-3.5 text-center">
                                     <button
                                         type="button"
@@ -60,17 +64,19 @@
                                 </td>
                             </tr>
                         </template>
-
+                    
                         <!-- Fallback empty collection template layout state -->
                         <template x-if="filteredBatches().length === 0">
                             <tr>
-                                <td colspan="{{ $isPresident ? '7' : '6' }}" class="text-center py-12 text-gray-400 dark:text-zinc-500 text-xs">
+                                <!-- Safe dynamic calculation fallback mapping across layout options -->
+                                <td :colspan="contributionType === 'claims' ? ({{ $isPresident ? 1 : 0 }} + 7) : ({{ $isPresident ? 1 : 0 }} + 6)" class="text-center py-12 text-gray-400 dark:text-zinc-500 text-xs">
                                     No records match your filters or search terms inside this workspace view.
                                 </td>
                             </tr>
                         </template>
                     </tbody>
                 </table>
+
                 <!-- Main Table Pagination Toolbar Controls -->
                 <div class="flex items-center justify-between border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-zinc-900 px-4 py-3.5 mt-4" x-show="totalBatchesCount > 0">
                     <div class="text-sm text-gray-700 dark:text-gray-400">

@@ -15,7 +15,8 @@
                     <div class="p-6" x-show="selectedBatch">
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">
                             <div class="rounded-xl border border-slate-100 bg-slate-50 p-4">
-                                <p class="text-xs uppercase tracking-wide text-slate-400">Claim ID</p>
+                                <p class="text-xs uppercase tracking-wide text-slate-400"
+                                x-text="contributionType === 'claims' ? 'Claim ID' : 'Contribution ID'"></p>
                                 <p class="mt-1 font-semibold text-slate-900" x-text="selectedBatch?.claim_number"></p>
                             </div>
                             <div class="rounded-xl border border-slate-100 bg-slate-50 p-4">
@@ -74,7 +75,7 @@
                                                 <button type="button" @click="selectDetail(detail)" class="block w-full text-xs font-semibold text-blue-600 hover:text-blue-700">View Full Details</button>
                                                 <button
                                                     type="button"
-                                                    @click="markContributionAsPaid(detail.id)"
+                                                    @click="markContributionAsPaid(detail.id, contributionType)"
                                                     :disabled="(detail.status || '').toString().toLowerCase() === 'paid'"
                                                     class="block w-full text-xs font-semibold"
                                                     :class="(detail.status || '').toString().toLowerCase() === 'paid' ? 'text-slate-400 cursor-not-allowed' : 'text-emerald-600 hover:text-emerald-700'"

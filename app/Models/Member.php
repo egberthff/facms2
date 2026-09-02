@@ -96,6 +96,11 @@ class Member extends Model
         return $this->belongsTo(Campus::class, 'campus_id', 'id'); 
     }
 
+    public function annualContributions()
+    {
+        return $this->hasMany(AnnualContribution::class, "member_id", 'id');
+    }
+
     /*
     |--------------------------------------------------------------------------
     | Accessors
