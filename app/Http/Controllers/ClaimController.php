@@ -21,17 +21,24 @@ use App\Models\ClaimDocument;
 use App\Models\SystemSetting;
 use App\Services\ClaimService;
 use App\Services\TreasuryLedgerService;
+use App\Services\EmailService;
 
 use Exception;
 class ClaimController extends Controller
 {
     private ClaimService $claimService;
     private TreasuryLedgerService $ledgerService;
+    private EmailService $emailService;
 
-     public function __construct(ClaimService $claimService, TreasuryLedgerService $ledgerService)
+     public function __construct(
+        ClaimService $claimService, 
+        TreasuryLedgerService $ledgerService,
+        EmailService $emailService
+        )
     {
         $this->claimService = $claimService;
         $this->ledgerService = $ledgerService;
+        $this->emailService = $emailService;
     }
     /**
      * Display a listing of the resource.
@@ -65,14 +72,16 @@ class ClaimController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreClaimRequest $request): JsonResponse
+    public function store(StoreClaimRequest $request, EmailService $emailService): JsonResponse
     {
         try {
             // Pass validated data and files directly to the service
-            $this->claimService->createClaim(
-                $request->validated(), 
-                $request->file('documents', [])
-            );
+           $claim = $this->claimService->createClaim(
+                        $request->validated(), 
+                        $request->file('documents', [])
+                    );
+
+            $emailService->newSubmittedClaimAlert($claim); 
 
             return response()->json([
                 'success' => true,
@@ -81,6 +90,7 @@ class ClaimController extends Controller
 
         } catch (Exception $e) {
             // Log the actual error here for debugging: 
+            DB::rollback();
             \Log::error($e->getMessage());
             return response()->json([
                 'success' => false,

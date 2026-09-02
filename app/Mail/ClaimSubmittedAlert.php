@@ -13,13 +13,23 @@ use Illuminate\Queue\SerializesModels;
 class ClaimSubmittedAlert extends Mailable
 {
     use Queueable, SerializesModels;
-
+    public $memberName; 
+    public $claimType;
+    public $claimNumber;
+    public $amount;
+    public $submissionDate;
+    public $url;
     /**
      * Create a new message instance.
      */
-    public function __construct()
+    public function __construct( $claim )
     {
-        //
+        $this->memberName = $claim['memberName']; 
+        $this->claimType = $claim['claimType']; 
+        $this->claimNumber = $claim['claimNumber'];
+        $this->amount = $claim['amount'];
+        $this->submissionDate = $claim['submissionDate'];
+        $this->url = $claim['url'];
     }
 
     /**
@@ -38,7 +48,7 @@ class ClaimSubmittedAlert extends Mailable
     public function content(): Content
     {
         return new Content(
-            view: 'view.name',
+            view: 'emails.new-submitted-claim-alert',
         );
     }
 

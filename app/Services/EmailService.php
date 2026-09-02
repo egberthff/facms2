@@ -3,6 +3,9 @@
 namespace App\Services;
 
 use App\Mail\WelcomeEMail;
+use App\Mail\ClaimSubmittedAlert;
+use App\Models\User;
+use App\Models\Member;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Collection;
@@ -32,6 +35,59 @@ class EmailService
             } catch (Exception $e) {
                 // 3. Log failures individually so one bad email address doesn't halt the rest
                 Log::error("Failed to send welcome email to Member ID {$member->id}: " . $e->getMessage());
+            }
+        }
+    }
+
+    public function newSubmittedClaimAlert($claim): void
+    {
+        // 1. Wrap into a base support collection
+        $claimCollection = wrap_into_collection($claim);
+    
+        // 2. Safely eager-load relationships if the collection isn't empty
+        if ($claimCollection->isNotEmpty()) {
+            // If it's a standard Eloquent Collection, this loads it perfectly.
+            // If it's a Support Collection holding Eloquent models, this still triggers Eloquent's loader safely.
+            $claimCollection->first()->newCollection($claimCollection->all())->loadMissing(['member.user', 'claimType']);
+        }
+    
+        foreach ($claimCollection as $singleClaim) {
+            try {
+                // Get the claimant's member record
+                $member = $singleClaim->member;
+    
+                if (!$member) {
+                    continue; // Skip if no member record is attached to this claim
+                }
+    
+                // Find the member who has the 'President' or 'Federated President' role and matching campus_id
+                $presidentMember = Member::with('user')
+                    ->where('campus_id', $member->campus_id)
+                    ->whereHas('user', function ($query) {
+                        $query->role(['President', 'Federated President']); 
+                    })
+                    ->first();
+    
+                // Send the email if a president is found
+                if ($presidentMember && $presidentMember->user && $presidentMember->user->email) {
+                    \Log::error(print_r($singleClaim, true));
+                    $emailData = [
+                        "memberName"     => $member->user ? $member->user->name : 'Unknown Member', 
+                        "claimType"      => $singleClaim->claimType ? $singleClaim->claimType->name : 'N/A', 
+                        "claimNumber"    => $singleClaim->claim_number,
+                        "amount"         => $singleClaim->requested_amount,
+                        "submissionDate" => $singleClaim->submitted_at, 
+                        "url"            => url('/claims/list') 
+                    ];
+                
+                    Mail::to($presidentMember->user->email)
+                        ->send(new ClaimSubmittedAlert($emailData));
+                } else {
+                    Log::warning("No president user account found for campus_id: {$member->campus_id}");
+                }
+    
+            } catch (\Exception $e) {
+                Log::error('Failed to send claim alert: ' . $e->getMessage());
             }
         }
     }

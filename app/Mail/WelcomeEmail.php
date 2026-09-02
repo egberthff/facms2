@@ -23,8 +23,8 @@ class WelcomeEmail extends Mailable implements ShouldQueue
     {
         $this->name = $name;
         $this->email = $email;
-        $this->password = 'password123'; // Static password string
-        $this->url = config('app.url') . '/forgot-password'; // Use config() helper instead of env() directly
+        $this->password = 'password123';  
+        $this->url = config('app.url') . '/forgot-password'; 
     }
 
     public function envelope(): Envelope

@@ -4,7 +4,7 @@ use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\DashboardController;
-// use App\Mail\WelcomeEmail;
+use App\Mail\ClaimSubmittedAlert;
 
 // Route::middleware(['auth', 'active'])->group(function () {
 //     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -13,13 +13,14 @@ use App\Http\Controllers\DashboardController;
 // });
 
 // Route::get('/send-test-email', function () {
-//     $recipient = 'user@example.com';
-//     $name = 'John Doe';
-//     $password = 'password123';
-//     $url = env('APP_URL');
+//     $recipient = 'president@bisu.edu.ph';
+//     $memberName = 'Test Account';
+//     $claimNumber = 'CLM-09022026-01';
+//     $claimType = 'Outpatient';
+//     $amount = '2000';
+//     $submissionDate = now(); 
 
-
-//     Mail::to($recipient)->send(new WelcomeEmail($name, $recipient, $password, $url));
+//     Mail::to($recipient)->send(new ClaimSubmittedAlert($memberName, $claimType, $claimNumber, $amount, $submissionDate));
 
 //     return 'Email sent successfully!';
 // });
