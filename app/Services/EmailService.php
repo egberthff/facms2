@@ -146,7 +146,6 @@ class EmailService
                         })
                         ->first();      
 
-                    // CRITICAL FIX: Verify the treasurer was actually found before pulling variables
                     if ($treasurerMember && $treasurerMember->user && $treasurerMember->user->email) {
 
                         $treasurerEmailData = [
@@ -165,6 +164,38 @@ class EmailService
 
                     } else {
                         Log::warning("Treasurer alert skipped. No active 'Treasurer' or 'Federated Treasurer' role found linked to campus_id: {$member->campus_id}");
+                    }
+                }       
+
+                // --- SECTION C: SEND PRESIDENT NOTIFICATION (ONLY IF DISBURSED) ---
+                if (strtoupper(trim($singleClaim->status)) === 'DISBURSED') {
+
+                    // Query for the specific regional president
+                    $presidentMember = Member::with('user')
+                        ->where('campus_id', $member->campus_id)
+                        ->whereHas('user', function ($query) {
+                            $query->role(['President', 'Federated President']); 
+                        })
+                        ->first();   
+
+                    if ($presidentMember && $presidentMember->user && $presidentMember->user->email) {
+
+                        $presidentEmailData = [
+                            "recipientName" => $presidentMember->user->name,
+                            "claimNumber"   => $singleClaim->claim_number,
+                            "claimType"     => $singleClaim->claimType ? $singleClaim->claimType->name : 'N/A',
+                            "status"        => strtoupper($singleClaim->status), 
+                            "amount"        => $singleClaim->approved_amount ?? 0.00, // Uses approved amount for treasurer
+                            "remarks"       => $singleClaim->status_remarks ?? 'No additional comments provided.', 
+                            "updatedAt"     => $singleClaim->disbursed_at->format('F j, Y, g:i a'),
+                            "url"           => url('disbursements/list') 
+                        ];      
+
+                        Mail::to($presidentMember->user->email)
+                            ->send(new ClaimStatusUpdated('president', $presidentEmailData));
+
+                    } else {
+                        Log::warning("President alert skipped. No active 'Treasurer' or 'Federated Treasurer' role found linked to campus_id: {$member->campus_id}");
                     }
                 }       
 

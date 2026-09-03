@@ -18,17 +18,25 @@ class ClaimStatusUpdated extends Mailable implements ShouldQueue
 
     public function __construct($recipientType, array $emailData)
     {
-        $this->recipientType = $recipientType;
+        // Normalize immediately on construction to prevent string matching issues
+        $this->recipientType = strtolower(trim($recipientType));
         $this->emailData = $emailData;
     }
 
     public function envelope(): Envelope
     {
-        $isMember = strtolower(trim($this->recipientType)) === 'member';
+        $claimNumber = $this->emailData['claimNumber'] ?? '';
+        $status = $this->emailData['status'] ?? '';
 
-        $subject = $isMember 
-            ? 'Update on Your Claim #' . ($this->emailData['claimNumber'] ?? '') . ' [' . ($this->emailData['status'] ?? '') . ']' 
-            : 'Disbursement Notice on Claim #' . ($this->emailData['claimNumber'] ?? '');
+        // Clean mapping for subjects based on recipient types
+        $subjects = [
+            'member'    => "Update on Your Claim #{$claimNumber} [{$status}]",
+            'treasurer' => "Disbursement Notice on Claim #{$claimNumber}",
+            'president' => "Disbursement Alert on Claim #{$claimNumber}",
+        ];
+
+        // Fallback to member subject if type is unrecognized
+        $subject = $subjects[$this->recipientType] ?? "Claim Notification #{$claimNumber}";
 
         return new Envelope(
             subject: $subject,
@@ -37,13 +45,18 @@ class ClaimStatusUpdated extends Mailable implements ShouldQueue
 
     public function content(): Content
     {
-        // Safe fallback logic check using trim and lowercase normalization
-        $isMember = strtolower(trim($this->recipientType)) === 'member';
+        // Clean mapping for blade template views based on recipient types
+        $views = [
+            'member'    => 'emails.claim-status-updated',
+            'treasurer' => 'emails.claim-treasurer-disbursement-alert',
+            'president' => 'emails.claim-president-disbursement-alert', 
+        ];
+
+        // Fallback to member view if type is unrecognized
+        $view = $views[$this->recipientType] ?? 'emails.claim-status-updated';
 
         return new Content(
-            view: $isMember 
-                ? 'emails.claim-status-updated' 
-                : 'emails.claim-treasurer-disbursement-alert',
+            view: $view,
         );
     }
 }
