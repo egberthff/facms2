@@ -130,6 +130,18 @@
                 <div
                     x-data="{ open:false }"
                     class="relative inline-block text-left">
+                    @role('Member')
+                        <button
+                            @click="
+                                activeClaim = @js($claim);
+                                openModal = true;
+                                open = false;
+                                "
+                                class="flex w-full items-center px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-100">
+                                <x-heroicon-o-eye class="size-6 text-blue-600" />
+                                <span class="ml-3">View Details</span>
+                            </button>
+                        @else
                     <button
                         @click="open=!open"
                         class="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-100 transition">
@@ -146,6 +158,8 @@
                                 d="M19 9l-7 7-7-7"/>
                         </svg>
                     </button>
+                    @endrole
+                     
                     <div
                         x-show="open"
                         @click.away="open=false"
