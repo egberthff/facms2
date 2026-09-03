@@ -11,6 +11,7 @@ use App\Models\ContributionBatch;
 use App\Models\ContributionDetail;
 use App\Models\AnnualContribution;
 use App\Models\SystemSetting;
+use App\Services\TreasuryLedgerService;
 USE App\Enums\ContributionStatus;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
@@ -23,6 +24,12 @@ use InvalidArgumentException;
 
 class ContributionService
 {
+    private TreasuryLedgerService $ledgerService;
+
+    public function __construct(TreasuryLedgerService $ledgerService)
+    {
+        $this->ledgerService = $ledgerService;
+    }
     /**
      * Store a new contribution batch and generate detail records for all active members.
      */
@@ -230,33 +237,36 @@ class ContributionService
     /**
      * Record a payment for an individual contribution detail line item.
      */
-    public function markAsPaid(string $id, string $tag): ContributionDetail | AnnualContribution
+    public function markAsPaid(string $id, string $tag, array $data = [])
     {
-        switch ($tag) {
-            case 'claims':
-                $detail = ContributionDetail::findOrFail($id);
-        
-                $detail->update([
-                    'status'  => ContributionStatus::Paid->value,
-                    'paid_at' => now(),
-                ]);
-    
-                return $detail;
-    
-            case 'annual': // Fixed typo from 'annula'
-                $detail = AnnualContribution::findOrFail($id);
-        
-                $detail->update([
-                    'status'  => ContributionStatus::Paid->value,
-                    'paid_at' => now(),
-                ]);
-    
-                return $detail;
-    
-            default:
-                // Throwing an exception prevents a PHP Type Hint violation error
-                throw new InvalidArgumentException("Invalid contribution tag type specified: {$tag}");
-        }
+        return DB::transaction(function () use ($id, $tag, $data) {
+            
+            $detail = match ($tag) {
+                'claims' => ContributionDetail::findOrFail($id),
+                'annual' => AnnualContribution::findOrFail($id),
+                default  => throw new InvalidArgumentException("Invalid contribution tag: {$tag}"),
+            };
+
+            $detail->update([
+                'status'  => ContributionStatus::Paid->value,
+                'paid_at' => now(),
+            ]);
+
+            $name = ($tag === 'claims') ? 'Claims' : 'Annual';
+            $description = "Receipt for {$name} Contribution - Member ID: " . $detail->member_id;
+
+            $this->ledgerService->recordTransaction([
+                'campus_id'        => $detail->member->campus_id,
+                'sourceable_type'  => get_class($detail),
+                'sourceable_id'    => $detail->id,
+                'reference_number' => $data['reference_number'] ?? 'GL-' . time(),
+                'description'      => $description,
+                'type'             => 'Credit',
+                'amount'           => $detail->amount,
+            ]);
+
+            return $detail;
+        });
     }
 
      /**

@@ -52,7 +52,7 @@ class AnnualContributionController extends Controller
                 'success' => true,
                 'message' => 'Contribution payment recorded successfully.',
                 'data'    => $updatedDetail
-            ]);
+            ], 200);
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
