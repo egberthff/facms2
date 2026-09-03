@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Mail;
 
 use Illuminate\Bus\Queueable;
@@ -12,24 +13,37 @@ class ClaimStatusUpdated extends Mailable implements ShouldQueue
 {
     use Queueable, SerializesModels;
 
-    public array $emailData;
+    public $recipientType;
+    public $emailData;
 
-    public function __construct(array $emailData)
+    public function __construct($recipientType, array $emailData)
     {
+        $this->recipientType = $recipientType;
         $this->emailData = $emailData;
     }
 
     public function envelope(): Envelope
     {
+        $isMember = strtolower(trim($this->recipientType)) === 'member';
+
+        $subject = $isMember 
+            ? 'Update on Your Claim #' . ($this->emailData['claimNumber'] ?? '') . ' [' . ($this->emailData['status'] ?? '') . ']' 
+            : 'Disbursement Notice on Claim #' . ($this->emailData['claimNumber'] ?? '');
+
         return new Envelope(
-            subject: 'Update on Your Claim #' . $this->emailData['claimNumber'] . ' [' . $this->emailData['status'] . ']',
-        );
+            subject: $subject,
+        ); 
     }
 
     public function content(): Content
     {
+        // Safe fallback logic check using trim and lowercase normalization
+        $isMember = strtolower(trim($this->recipientType)) === 'member';
+
         return new Content(
-            markdown: 'emails.claim-status-updated',
+            view: $isMember 
+                ? 'emails.claim-status-updated' 
+                : 'emails.claim-treasurer-disbursement-alert',
         );
     }
 }

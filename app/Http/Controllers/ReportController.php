@@ -57,9 +57,7 @@ class ReportController extends Controller
              |------------------------------------------------------------
              | Campuses
              |------------------------------------------------------------
-             |
-             | Mock for now.
-             | Replace later with Campus::orderBy('name')->get()
+             | 
              |
              */
 

@@ -110,35 +110,82 @@ class EmailService
 
         foreach ($claimCollection as $singleClaim) {
             try {
-                $member = $singleClaim->member;
+                $member = $singleClaim->member;     
 
-                // Ensure the claimant has a linked user account with an email address
-                if ($member && $member->user && $member->user->email) {
-
-                    $emailData = [
-                        "recipientName"  => $member->user->name,
-                        "claimNumber"    => $singleClaim->claim_number,
-                        "claimType"      => $singleClaim->claimType ? $singleClaim->claimType->name : 'N/A',
-                        "status"         => strtoupper($singleClaim->status), // e.g., APPROVED, REJECTED, PENDING
-                        "amount"         =>$singleClaim->requested_amount ?? 0.00,
-                        "remarks"        => $singleClaim->status_remarks ?? 'No additional comments provided.', // Useful for rejection reasons
-                        "updatedAt"      => $singleClaim->updated_at->format('F j, Y, g:i a'),
-                        "url"            => url('claims/my-list/' . $singleClaim->member->user->user_id) // Direct link for the user to view details
-                    ];
-
-                    Mail::to($member->user->email)
-                        ->send(new ClaimStatusUpdated($emailData));
-                } else {
+                // 1. Structural Check: Ensure the claimant exists and has a valid user email
+                if (!$member || !$member->user || !$member->user->email) {
                     Log::warning("Cannot send status update. Claimant user account or email missing for claim ID: {$singleClaim->id}");
-                }
+                    continue; 
+                }       
+
+                // --- SECTION A: SEND MEMBER NOTIFICATION ---
+                $memberEmailData = [
+                    "recipientName" => $member->user->name,
+                    "claimNumber"   => $singleClaim->claim_number,
+                    "claimType"     => $singleClaim->claimType ? $singleClaim->claimType->name : 'N/A',
+                    "status"        => strtoupper($singleClaim->status), 
+                    "amount"        => $singleClaim->requested_amount ?? 0.00,
+                    "remarks"       => $singleClaim->status_remarks ?? 'No additional comments provided.',
+                    "updatedAt"     => $singleClaim->updated_at->format('F j, Y, g:i a'),
+                    "url"           => url('claims/my-list/' . $member->user->user_id)
+                ];      
+
+                Mail::to($member->user->email)
+                    ->send(new ClaimStatusUpdated('member', $memberEmailData));     
+
+
+                // --- SECTION B: SEND TREASURER NOTIFICATION (ONLY IF APPROVED) ---
+                if (strtoupper(trim($singleClaim->status)) === 'APPROVED') {
+
+                    // Query for the specific regional treasurer
+                    $treasurerMember = Member::with('user')
+                        ->where('campus_id', $member->campus_id)
+                        ->whereHas('user', function ($query) {
+                            // Tip: Ensure Spatie Laravel-Permission is configured correctly for array arguments
+                            $query->role(['Treasurer', 'Federated Treasurer']); 
+                        })
+                        ->first();      
+
+                    // CRITICAL FIX: Verify the treasurer was actually found before pulling variables
+                    if ($treasurerMember && $treasurerMember->user && $treasurerMember->user->email) {
+
+                        $treasurerEmailData = [
+                            "recipientName" => $treasurerMember->user->name,
+                            "claimNumber"   => $singleClaim->claim_number,
+                            "claimType"     => $singleClaim->claimType ? $singleClaim->claimType->name : 'N/A',
+                            "status"        => strtoupper($singleClaim->status), 
+                            "amount"        => $singleClaim->approved_amount ?? 0.00, // Uses approved amount for treasurer
+                            "remarks"       => $singleClaim->status_remarks ?? 'No additional comments provided.', 
+                            "updatedAt"     => $singleClaim->updated_at->format('F j, Y, g:i a'),
+                            "url"           => url('claims/list') 
+                        ];      
+
+                        Mail::to($treasurerMember->user->email)
+                            ->send(new ClaimStatusUpdated('treasurer', $treasurerEmailData));
+
+                    } else {
+                        Log::warning("Treasurer alert skipped. No active 'Treasurer' or 'Federated Treasurer' role found linked to campus_id: {$member->campus_id}");
+                    }
+                }       
 
             } catch (\Exception $e) {
-                Log::error('Failed to send claim status update email: ' . $e->getMessage());
+                Log::error('Failed to send claim status update email for claim ID ' . ($singleClaim->id ?? 'unknown') . ': ' . $e->getMessage());
             }
         }
+
     }
 
 }
+
+    /**
+     * Notification for the treasurer to disburse the claim
+     */
+    // public function sendDisbursementAlertToTresurer($claim): void
+    // {
+    //     $claimCollection = wrap_into_collection($claim);
+
+
+    // } 
 
 /**
  * Helper utility to normalize mixed types into a singular Collection instance.
