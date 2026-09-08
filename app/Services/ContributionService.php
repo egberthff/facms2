@@ -115,6 +115,13 @@ class ContributionService
 
             $fixedAmount = (float) $setting->setting_value;
 
+            if ($fixedAmount <= 0) {
+                throw new Exception(
+                    "Generation failed: The annual contribution amount for this campus must be greater than zero. " .
+                    "Please update the 'annual_contribution' setting before generating records."
+                );
+            }
+
             // 3. Fetch active members who do not have records yet for this year
             $membersToProcess = Member::where('membership_status', 'active')
                 ->when($campus_filter, function($query, $campus_filter) {
@@ -254,6 +261,11 @@ class ContributionService
 
             $name = ($tag === 'claims') ? 'Claims' : 'Annual';
             $description = "Receipt for {$name} Contribution - Member ID: " . $detail->member_id;
+            $amount = $tag === 'annual' ? $detail->amount_paid : $detail->amount;
+
+            if ($amount === null || (float) $amount < 0) {
+                throw new InvalidArgumentException('The contribution amount must be a valid non-negative value.');
+            }
 
             $this->ledgerService->recordTransaction([
                 'campus_id'        => $detail->member->campus_id,
@@ -262,7 +274,7 @@ class ContributionService
                 'reference_number' => $data['reference_number'] ?? 'GL-' . time(),
                 'description'      => $description,
                 'type'             => 'Credit',
-                'amount'           => $detail->amount,
+                'amount'           => (float) $amount,
             ]);
 
             return $detail;

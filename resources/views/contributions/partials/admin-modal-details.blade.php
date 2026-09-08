@@ -29,7 +29,7 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div class="rounded-xl border border-slate-100 p-4">
                                 <p class="text-xs uppercase tracking-wide text-slate-400">Amount</p>
-                                <p class="mt-1 font-semibold text-slate-900" x-text="selectedDetail ? '₱' + Number(selectedDetail.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : ''"></p>
+                                <p class="mt-1 font-semibold text-slate-900" x-text="selectedDetail ? formatAmount(selectedDetail.amount ?? selectedDetail.amount_paid) : ''"></p>
                             </div>
                             <div class="rounded-xl border border-slate-100 p-4">
                                 <p class="text-xs uppercase tracking-wide text-slate-400">Status</p>

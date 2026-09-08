@@ -33,10 +33,7 @@ import { all } from 'axios';
 // Initialize components on DOM ready
 document.addEventListener('DOMContentLoaded', () => {
 
-    //Datatables 
-    const tables = document.querySelectorAll(".dt-table");
-     tables.forEach(tableElement => {
-        // 3. Initialize the library directly on the specific element
+    const initializeDataTable = (tableElement) => {
         const dtInstance = new DataTable(tableElement, {
             searchable: true,
             paging: true,
@@ -50,8 +47,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 thead: "text-md text-gray-700 uppercase bg-gray-50", 
             }
         });
-         tableElement.dataTableInstance = dtInstance;
-    });
+        tableElement.dataTableInstance = dtInstance;
+        return dtInstance;
+    };
+
+    window.initializeDataTable = initializeDataTable;
+
+    // Datatables
+    document.querySelectorAll(".dt-table:not([data-datatable-defer])").forEach(initializeDataTable);
 
     // Map imports
     // if (document.querySelector('#mapOne')) {
@@ -265,9 +268,9 @@ window.markContributionAsPaid = function(id, tag) {
     // * Processes and submits the Annual Contribution Batch Setup Form.
     // * @param {HTMLFormElement} formElement - The submitted form DOM reference.
     // */
-    window.sendAnnualContributionBatchSetup = function(formElement) {
-        // 1. Prevent native page refresh reload
-        if (window.event) window.event.preventDefault();
+    window.sendAnnualContributionBatchSetup = function(event, formElement) {
+        // Prevent native submission so failed requests keep the Alpine modal open.
+        event.preventDefault();
     
         // 2. Extract input values directly from Form Data
         const formData = new FormData(formElement);
@@ -392,6 +395,8 @@ window.markContributionAsPaid = function(id, tag) {
                 }
             });
         });
+
+        return false;
     };
     
         
