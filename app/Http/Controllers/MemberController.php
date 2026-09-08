@@ -28,6 +28,8 @@ use Exception;
 class MemberController extends Controller
 {
     private MemberService $memberService;
+    private EmailService $emailService;
+
     public function __construct(MemberService $memberService, EmailService $emailService)
     {
         // $this->authorizeResource(Member::class, 'member');
@@ -87,7 +89,7 @@ class MemberController extends Controller
     
             return response()->json([
                 'status' => 500,
-                'message' => "Failed to create members from CSV. The operation was safely rolled back.",
+                'message' => "Failed to create members from CSV. Please check the following details for potential issues: CSV format, data integrity, or duplicate entries.",
                 'error' => app()->environment('local', 'testing') ? $e->getMessage() : 'Internal Server Error'
             ], 500);
         }
@@ -118,7 +120,7 @@ class MemberController extends Controller
 
             return response()->json([
                 'status' => 500,
-                'message' => "Failed to create member. The operation was safely rolled back.",
+                'message' => "Failed to create member. Please check the following details for potential issues: Data integrity, or duplicate entries.",
                 'error' => app()->environment('local', 'testing') ? $e->getMessage() : 'Internal Server Error'
             ], 500);
         }
@@ -163,7 +165,7 @@ class MemberController extends Controller
 
             return response()->json([
                 'status' => 500,
-                'message' => "Failed to update member. Changes were safely rolled back.",
+                'message' => "Failed to update member. Please check the following details for potential issues: Data integrity, or duplicate entries.",
                 'error' => app()->environment('local', 'testing') ? $e->getMessage() : 'Internal Server Error'
             ], 500);
         }

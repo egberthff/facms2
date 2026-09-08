@@ -340,18 +340,29 @@
                             text: response.message,
                         })
                     }else {
-                        Swal.fire("",response.message,"")
-                    }
-                },
-                error: function(xhr, status, error) {
-                    console.error('Form submission failed:', error);
-                    // Optionally, display an error message to the user
-                    Swal.fire({ 
+                        Swal.fire({ 
                             icon: 'error',
                             title: 'Error',
-                            text: response.message,
+                            text: response.message
                         })
+                    }
+                },
+               error: function(xhr, status, error) {
+                    console.error('Form submission failed:', error);
+
+                    // Safely get the message from the server response
+                    let errorMsg = 'An unexpected error occurred.';
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        errorMsg = xhr.responseJSON.message;
+                    }
+                
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: errorMsg,
+                    });
                 }
+
             });
 
         }
@@ -391,10 +402,20 @@
                 },
                 error: function(xhr, status, error) {
                     console.error('Form submission failed:', error);
-                    Swal.fire('Error', 'Somethinf went wrong', 'error');
-                    // Optionally, display an error message to the user
+                            
+                    // Safely get the message from the server response
+                    let errorMsg = 'An unexpected error occurred.';
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        errorMsg = xhr.responseJSON.message;
+                    }
+                
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: errorMsg,
+                    });
                 }
-            });
+            });   
         }
 
         //Date format helper
