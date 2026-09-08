@@ -39,8 +39,9 @@
                 </select>
             </div>  
 
-            <!-- Right End: Add Action -->
+            <!-- Right End: Add Action --> 
             <div class="flex gap-2">  
+                {{-- @if(Auth::user()->hasRole('President'))   --}}
                 <x-button
                     id="add-new-member-btn-csv"
                     type="button"
@@ -60,8 +61,10 @@
                     data-modal-toggle="member-modal">
                         Add New Member
                 </x-button>
+                {{-- @endif --}}
             </div>
         </div>
+         
 
         <div class="w-full">
             @include('members.partials.members-table')
@@ -336,6 +339,8 @@
                             title: 'Error',
                             text: response.message,
                         })
+                    }else {
+                        Swal.fire("",response.message,"")
                     }
                 },
                 error: function(xhr, status, error) {
@@ -376,14 +381,29 @@
                              document.querySelector('[data-modal-hide="member-modal"]').click(); // Close the modal
                              window.location.reload();
                         })
+                    }else{
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: response.message
+                        });
                     }
                 },
                 error: function(xhr, status, error) {
                     console.error('Form submission failed:', error);
+                    Swal.fire('Error', 'Somethinf went wrong', 'error');
                     // Optionally, display an error message to the user
                 }
             });
         }
+
+        //Date format helper
+        const formatToHTMLDate = (dateString) => {
+            if (!dateString) return '';
+                const date = new Date(dateString);
+                // Check if the date is valid
+                return isNaN(date.getTime()) ? '' : date.toISOString().split('T')[0];
+            };
 
         document.addEventListener('click', function (e) {
             const btn = e.target.closest('[data-modal-target="member-modal"]');
@@ -444,8 +464,8 @@
                 document.getElementById('suffix').value =
                     btn.getAttribute('data-member-suffix') || '';
             
-                document.getElementById('birth_date').value =
-                    btn.getAttribute('data-member-birth-date') || '';
+                document.getElementById('birth_date').value = 
+                    formatToHTMLDate(btn.getAttribute('data-member-birth-date')) || '';
             
                 document.getElementById('gender').value =
                     btn.getAttribute('data-member-gender') || '';

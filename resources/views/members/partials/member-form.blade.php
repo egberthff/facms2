@@ -26,12 +26,13 @@
                     <div class="col-span-1 sm:col-span-2">
                         <label for="campus_id" class="block mb-2.5 text-sm font-medium text-gray-900 dark:text-white">Assigned Campus</label>
                         <select name="campus_id" id="campus_id" class="bg-gray-50 dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full px-3 py-2.5 shadow-xs">
-                            <option> -- SELECT CAMPUS -- </option>
-                            @forelse($campuses as $campus)
-                            <option value="{{ $campus->id }}"> {{ $campus->acronym }} </option>
-                            @empty
-                            <option></option>
-                            @endforelse
+                            <option value="">-- SELECT CAMPUS --</option>
+                            @foreach($campuses as $campus)
+                                <option value="{{ $campus->id }}" 
+                                    {{ Auth::user()->hasRole('President') && Auth::user()->member?->campus_id === $campus->id ? 'selected' : '' }}>
+                                    {{ $campus->acronym }}
+                                </option>
+                            @endforeach
                         </select>
                     </div>
 

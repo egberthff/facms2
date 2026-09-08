@@ -58,7 +58,7 @@
                                         data-member-id="{{ $member->id }}"
                                         data-member-employee-number="{{ $member->employee_number }}"
                                         data-member-first-name="{{ $member->first_name }}"
-                                        data-member-last-name="{{ $member->lastname }}"
+                                        data-member-last-name="{{ $member->last_name }}"
                                         data-member-middle-name="{{ $member->middle_name }}"
                                         data-member-suffix="{{ $member->suffix }}"
                                         data-member-gender="{{ $member->gender }}"
@@ -72,7 +72,7 @@
                                         data-member-gcash-number="{{ $member->gcash_number }}"
                                         data-member-gcash-account-name="{{ $member->gcash_account_name }}"
                                         data-member-campus-id="{{ $member->campus_id }}"
-                                        data-member-email="{{ Auth::user()->email }}"
+                                        data-member-email="{{ $member->user->email }}"
                                     >
                                         Edit
                                     </x-button>
