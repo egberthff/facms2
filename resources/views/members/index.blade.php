@@ -521,6 +521,11 @@
                 document.getElementById('email').value = 
                     btn.getAttribute('data-member-email') || '';
 
+                const memberModal = document.getElementById('member-modal');
+                memberModal.classList.remove('hidden');
+                memberModal.classList.add('flex');
+                memberModal.setAttribute('aria-hidden', 'false');
+
             
             } else if (action === 'add-new-member') {
             
