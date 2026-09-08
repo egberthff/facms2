@@ -86,18 +86,31 @@
                         <span class="font-semibold text-gray-900 dark:text-white" x-text="totalBatchesCount"></span> batches
                     </div>
                     
-                    <div class="inline-flex space-x-2">
+                    <div class="inline-flex items-center space-x-2">
                         <button 
                             type="button"
-                            @click="page--" 
+                            @click="page = Math.max(page - 1, 1)" 
                             :disabled="page === 1"
                             class="px-3 py-1.5 text-xs font-semibold rounded-lg border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 bg-white dark:bg-zinc-800 hover:bg-gray-50 dark:hover:bg-zinc-700 transition disabled:opacity-40 disabled:cursor-not-allowed"
                         >
                             Previous
                         </button>
+                        <template x-for="pageNumber in totalBatchesPages" :key="pageNumber">
+                            <button
+                                type="button"
+                                @click="page = pageNumber"
+                                x-text="pageNumber"
+                                :aria-current="page === pageNumber ? 'page' : null"
+                                :class="page === pageNumber
+                                    ? 'bg-blue-600 text-white border-blue-600'
+                                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 dark:bg-zinc-800 dark:text-gray-300 dark:border-gray-700 dark:hover:bg-zinc-700'"
+                                class="min-w-8 px-2.5 py-1.5 text-xs font-semibold rounded-lg border transition"
+                            ></button>
+                        </template>
+                        <span class="text-xs text-gray-500 dark:text-gray-400" x-text="'Page ' + page + ' of ' + totalBatchesPages"></span>
                         <button 
                             type="button"
-                            @click="page++" 
+                            @click="page = Math.min(page + 1, totalBatchesPages)" 
                             :disabled="page >= totalBatchesPages"
                             class="px-3 py-1.5 text-xs font-semibold rounded-lg border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 bg-white dark:bg-zinc-800 hover:bg-gray-50 dark:hover:bg-zinc-700 transition disabled:opacity-40 disabled:cursor-not-allowed"
                         >

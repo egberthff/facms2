@@ -5,7 +5,7 @@
             <template x-for="status in statuses" :key="status">
                 <button 
                     type="button"
-                    @click="currentStatus = status"
+                    @click="currentStatus = status; filterContributions(status)"
                     :class="currentStatus === status 
                         ? 'bg-blue-600 text-white border-blue-600' 
                         : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'"

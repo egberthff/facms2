@@ -5,6 +5,14 @@
             searchText: '',
             openModal: false,
             activeClaim: {},
+            filterClaims(status) {
+                const table = document.querySelector('.dt-table');
+                const dataTable = table?.dataTableInstance;
+
+                if (dataTable) {
+                    dataTable.search(status === 'all' ? '' : status);
+                }
+            },
             matches(status, number, desc, type) {
                 const matchesStatus = this.currentStatus === 'all' || status.toLowerCase() === this.currentStatus.toLowerCase();
                 const searchLower = this.searchText.toLowerCase();
@@ -65,7 +73,7 @@
                     <template x-for="status in ['all', 'Pending', 'Processing', 'Approved', 'Disbursed', 'Rejected']">
                         <button 
                             type="button"
-                            @click="currentStatus = status"
+                            @click="currentStatus = status; filterClaims(status)"
                             :class="currentStatus === status 
                                 ? 'bg-blue-400 text-blue-600 border-blue-600' 
                                 : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'"
