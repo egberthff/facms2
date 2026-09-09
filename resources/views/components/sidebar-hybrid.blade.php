@@ -1,6 +1,8 @@
 <aside
     id="logo-sidebar"
-    class="fixed top-0 left-0 z-40 w-64 h-screen transition-transform bg-slate-800 border-r border-slate-700">
+    class="fixed top-0 left-0 z-40 w-64 h-screen -translate-x-full lg:translate-x-0 transition-transform duration-300 bg-slate-800 border-r border-slate-700"
+    :class="{ 'translate-x-0': sidebarOpen }"
+    @click="if (window.innerWidth < 1024) sidebarOpen = false">
     <div class="h-full px-3 py-4 overflow-y-auto">
         <!-- ========================================= -->
         <!-- LOGO -->
