@@ -7,6 +7,9 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
+        <style>
+            [x-cloak] { display: none !important; }
+        </style>
 
         <title>{{ config('app.name', 'FACMS') }}</title>
 
@@ -26,7 +29,7 @@
 
 <body class="bg-gray-100">
 
-<div class="min-h-screen flex">
+<div class="min-h-screen flex" x-data="{ sidebarOpen: false }">
 
     {{-- Sidebar --}}
     {{-- <x-layout.sidebar /> --}}
@@ -37,6 +40,13 @@
     <x-sidebar-member/>
     @endrole --}}
     <x-sidebar-hybrid/>
+    <div
+        x-cloak
+        x-show="sidebarOpen"
+        x-transition.opacity
+        @click="sidebarOpen = false"
+        class="fixed inset-0 z-30 bg-slate-900/60 lg:hidden"
+        aria-hidden="true"></div>
     {{-- Main Content --}}
     <div class="flex-1 flex flex-col lg:ml-64">
 
