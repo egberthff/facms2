@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Log;
 use App\Services\MemberService;
 use App\Services\EmailService;
 use Illuminate\Http\JsonResponse;
+use App\Services\DashboardService;
 
 // 1. Move the enum here (outside of the class)
 // enum MembershipStatus: string
@@ -29,12 +30,18 @@ class MemberController extends Controller
 {
     private MemberService $memberService;
     private EmailService $emailService;
+    private DashboardService $dashboardService;
 
-    public function __construct(MemberService $memberService, EmailService $emailService)
+    public function __construct(
+        MemberService $memberService, 
+        EmailService $emailService,
+        DashboardService $dashboardService
+        )
     {
         // $this->authorizeResource(Member::class, 'member');
         $this->memberService = $memberService;
         $this->emailService = $emailService;
+        $this->dashboardService = $dashboardService;
     }
 
     /**
@@ -42,8 +49,11 @@ class MemberController extends Controller
      */
     public function index(Request $request)
     {
+        $user = Auth::user();
         $data['title'] = "Members List";
-        $data['isPresident'] = Auth::user()->can('view all campus data') || Auth::user()->hasAnyRole(['President', 'Treasurer']);
+        // $data['isPresident'] = $user->can('view all campus data') || $user->hasAnyRole(['President', 'Federated President']);
+        $data['isPresident'] = $user->hasAnyRole(['President', 'Federated President']);
+        $data['isTreasurer'] = $user->hasAnyRole(['Treasurer', 'Federated Treasurer']);
         $data['allCampuses'] = Campus::where('is_active', true)->get();
         $data['selectedCampusId'] = $data['isPresident'] ? $request->input('campus_filter') : null;
 
@@ -209,6 +219,9 @@ class MemberController extends Controller
             return response()->json(['error' => 'Invalid history type requested'], 400);
         }
 
+        $user = $member->user;
+        $balance = $this->dashboardService->calculateMemberBalanceData($user);
+
         switch ($type) {
             case 'claims':
                 $member->load(['claims' => function ($query) {
@@ -217,18 +230,22 @@ class MemberController extends Controller
                 }]);
                 break;
 
-            case 'contributions':
-                $member->load(['contributions' => function ($query) {
-                    $query->select(['member_id', 'contribution_batch_id', 'amount', 'status', 'paid_at'])
-                    ->latest('created_at');;
-                        //   ->with(['contributionBatch:id,generated_at']); 
-                }]);
-                break;
+                case 'contributions':
+                    $member->load(['contributions' => function ($query) {
+                        $query->select(['id', 'member_id', 'contribution_batch_id', 'amount', 'status', 'paid_at'])
+                              ->latest('created_at')
+                              ->with(['contributionBatch' => function ($batchQuery) {
+                                  $batchQuery->select(['id', 'batch_reference', 'generated_at']); 
+                              }]);
+                    }]);
+                    break;
+                
         }
 
         return response()->json([
-            'member' => $member->only(['id', 'first_name', 'last_name']),
+            'member'  => $member->only(['id', 'first_name', 'last_name']),
             'records' => $member->getRelation($type), 
+            'balance' => $balance,
         ]);
     }
 

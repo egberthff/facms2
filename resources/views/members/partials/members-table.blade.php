@@ -3,7 +3,8 @@
                     <tr class="text-xs uppercase tracking-wider text-gray-700 bg-gray-50 dark:bg-gray-800 dark:text-gray-300"> 
                         <th class="px-6 py-4 font-semibold">Employee ID</th>
                         <th class="px-6 py-4 font-semibold">Member</th>
-                        @if(Auth::user()->hasAnyRole(['Federated President', 'Federated Treasurer']) || Auth::user()->can('view all campus data'))
+                        {{-- @if(Auth::user()->hasAnyRole(['Federated President', 'Federated Treasurer']) || Auth::user()->can('view all campus data')) --}}
+                        @if(($isPresident ?? false) || ($isTreasurer ?? false))
                         <th class="px-6 py-4 font-semibold">Campus</th>
                         @endif
                         <th class="px-6 py-4 font-semibold">Work Details</th>
@@ -11,7 +12,9 @@
                         <th class="px-6 py-4 font-semibold">Membership Status</th>
                         <th class="px-6 py-4 font-semibold">Claims</th>
                         <th class="px-6 py-4 font-semibold">Contributions</th>
+                        @if($isPresident ?? false)
                         <th class="px-6 py-4 font-semibold">Action</th>
+                        @endif
 
                      </tr> 
                 </thead>
@@ -47,6 +50,7 @@
                                          View Contributions 
                                     </x-button>
                                 </td>
+                                @if($isPresident ?? false)
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <x-button
                                         type="button"
@@ -77,6 +81,7 @@
                                         Edit
                                     </x-button>
                                 </td>
+                                @endif
                             </tr>
                         @endforeach
                     @else
