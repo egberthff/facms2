@@ -236,10 +236,11 @@ class ClaimService
                 // Guard check: Avoid division by zero or empty processing
                 if ($totalMembersCount > 0) {
                     $totalAmount = $totalMembersCount * $amountPerMember;
-
+                    $batch_reference = 'BTCH -' . now()->format('Ymd') . '-' . strtoupper(Str::random(6));
                     // Correctly save model and extract its raw primary key string
                     $contributionBatch = ContributionBatch::create([
                         'claim_id'           => $claim->id,
+                        'batch_reference'    => $batch_reference,
                         'amount_per_member'  => $amountPerMember,
                         'total_members'      => $totalMembersCount,
                         'total_amount'      => $totalAmount,

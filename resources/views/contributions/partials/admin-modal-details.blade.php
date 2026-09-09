@@ -38,7 +38,9 @@
                         </div>
                         <div class="rounded-xl border border-slate-100 p-4">
                             <p class="text-xs uppercase tracking-wide text-slate-400">Paid At</p>
-                            <p class="mt-1 font-semibold text-slate-900" x-text="selectedDetail?.paid_at || '—'"></p>
+                            <p class="mt-1 font-semibold text-slate-900" 
+                               x-text="selectedDetail?.paid_at ? new Date(selectedDetail.paid_at).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' }) : '—'">
+                            </p>
                         </div>
                     </div>
                 </div>

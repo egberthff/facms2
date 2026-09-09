@@ -324,6 +324,7 @@ class ContributionService
 
             return [
                 'id'                  => $batch->id,
+                'batch_reference'     => $batch->batch_reference,
                 'claim_id'            => $batch->claim_id,
                 'claim_number'        => $batch->claim?->claim_number ?? 'N/A',
                 'claimant'            => trim(sprintf('%s %s %s', $batch->claim?->member?->first_name, $batch->claim?->member?->middle_name, $batch->claim?->member?->last_name)),

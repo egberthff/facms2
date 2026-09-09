@@ -16,6 +16,7 @@ return new class extends Migration
         Schema::create('contribution_batches', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignUuid('claim_id')->constrained('claims', 'id');
+            $table->string('batch_reference')->nullable(false);
             $table->decimal('amount_per_member', 10, 2)->default(0.00);
             $table->integer('total_members');
             $table->decimal('total_amount', 10, 2);

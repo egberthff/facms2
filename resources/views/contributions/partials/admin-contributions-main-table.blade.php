@@ -62,7 +62,7 @@
                             <tr class="bg-white hover:bg-gray-50/70 dark:bg-zinc-900 dark:hover:bg-zinc-800/50 transition-colors duration-150">
                                 <!-- Column 1: Dynamic Primary Key (Renders in ALL view states) -->
                                 <td class="px-4 py-3.5 font-mono text-xs text-gray-600 dark:text-gray-400">
-                                    {{ $contribution_type === 'claims' ? $batch['id'] : $batch['claim_number'] }}
+                                    {{ $contribution_type === 'claims' ? $batch['batch_reference'] : $batch['claim_number'] }}
                                 </td>
                                 <td class="px-4 py-3.5 font-mono text-xs text-gray-600 dark:text-gray-400">
                                     {{ $contribution_type === 'claims' ? ($batch['claim_number'] ?: 'N/A') : ($batch['claim_id'] ?: 'N/A') }}
