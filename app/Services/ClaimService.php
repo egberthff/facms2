@@ -134,7 +134,7 @@ class ClaimService
         ];
     }
 
-    public function getAllClaims( bool $isFederated = false, ?string $selectedCampusId = null): Collection
+    public function getAllClaims( bool $isPresident = false, ?string $selectedCampusId = null): Collection
     {
         $query = Claim::with(['claimType', 'paymentMethod', 'reviewer', 'documents', 'member'])
             ->withoutGlobalScope(CampusMemberScope::class);
@@ -146,8 +146,8 @@ class ClaimService
             });
         }
     
-        if ($isFederated) {
-            $query->where('status', '!=', 'Processing');
+        if ($isPresident) {
+            $query->whereIn('status', ['Pending', 'Rejected']);
         }
     
         return $query->latest('submitted_at')->get();

@@ -307,7 +307,7 @@
                         <!-- PENDING STATE: Show only Processing -->
                         <button 
                             type="button" 
-                            x-show="activeClaim.status && activeClaim.status.toLowerCase().trim() === 'pending'" 
+                            x-show="activeClaim.status && activeClaim.status.toLowerCase().trim() === 'approved'" 
                             @click="updateClaimStatus(activeClaim.id, 'Processing', activeClaim)" 
                             class="px-5 py-2 text-sm font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-xl transition">
                             Process Claim
@@ -316,7 +316,7 @@
                         <!-- PROCESSING STATE: Show Approved and Reject -->
                         <button 
                             type="button" 
-                            x-show="activeClaim.status && activeClaim.status.toLowerCase().trim() === 'processing'" 
+                            x-show="activeClaim.status && activeClaim.status.toLowerCase().trim() === 'pending'" 
                             @click="updateClaimStatus(activeClaim.id, 'Approved', activeClaim)" 
                             class="px-5 py-2 text-sm font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-xl transition">
                             Approve
@@ -324,7 +324,7 @@
 
                         <button 
                             type="button" 
-                            x-show="activeClaim.status && activeClaim.status.toLowerCase().trim() === 'processing'" 
+                            x-show="activeClaim.status && activeClaim.status.toLowerCase().trim() === 'pending'" 
                             @click="updateClaimStatus(activeClaim.id, 'Rejected', activeClaim)" 
                             class="px-5 py-2 text-sm font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-xl transition">
                             Reject
@@ -333,7 +333,7 @@
                         <!-- APPROVED STATE: Show Disbursed -->
                         <button 
                             type="button" 
-                            x-show="activeClaim.status && activeClaim.status.toLowerCase().trim() === 'approved'" 
+                            x-show="activeClaim.status && activeClaim.status.toLowerCase().trim() === 'processing'" 
                             @click="updateClaimStatus(activeClaim.id, 'Disbursed', activeClaim)" 
                             class="px-5 py-2 text-sm font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-xl transition">
                             Disburse
