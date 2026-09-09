@@ -339,61 +339,121 @@ window.markContributionAsPaid = function(id, tag) {
             });
     
             // 6. Send Network Request to your Laravel Destination
-            fetch(formElement.action, {
-                method: formElement.method,
-                body: formData,
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
-                    'Accept': 'application/json'
-                }
+            fetch(formElement.action, { 
+                method: formElement.method, 
+                body: formData, 
+                headers: { 
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '', 
+                    'Accept': 'application/json' 
+                } 
             })
-            .then(async (response) => {
-                const data = await response.json();
+            .then(async (response) => { 
+                const data = await response.json(); 
                 
-                if (!response.ok) {
-                    throw new Error(data.message || 'Something went wrong during form initialization.');
+                if (!response.ok) { 
+                    // Checks if data.error or data.message exists, otherwise uses the fallback string
+                    throw new Error(data.error || data.message || 'Something went wrong during form initialization.'); 
                 }
-    
-                // 7. Success State Execution UI Updates
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Success!',
-                    text: data.message || `Annual batch setup for ${parsedYear} has been generated successfully.`,
-                    confirmButtonColor: '#2563eb'
-                }).then(() => {
-                    // Safely close Alpine modal overlay using element references
-                    if (typeof Alpine !== 'undefined') {
-                        const alpineContainer = formElement.closest('[x-data]');
-                        if (alpineContainer) {
-                            // Works for Alpine v3 ($data) and v2 (__x) configurations
-                            const dataStore = alpineContainer.__x ? alpineContainer.__x.$data : Alpine.$data(alpineContainer);
-                            if (dataStore) {
-                                dataStore.openAnnualContributionSetupModal = false;
+                
+                // 7. Success State Execution UI Updates 
+                Swal.fire({ 
+                    icon: 'success', 
+                    title: 'Success!', 
+                    text: data.message || `Annual batch setup for ${parsedYear} has been generated successfully.`, 
+                    confirmButtonColor: '#2563eb' 
+                }).then(() => { 
+                    // Safely close Alpine modal overlay using element references 
+                    if (typeof Alpine !== 'undefined') { 
+                        const alpineContainer = formElement.closest('[x-data]'); 
+                        if (alpineContainer) { 
+                            const dataStore = alpineContainer.__x ? alpineContainer.__x.$data : Alpine.$data(alpineContainer); 
+                            if (dataStore) { 
+                                dataStore.openAnnualContributionSetupModal = false; 
                                 dataStore.contributionYear = ''; 
-                            }
-                        }
-                    }
-                    
-                    // Optional: window.location.reload(); 
-                });
-            })
-            .catch((error) => {
-                // 8. Error/Exception Handling Notification Output
-                console.error('Submission Error:', error);
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Setup Failed',
-                    text: error.message || 'Network connectivity fault or system error. Please try again.',
-                    confirmButtonColor: '#ef4444' // Tailwind bg-red-500
-                });
-            })
-            .finally(() => {
-                // 9. Reset button UI state context values
-                if (submitBtn) {
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = originalBtnText;
-                }
+                            } 
+                        } 
+                    } 
+                    window.location.reload();
+                }); 
+            }) 
+            .catch((error) => { 
+                // 8. Error/Exception Handling Notification Output 
+                console.error('Form submission failed:', error); 
+                
+                // Fallback message if error.message is completely empty
+                const errorMsg = error.message || 'An unexpected error occurred.';
+            
+                Swal.fire({ 
+                    icon: 'error', 
+                    title: 'Error', 
+                    text: errorMsg, 
+                    confirmButtonColor: '#ef4444' 
+                }); 
+            }) 
+            .finally(() => { 
+                // 9. Reset button UI state context values 
+                if (submitBtn) { 
+                    submitBtn.disabled = false; 
+                    submitBtn.innerHTML = originalBtnText; 
+                } 
+                 
             });
+            
+            // fetch(formElement.action, {
+            //     method: formElement.method,
+            //     body: formData,
+            //     headers: {
+            //         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+            //         'Accept': 'application/json'
+            //     }
+            // })
+            // .then(async (response) => {
+            //     const data = await response.json();
+                
+            //     if (!response.ok) {
+            //         throw new Error(data.message || 'Something went wrong during form initialization.');
+            //     }
+    
+            //     // 7. Success State Execution UI Updates
+            //     Swal.fire({
+            //         icon: 'success',
+            //         title: 'Success!',
+            //         text: data.message || `Annual batch setup for ${parsedYear} has been generated successfully.`,
+            //         confirmButtonColor: '#2563eb'
+            //     }).then(() => {
+            //         // Safely close Alpine modal overlay using element references
+            //         if (typeof Alpine !== 'undefined') {
+            //             const alpineContainer = formElement.closest('[x-data]');
+            //             if (alpineContainer) {
+            //                 // Works for Alpine v3 ($data) and v2 (__x) configurations
+            //                 const dataStore = alpineContainer.__x ? alpineContainer.__x.$data : Alpine.$data(alpineContainer);
+            //                 if (dataStore) {
+            //                     dataStore.openAnnualContributionSetupModal = false;
+            //                     dataStore.contributionYear = ''; 
+            //                 }
+            //             }
+            //         }
+                    
+            //         // Optional: window.location.reload(); 
+            //     });
+            // })
+            // .catch((error) => {
+            //     // 8. Error/Exception Handling Notification Output
+            //     console.error('Submission Error:', error);
+            //     Swal.fire({
+            //         icon: 'error',
+            //         title: 'Setup Failed',
+            //         text: error.message || 'Network connectivity fault or system error. Please try again.',
+            //         confirmButtonColor: '#ef4444' // Tailwind bg-red-500
+            //     });
+            // })
+            // .finally(() => {
+            //     // 9. Reset button UI state context values
+            //     if (submitBtn) {
+            //         submitBtn.disabled = false;
+            //         submitBtn.innerHTML = originalBtnText;
+            //     }
+            // });
         });
 
         return false;
