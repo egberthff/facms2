@@ -146,7 +146,7 @@ class DisbursementService
             $releasedAmountQuery->where('members.campus_id', $selectedCampusId);
         }
 
-        $releasedAmount = (float) $releasedAmountQuery->sum('claim_payments.amount');
+        $releasedAmount = (float) $releasedAmountQuery->where('status', 'Disbursed')->sum('claim_payments.amount');
         $pendingAmount = max(0, $approvedAmount - $releasedAmount);
 
         $releasedCountQuery = ClaimPayment::query();
