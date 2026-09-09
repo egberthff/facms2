@@ -134,7 +134,7 @@ class ClaimService
         ];
     }
 
-    public function getAllClaims( bool $isPresident = false, ?string $selectedCampusId = null): Collection
+    public function getAllClaims( array $userRoles = [], ?string $selectedCampusId = null): Collection
     {
         $query = Claim::with(['claimType', 'paymentMethod', 'reviewer', 'documents', 'member'])
             ->withoutGlobalScope(CampusMemberScope::class);
@@ -146,9 +146,26 @@ class ClaimService
             });
         }
     
-        if ($isPresident) {
-            $query->whereIn('status', ['Pending', 'Rejected']);
-        }
+    //    if( !empty($userRoles)) {
+    //         $query->where(function ($query) use ($userRoles) {
+
+    //             if (in_array('President', $userRoles)) {
+    //                 $query->orWhereIn('status', ['Pending', 'Processing', 'Approved', 'Disbursed', 'Rejected']);
+    //             }
+
+    //             if (in_array('Treasurer', $userRoles)) {
+    //                 $query->orWhereIn('status', ['For Review FP', 'Processing', 'Approved', 'Disbursed']);
+    //             }
+    
+    //             if (in_array('Federated President', $userRoles)) {
+    //                 $query->orWhereIn('status', ['Pending', 'Rejected']);
+    //             }
+    
+    //             if (in_array('Federated Treasurer', $userRoles)) {
+    //                 $query->orWhereIn('status', ['For Review FP', 'Processing', 'Approved', 'Disbursed']);
+    //             }
+    //         });
+    //     }
     
         return $query->latest('submitted_at')->get();
     }
