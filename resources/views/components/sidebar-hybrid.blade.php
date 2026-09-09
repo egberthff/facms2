@@ -202,19 +202,19 @@
 
                     @can('manage users')
                         <li>
-                            <a href="{{ route('settings.index') }}"
-                                class="flex items-center p-3 rounded-lg transition
-                                {{ request()->routeIs('settings.*') ? 'bg-slate-700 text-white' : 'text-white hover:bg-slate-700' }}">
-                                <x-heroicon-o-cog-6-tooth class="w-5 h-5"/>
-                                <span class="ml-3">Settings</span>
-                            </a>
-                        </li>
-                        <li>
                             <a href="{{ route('admin.permissions.index') }}"
                                 class="flex items-center p-3 rounded-lg transition
                                 {{ request()->routeIs('admin.permissions.*') ? 'bg-slate-700 text-white' : 'text-white hover:bg-slate-700' }}">
                                 <x-heroicon-o-shield-check class="w-5 h-5 text-blue-400"/>
                                 <span class="ml-3 text-blue-300 font-medium">User Roles</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('settings.index') }}"
+                                class="flex items-center p-3 rounded-lg transition
+                                {{ request()->routeIs('settings.*') ? 'bg-slate-700 text-white' : 'text-white hover:bg-slate-700' }}">
+                                <x-heroicon-o-cog-6-tooth class="w-5 h-5"/>
+                                <span class="ml-3">Settings</span>
                             </a>
                         </li>
                     @endcan
