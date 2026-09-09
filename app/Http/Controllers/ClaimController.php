@@ -49,7 +49,8 @@ class ClaimController extends Controller
         $data['isPresident'] = $user->can('view all campus data') || $user->hasAnyRole(['President', 'Treasurer']);
         $selectedCampusId = $data['isPresident'] ? $request->input('campus_filter') : null;
 
-        $data['claims'] = $this->claimService->getAllClaims($selectedCampusId);
+        $isFederatedTreasuer = $user->hasRole('Federated Treasurer');
+        $data['claims'] = $this->claimService->getAllClaims($isFederatedTreasuer, $selectedCampusId);
 
         if ($data['isPresident']) {
             $data['allCampuses'] = Campus::where('is_active', true)->get();

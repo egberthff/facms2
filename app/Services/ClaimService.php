@@ -134,27 +134,25 @@ class ClaimService
         ];
     }
 
-    public function getAllClaims(?string $selectedCampusId = null): Collection
+    public function getAllClaims( bool $isFederated = false, ?string $selectedCampusId = null): Collection
     {
-        $query = Claim::with([
-            'claimType',
-            'paymentMethod',
-            'reviewer',
-            'documents',
-            'member' => function ($query) {
-                $query->withoutGlobalScope(CampusMemberScope::class);
-            },
-        ]);
-
+        $query = Claim::with(['claimType', 'paymentMethod', 'reviewer', 'documents', 'member'])
+            ->withoutGlobalScope(CampusMemberScope::class);
+    
         if ($selectedCampusId) {
             $query->whereHas('member', function ($query) use ($selectedCampusId) {
                 $query->withoutGlobalScope(CampusMemberScope::class)
                     ->where('campus_id', $selectedCampusId);
             });
         }
-
+    
+        if ($isFederated) {
+            $query->where('status', '!=', 'Processing');
+        }
+    
         return $query->latest('submitted_at')->get();
     }
+    
 
      /**
      * Update the claim status securely.

@@ -90,15 +90,45 @@
                     <x-heroicon-o-arrow-path class="size-5 text-black text-solid" />
                     Refresh
                 </button>
-            </div>
+                {{-- <div class="mb-4 max-w-sm">
+                    <select 
+                      name="config-option" 
+                      id="config-option" 
+                      onchange="toggleForm(this.value)" 
+                      class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-300 bg-white hover:bg-slate-100">
+                      <option value="claims-based" selected>Search Claims</option>
+                      <option value="member-based">Search Member</option>
+                    </select>
+                </div> --}}
+            </div> 
         </div>
     </div>
     <!-- ===================================================== -->
     <!-- TABLE -->
     <!-- ===================================================== -->
-    <div class="overflow-x-auto p-8">
-        @include('claims.partials.claims-table')
+    <!-- Default Display -->
+    <div id="claims-form-container" class="overflow-x-auto p-8">
+        <!-- Claims-based view (Visible by default) -->
+        <div id="template-claims-table" style="display: block;">
+            @include('claims.partials.claims-table')
+        </div>
+        
+        <!-- Member-based view (Hidden by default) -->
+        <div id="template-search-member" style="display: none;">
+            @include('claims.partials.claim-search-member')
+        </div>
     </div>
+    
+
+        {{-- <div id="form-templates" style="display: none;">
+            <div id="template-claims-table">
+                @include('claims.partials.claims-table')
+            </div>
+            <div id="template-search-member">
+                @include('claims.partials.claim-search-member')
+            </div>
+        </div> --}}
+
     </div>
     <!--========================================= -->
     <!-- ALPINE DETAILS MODAL OVERLAY -->
@@ -323,4 +353,25 @@
         </div>
     </div>
 </div>
+
+<script>
+    function toggleForm(value) {
+        const claimsTable = document.getElementById('template-claims-table');
+        const searchMember = document.getElementById('template-search-member');
+
+        // Clean up input value
+        const selectedValue = value.trim().toLowerCase();
+
+        if (selectedValue === 'claims-based') {
+            claimsTable.style.display = 'block';
+            searchMember.style.display = 'none';
+        } else {
+            // Defaults to 'member-based'
+            claimsTable.style.display = 'none';
+            searchMember.style.display = 'block';
+        }
+    }
+
+</script>
 </x-app-layout>
+
