@@ -214,7 +214,7 @@
                                 class="flex items-center p-3 rounded-lg transition
                                 {{ request()->routeIs('admin.permissions.*') ? 'bg-slate-700 text-white' : 'text-white hover:bg-slate-700' }}">
                                 <x-heroicon-o-shield-check class="w-5 h-5 text-blue-400"/>
-                                <span class="ml-3 text-blue-300 font-medium">Roles & Permissions</span>
+                                <span class="ml-3 text-blue-300 font-medium">User Roles</span>
                             </a>
                         </li>
                     @endcan

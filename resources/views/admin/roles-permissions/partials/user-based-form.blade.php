@@ -22,13 +22,13 @@
 <div id="assignment-card-wrapper" class="hidden w-full mx-auto my-8 bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden font-sans">
     <!-- Tab Navigation Buttons -->
     <ul class="flex bg-slate-50 border-b border-slate-200 list-none p-0 m-0">
-        <li class="flex-1">
+        {{-- <li class="flex-1">
             <button 
                 class="tab-btn w-full py-4 px-6 text-sm font-semibold border-b-2 transition-all duration-200 outline-none text-blue-600 border-blue-600 bg-white" 
                 data-target="setup-permissions">
                 Setup Permissions
             </button>
-       </li>
+       </li> --}}
         <li class="flex-1">
             <button 
                 class="tab-btn w-full py-4 px-6 text-sm font-semibold border-b-2 transition-all duration-200 outline-none text-slate-500 border-transparent hover:text-slate-700 hover:bg-slate-100" 
@@ -40,8 +40,8 @@
             
     <div class="p-6">
         <!-- Form Panel 1: Setup Permissions Matrix -->
-        <div id="setup-permissions" class="tab-panel block">
-            <form id="user-permissions-form" action="{{ route('admin.users.sync-access') }}" data-action-type="permission-assignment" class="space-y-4" onsubmit="handleRolePermissionUpdate(event)">
+        <div id="setup-permissions" class="tab-panel hidden">
+            <form id="user-permissions-form" action="{{ route('admin.users.sync-access') }}" data-action-type="permission-assignment" class="space-y-4 hidden" onsubmit="handleRolePermissionUpdate(event)">
                 @csrf
                 @method('PUT')
 
@@ -71,7 +71,7 @@
         </div>
           
         <!-- Form Panel 2: Assign System Roles -->
-        <div id="assign-role" class="tab-panel hidden">
+        <div id="assign-role" class="tab-panel block">
             <form id="user-role-form" method="POST" class="space-y-4" action="{{ route('admin.users.sync-access') }}" data-action-type="role-assignment" onsubmit="handleRolePermissionUpdate(event)">
                 @csrf
                 @method('PUT')
