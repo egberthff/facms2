@@ -52,8 +52,9 @@ class ClaimController extends Controller
         // $isFederatedTreasuer = $user->hasRole('Federated Treasurer');
         $roles = ['President', 'Treasurer', 'Federated President', 'Federated Treasurer'];
         // Get only the roles the user actually has
-        $userRoles = array_filter($roles, fn($role) => $user->hasRole($role));
-            $data['claims'] = $this->claimService->getAllClaims($userRoles, $selectedCampusId);
+        $userRoles = array_values(array_filter($roles, fn($role) => $user->hasRole($role)));
+        $data['userRole'] = $userRoles[0] ?? null;
+        $data['claims'] = $this->claimService->getAllClaims($userRoles, $selectedCampusId);
 
         if ($data['isPresident']) {
             $data['allCampuses'] = Campus::where('is_active', true)->get();
@@ -174,6 +175,8 @@ class ClaimController extends Controller
         $data['claims'] = $this->claimService->getClaimsForUser($user);
         // dd($data['claims']);   
         $data['isPresident'] = Auth::user()->can('view all campus data') || Auth::user()->hasAnyRole(['President', 'Treasurer']);
+        $data['userRole'] = collect(['President', 'Treasurer', 'Federated President', 'Federated Treasurer'])
+            ->first(fn($role) => Auth::user()->hasRole($role));
 
         if ($data['isPresident']) {
             $data['allCampuses'] = Campus::where('is_active', true)->get();
