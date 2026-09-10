@@ -282,9 +282,9 @@
                                             </div>
                                         </div>
                                         <!-- 4. Dynamically generate the storage asset link path -->
-                                        <a :href="'/storage/' + doc.file_path" target="_blank" class="inline-flex items-center gap-1 font-semibold text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100/70 px-2.5 py-1 rounded transition shrink-0">
+                                        <button type="button" @click="$dispatch('open-file-preview', { url: '/storage/' + doc.file_path, name: doc.original_filename })" class="inline-flex items-center gap-1 font-semibold text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100/70 px-2.5 py-1 rounded transition shrink-0">
                                             View File
-                                        </a>
+                                        </button>
                                     </div>
                                 </template>
                             </template>
@@ -373,5 +373,6 @@
     }
 
 </script>
+@include('components.file-preview-modal')
 </x-app-layout>
 
