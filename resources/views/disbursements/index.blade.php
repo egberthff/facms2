@@ -1,6 +1,17 @@
 <x-app-layout>
 <div class="p-6 bg-gray-50 min-h-screen text-gray-800 font-sans"
-    x-data="{ openModal: false, activeDisbursement: {} }"
+    x-data="{
+        openModal: false,
+        activeDisbursement: {},
+        filePreviewOpen: false,
+        filePreviewUrl: '',
+        filePreviewName: '',
+        previewFile(url, name) {
+            this.filePreviewUrl = url;
+            this.filePreviewName = name || 'File preview';
+            this.filePreviewOpen = true;
+        }
+    }"
     @close-modal.window="openModal = false">
     {{-- @if($isPresident) --}}
     @if(Auth::user()->hasAnyRole(['Federated Presidnent', 'Federated Treasurer']) || Auth::user()->can('view all campus data'))
@@ -129,7 +140,7 @@
                             <td class="px-6 py-4 text-right">
                                 <button
                                     type="button"
-                                    @click="activeDisbursement = @js($modalData); openModal = true; console.log(@js($modalData));"
+                                    @click="activeDisbursement = @js($modalData); openModal = true;"
                                     class="inline-flex items-center rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-100">
                                     View Details
                                 </button>
@@ -227,13 +238,13 @@
                                                 </svg>
                                             </div>
                                             <div class="min-w-0 truncate">
-                                                {{-- <span class="font-medium text-slate-800 block truncate" x-text="doc.receipt_path"></span> --}}
+                                                <span class="font-medium text-slate-800 block truncate" x-text="doc.split('/').pop()"></span>
                                                 {{-- <span class="text-[10px] text-slate-400" x-text="doc.file_size ? (doc.file_size / 1024).toFixed(1) + ' KB' : '0 KB'"></span> --}}
                                             </div>
                                         </div>
-                                        <a :href="'/storage/' + doc" target="_blank" class="inline-flex items-center gap-1 font-semibold text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100/70 px-2.5 py-1 rounded transition shrink-0">
+                                        <button type="button" @click="$dispatch('open-file-preview', { url: '/storage/' + doc, name: doc.split('/').pop() })" class="inline-flex items-center gap-1 font-semibold text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100/70 px-2.5 py-1 rounded transition shrink-0">
                                             View File
-                                        </a>
+                                        </button>
                                     </div>
                                 </template>
                             </div>
@@ -250,6 +261,7 @@
             </div>
         </div>
     </div>
+    @include('components.file-preview-modal')
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
