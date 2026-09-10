@@ -176,7 +176,7 @@
 
         <!-- Month Indicator -->
         <div class="month-indicator">
-            For the month of <span style="border-bottom: 1px solid #000; padding-bottom: 2px;">FEBRUARY 2025</span>
+            For the month of <span style="border-bottom: 1px solid #000; padding-bottom: 2px;">{{ strtoupper($payrollMonth) }}</span>
         </div>
 
         <!-- Addressing -->
@@ -187,7 +187,7 @@
 
         <!-- Subject -->
         <div class="subject-block">
-            <p class="subject-line">Subject: REQUEST FOR PAYROLL DEDUCTION TO FACULTY ASSOCIATION MEMBER'S MEDICAL ASSISTANCE AMOUNTING TO P 350.00 FOR DECEMBER 2024 CLAIMANTS</p>
+            <p class="subject-line">Subject: REQUEST FOR PAYROLL DEDUCTION TO FACULTY ASSOCIATION MEMBER'S MEDICAL ASSISTANCE AMOUNTING TO P {{ number_format($totalDeduction, 2) }} FOR {{ strtoupper($reportPeriod) }} CLAIMANTS</p>
         </div>
 
         <div class="salutation">
@@ -196,7 +196,7 @@
 
         <!-- Content Body -->
         <p class="body-text">
-            This letter serves as an official request to process the payroll deductions amounting to Three Hundred Fifty Pesos (P 350.00) to Faculty Association (FA) members for the medical assistance of December 2024 claimants. This deduction is authorized by all FA members and will be allocated to the listed claimants below:
+            This letter serves as an official request to process the payroll deductions amounting to P {{ number_format($totalDeduction, 2) }} to Faculty Association (FA) members for the medical assistance of {{ $reportPeriod }} claimants. This deduction is authorized by all FA members and will be allocated to the listed claimants below:
         </p>
 
         <!-- Main Breakdown Table -->
@@ -212,65 +212,23 @@
                 </tr>
             </thead>
             <tbody>
-                <tr>
-                    <td>Cimagala, Roselle</td>
-                    <td class="text-center">Main</td>
-                    <td>Medical Assistance</td>
-                    <td class="text-right">₱ 23,000.00</td>
-                    <td class="text-right">₱ 50.00</td>
-                    <td class="text-center">December 2024-November 2026</td>
-                </tr>
-                <tr>
-                    <td>Tagud, Junel</td>
-                    <td class="text-center">Main</td>
-                    <td>Medical Assistance</td>
-                    <td class="text-right">₱ 6,476.00</td>
-                    <td class="text-right">₱ 50.00</td>
-                    <td class="text-center">December 2024-November 2026</td>
-                </tr>
-                <tr>
-                    <td>Sale, Renan</td>
-                    <td class="text-center">Bilar</td>
-                    <td>Medical Assistance</td>
-                    <td class="text-right">₱ 7,333.00</td>
-                    <td class="text-right">₱ 50.00</td>
-                    <td class="text-center">December 2024-November 2026</td>
-                </tr>
-                <tr>
-                    <td>Asombrado, Elrolen</td>
-                    <td class="text-center">Calape</td>
-                    <td>Maternity</td>
-                    <td class="text-right">₱ 23,000.00</td>
-                    <td class="text-right">₱ 50.00</td>
-                    <td class="text-center">December 2024-November 2026</td>
-                </tr>
-                <tr>
-                    <td>Rabia, Maria Danesa</td>
-                    <td class="text-center">Calape</td>
-                    <td>Medical Assistance</td>
-                    <td class="text-right">₱ 4,283.00</td>
-                    <td class="text-right">₱ 50.00</td>
-                    <td class="text-center">January 2025– December 2026</td>
-                </tr>
-                <tr>
-                    <td>Piquero, Alfonso</td>
-                    <td class="text-center">Candijay</td>
-                    <td>Medical Assistance</td>
-                    <td class="text-right">₱ 23,000.00</td>
-                    <td class="text-right">₱ 50.00</td>
-                    <td class="text-center">December 2024-November 2026</td>
-                </tr>
-                <tr>
-                    <td>Bas, Mae</td>
-                    <td class="text-center">Bilar</td>
-                    <td>Medical Assistance</td>
-                    <td class="text-right">₱ 23,000.00</td>
-                    <td class="text-right">₱ 50.00</td>
-                    <td class="text-center">December 2024-November 2026</td>
-                </tr>
+                @forelse ($rows as $row)
+                    <tr>
+                        <td>{{ $row['member'] }}</td>
+                        <td class="text-center">{{ $row['campus'] }}</td>
+                        <td>{{ $row['claim_type'] }}</td>
+                        <td class="text-right">₱ {{ number_format($row['approved'], 2) }}</td>
+                        <td class="text-right">₱ {{ number_format($row['deduction'], 2) }}</td>
+                        <td class="text-center">{{ $row['coverage'] }}</td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="6" class="text-center">No claimants matched the selected claim submission month.</td>
+                    </tr>
+                @endforelse
                 <tr class="font-bold">
                     <td colspan="4" class="text-right">TOTAL</td>
-                    <td class="text-right">₱ 300.00</td>
+                    <td class="text-right">₱ {{ number_format($totalDeduction, 2) }}</td>
                     <td></td>
                 </tr>
             </tbody>
@@ -278,7 +236,7 @@
 
         <!-- Closing Text -->
         <p class="body-text" style="text-indent: 0; text-align: justify; margin-bottom: 20px;">
-            We sincerely appreciate your efforts in ensuring that this deduction is accurately processed and, if possible, effected in the February 2025 payroll. If this timeline cannot be accommodated, we kindly request that it be included in the subsequent payroll cycle.
+            We sincerely appreciate your efforts in ensuring that this deduction is accurately processed and, if possible, effected in the {{ $payrollMonth }} payroll. If this timeline cannot be accommodated, we kindly request that it be included in the subsequent payroll cycle.
         </p>
         
         <p style="margin-bottom: 40px;">Please sign below to authorize the deduction.</p>
@@ -290,20 +248,20 @@
             <div class="sig-block" style="width: 70%; margin-left: 0;">
                 <p style="margin: 0 0 45px 0;">Requested by:</p>
                 <div class="sig-name" style="font-weight: bold; text-transform: uppercase; border-bottom: 1px solid black; display: inline-block; min-width: 300px; padding-bottom: 2px; text-align: center;">
-                    SIRICIA O. PERENIO, PhD
+                    {{ strtoupper($treasurerName) }}
                 </div>
-                <div style="font-size: 11pt; margin-top: 3px;">Signature Over Printed Name of Federated CVSCAFT FA Treasurer</div>
-                <div style="font-size: 11pt; margin-top: 3px;">Date: <span style="text-decoration: underline;">January 14, 2025</span></div>
+                <div style="font-size: 11pt; margin-top: 3px;">Signature Over Printed Name of Campus FA Treasurer</div>
+                <div style="font-size: 11pt; margin-top: 3px;">Date: <span style="text-decoration: underline;">{{ $generatedDate }}</span></div>
             </div>
             
             <!-- President Signature Block -->
             <div class="sig-block" style="width: 70%; margin-left: 0;">
                 <p style="margin: 0 0 45px 0;">Attested by:</p>
                 <div class="sig-name" style="font-weight: bold; text-transform: uppercase; border-bottom: 1px solid black; display: inline-block; min-width: 300px; padding-bottom: 2px; text-align: center;">
-                    MARC BENIGNO C. OLAGUIR, PhD
+                    ________________________________
                 </div>
                 <div style="font-size: 11pt; margin-top: 3px;">Signature Over Printed Name of Federated CVSCAFT FA President</div>
-                <div style="font-size: 11pt; margin-top: 3px;">Date: <span style="text-decoration: underline;">January 14, 2025</span></div>
+                <div style="font-size: 11pt; margin-top: 3px;">Date: <span style="text-decoration: underline;">{{ $generatedDate }}</span></div>
             </div>
 
         </div>

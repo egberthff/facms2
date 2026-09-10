@@ -118,6 +118,36 @@
                     </div>
                 </template>
 
+                {{-- Claim Submission Month --}}
+                <template
+                    x-if="showFilter('claim_month')">
+                    <div>
+                        <label
+                            class="block text-sm font-medium text-gray-700">
+                            Claim Submission Month
+                        </label>
+                        <input
+                            x-model="filters.claim_month"
+                            type="month"
+                            class="mt-1 w-full rounded-lg border-gray-300">
+                    </div>
+                </template>
+
+                {{-- Payroll Month --}}
+                <template
+                    x-if="showFilter('payroll_month')">
+                    <div>
+                        <label
+                            class="block text-sm font-medium text-gray-700">
+                            Payroll Month
+                        </label>
+                        <input
+                            x-model="filters.payroll_month"
+                            type="month"
+                            class="mt-1 w-full rounded-lg border-gray-300">
+                    </div>
+                </template>
+
                 {{-- Date To --}}
 
                 <template

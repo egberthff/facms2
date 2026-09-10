@@ -6,6 +6,7 @@ use Carbon\Carbon;
 use App\Models\Claim;
 use App\Models\Campus;
 use App\Models\Member;
+use App\Models\ContributionBatch;
 use App\Models\SystemSetting;
 use App\Models\ClaimsCycle;
 use InvalidArgumentException;
@@ -37,6 +38,9 @@ class ReportService
 
             'allowance-forfeiture'
                 => $this->allowanceForfeiture($filters),
+
+            'payroll-deduction-request'
+                => $this->payrollDeductionRequest($filters),
 
             default => throw new InvalidArgumentException(
                 "Unknown report type [{$reportType}]"
@@ -577,6 +581,108 @@ class ReportService
         ];
     }
 
+    protected function payrollDeductionRequest(array $filters): array
+    {
+        $campusId = $filters['treasurer_campus_id'] ?? null;
+
+        $query = ContributionBatch::query()
+            ->with([
+                'claim.member' => fn ($query) => $query->withoutGlobalScopes(),
+                'claim.member.campus' => fn ($query) => $query->withoutGlobalScopes(),
+                'claim.claimType',
+            ])
+            ->whereHas('contributionDetails')
+            ->whereHas('claim', function ($query) use ($campusId, $filters) {
+                $query->when(
+                    empty($filters['status']),
+                    fn ($query) => $query->whereIn('status', ['Approved', 'Disbursed'])
+                )
+                    ->when(!empty($filters['claim_month']), function ($query) use ($filters) {
+                        [$year, $month] = explode('-', $filters['claim_month']);
+
+                        $query->whereYear('submitted_at', $year)
+                            ->whereMonth('submitted_at', $month);
+                    })
+                    ->whereHas('member', function ($query) use ($campusId, $filters) {
+                        $query->withoutGlobalScopes()
+                            ->where('membership_status', 'Active')
+                            ->when($campusId, fn ($query) => $query->where('campus_id', $campusId))
+                            ->when(!empty($filters['member_id']), fn ($query) => $query->whereKey($filters['member_id']));
+                    });
+            })
+            ->when(!empty($filters['claim_type']), function ($query) use ($filters) {
+                $query->whereHas('claim', fn ($claim) =>
+                    $claim->where('claim_type_id', $filters['claim_type']));
+            })
+            ->when(!empty($filters['status']), function ($query) use ($filters) {
+                $query->whereHas('claim', fn ($claim) =>
+                    $claim->where('status', $filters['status']));
+            })
+            ->latest('generated_at');
+
+        $rows = $query->get()
+            ->map(function (ContributionBatch $batch) use ($filters) {
+                $claim = $batch->claim;
+                $claimant = $claim?->member;
+
+                return [
+                    'member' => $claimant?->full_name ?? 'Unknown Member',
+                    'campus' => $claimant?->campus?->acronym ?? 'Unassigned',
+                    'claim_type' => $claim?->claimType?->name ?? 'N/A',
+                    'approved' => (float) ($claim?->approved_amount ?? 0),
+                    'deduction' => (float) $batch->amount_per_member,
+                    'coverage' => $this->formatPayrollCoverage($claim),
+                ];
+            })
+            ->values()
+            ->all();
+
+        $totalDeduction = collect($rows)->sum('deduction');
+
+        return [
+            'context' => $this->buildContext(
+                'Payroll Deduction Request',
+                'All-campus payroll deductions for active claimants submitted in the selected month.',
+                $filters
+            ),
+            'cards' => [
+                ['key' => 'members', 'label' => 'Claimants', 'value' => count($rows)],
+                ['key' => 'amount', 'label' => 'Total Deduction', 'value' => $totalDeduction],
+            ],
+            'columns' => [
+                ['key' => 'member', 'label' => 'A Member-Claimant', 'type' => 'text'],
+                ['key' => 'campus', 'label' => 'Campus', 'type' => 'text'],
+                ['key' => 'claim_type', 'label' => 'Type of Claim', 'type' => 'text'],
+                ['key' => 'approved', 'label' => 'Approved Claim', 'type' => 'currency'],
+                ['key' => 'deduction', 'label' => 'Deduction', 'type' => 'currency'],
+                ['key' => 'coverage', 'label' => 'Medical Aid Deduction Coverage', 'type' => 'text'],
+            ],
+            'rows' => $rows,
+            'total_deduction' => $totalDeduction,
+        ];
+    }
+
+    private function formatPayrollCoverage(?Claim $claim): string
+    {
+        $campusId = $claim?->member?->campus_id;
+        $submittedAt = $claim?->submitted_at;
+
+        if (!$campusId || !$submittedAt) {
+            return 'N/A';
+        }
+
+        $cycle = ClaimsCycle::query()
+            ->where('campus_id', $campusId)
+            ->where('start_date', '<=', $submittedAt)
+            ->where('end_date', '>=', $submittedAt)
+            ->first();
+
+        return $cycle
+            ? $cycle->start_date->format('F Y') . '-' . $cycle->end_date->format('F Y')
+            : 'N/A';
+    }
+
+
         /*
     |--------------------------------------------------------------------------
     | Helpers
@@ -628,7 +734,9 @@ class ReportService
         // 2. Format a clean date range string based on dates or reporting year
         $dateRange = 'All Dates';
 
-        if (!empty($filters['date_from']) || !empty($filters['date_to'])) {
+        if (!empty($filters['claim_month'])) {
+            $dateRange = 'Claims submitted in ' . Carbon::parse($filters['claim_month'] . '-01')->format('F Y');
+        } elseif (!empty($filters['date_from']) || !empty($filters['date_to'])) {
             // User explicitly picked specific date boundaries
             $from = !empty($filters['date_from']) ? Carbon::parse($filters['date_from'])->format('M d, Y') : 'Beginning';
             $to = !empty($filters['date_to']) ? Carbon::parse($filters['date_to'])->format('M d, Y') : 'Present';
@@ -660,6 +768,10 @@ class ReportService
                     'label' => 'Date Range',
                     'value' => $dateRange,
                 ],
+                ...(!empty($filters['payroll_month']) ? [[
+                    'label' => 'Payroll Month',
+                    'value' => Carbon::parse($filters['payroll_month'] . '-01')->format('F Y'),
+                ]] : []),
             ],
         ];
     }

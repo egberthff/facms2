@@ -20,6 +20,8 @@ window.reportCenter = function(options)
 
         generateUrl: options.generateUrl,
 
+        payrollPrintUrl: options.payrollPrintUrl,
+
 
 
         /*
@@ -92,7 +94,11 @@ window.reportCenter = function(options)
 
             date_from: '',
 
-            date_to: ''
+            date_to: '',
+
+            claim_month: '',
+
+            payroll_month: ''
 
         },
 
@@ -237,7 +243,11 @@ window.reportCenter = function(options)
 
                 date_from: '',
 
-                date_to: ''
+                date_to: '',
+
+                claim_month: '',
+
+                payroll_month: ''
 
             };
 
@@ -379,7 +389,31 @@ window.reportCenter = function(options)
 
             }
 
+            if (this.selectedReport === 'payroll-deduction-request') {
+                this.openPayrollDeductionReport();
+
+                return;
+            }
+
             window.print();
+
+        },
+
+        openPayrollDeductionReport()
+        {
+            if (!this.hasGenerated || this.selectedReport !== 'payroll-deduction-request') {
+                return;
+            }
+
+            const params = new URLSearchParams();
+
+            Object.entries(this.filters).forEach(([key, value]) => {
+                if (value) {
+                    params.set(key, value);
+                }
+            });
+
+            window.open(`${this.payrollPrintUrl}?${params.toString()}`, '_blank');
 
         },
 

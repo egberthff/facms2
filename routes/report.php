@@ -8,4 +8,7 @@ Route::middleware(['auth', 'active'])
     //Report Admin
     Route::get('reports/index', [ReportController::class, 'index'])->middleware('can:view reports')->name('reports.index');
     Route::post('reports/generate', [ReportController::class, 'generate'])->middleware('can:view reports')->name('reports.generate');
+    Route::get('reports/payroll-deduction-request', [ReportController::class, 'payrollDeductionRequest'])
+        ->middleware('can:view reports')
+        ->name('reports.payroll-deduction-request');
     });

@@ -5,9 +5,9 @@ namespace App\Http\Controllers;
 use App\Services\ReportService;
 use App\Services\MemberService;
 use App\Services\ClaimService;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
-use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class ReportController extends Controller
 {
@@ -40,6 +40,12 @@ class ReportController extends Controller
      */
     public function index(): View
     {
+        $reportConfiguration = config('reports');
+
+        if (!Auth::user()->hasRole('Federated Treasurer')) {
+            unset($reportConfiguration['types']['payroll-deduction-request']);
+        }
+
         return view('reports.index', [
 
             /*
@@ -51,7 +57,7 @@ class ReportController extends Controller
              |
              */
 
-            'reportConfiguration' => config('reports'),
+            'reportConfiguration' => $reportConfiguration,
 
             /*
              |------------------------------------------------------------
@@ -108,13 +114,26 @@ class ReportController extends Controller
 
             'date_from' => ['nullable', 'date'],
 
-            'date_to' => ['nullable', 'date'],
+            'date_to' => ['nullable', 'date', 'after_or_equal:date_from'],
+
+            'claim_month' => ['nullable', 'date_format:Y-m'],
+
+            'payroll_month' => ['nullable', 'date_format:Y-m'],
 
             'reporting_year' => ['nullable', 'string'],
 
             'cycle' => ['nullable', 'string'],
 
         ]);
+
+        if ($validated['report_type'] === 'payroll-deduction-request') {
+            $validated = array_merge($validated, $request->validate([
+                'claim_month' => ['required', 'date_format:Y-m'],
+                'payroll_month' => ['required', 'date_format:Y-m'],
+            ]));
+
+            $validated = $this->payrollFilters($validated);
+        }
 
         $report = $this->reportService->generate(
 
@@ -125,6 +144,59 @@ class ReportController extends Controller
         );
 
         return response()->json($report);
+    }
+
+    public function payrollDeductionRequest(Request $request): View
+    {
+        $validated = $request->validate([
+            'member_id' => ['nullable', 'string'],
+            'claim_type' => ['nullable', 'string'],
+            'status' => ['nullable', 'string'],
+            'claim_month' => ['required', 'date_format:Y-m'],
+            'payroll_month' => ['required', 'date_format:Y-m'],
+        ]);
+
+        $filters = $this->payrollFilters($validated);
+        $report = $this->reportService->generate('payroll-deduction-request', $filters);
+        $treasurer = Auth::user();
+        $treasurerMember = $treasurer->member()->withoutGlobalScopes()->first();
+
+        return view('reports.payroll-deduction-request-form', [
+            'rows' => $report['rows'],
+            'totalDeduction' => $report['total_deduction'],
+            'treasurerName' => $treasurerMember?->full_name ?? $treasurer->name,
+            'reportPeriod' => $this->formatClaimMonth($filters),
+            'payrollMonth' => $this->formatPayrollMonth($filters),
+            'claimTypes' => collect($report['rows'])->pluck('claim_type')->unique()->implode(', '),
+            'coverage' => collect($report['rows'])->pluck('coverage')->unique()->implode(', '),
+            'generatedDate' => now()->format('F d, Y'),
+        ]);
+    }
+
+    private function payrollFilters(array $filters): array
+    {
+        abort_unless(Auth::user()->hasRole('Federated Treasurer'), 403);
+
+        $filters['campus_id'] = null;
+        $filters['treasurer_campus_id'] = null;
+
+        return $filters;
+    }
+
+    private function formatClaimMonth(array $filters): string
+    {
+        return !empty($filters['claim_month'])
+            ? date('F Y', strtotime($filters['claim_month'] . '-01'))
+            : 'the selected month';
+    }
+
+    private function formatPayrollMonth(array $filters): string
+    {
+        $date = !empty($filters['payroll_month'])
+            ? $filters['payroll_month'] . '-01'
+            : now()->toDateString();
+
+        return date('F Y', strtotime($date));
     }
 
     /**

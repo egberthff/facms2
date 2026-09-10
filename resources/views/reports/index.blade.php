@@ -7,7 +7,8 @@
         members: @js($members),
         cycles: @js($cycles),
         claimTypes: @js($claimTypes),
-        generateUrl: '{{ route('reports.generate') }}'
+        generateUrl: '{{ route('reports.generate') }}',
+        payrollPrintUrl: '{{ route('reports.payroll-deduction-request') }}'
     })"
     x-init="initialize()"
     class="max-w-7xl mx-auto px-4 py-6 space-y-6">
