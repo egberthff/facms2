@@ -102,121 +102,138 @@ class EmailService
     public function sendClaimStatusUpdate($claim): void
     {
         $claimCollection = wrap_into_collection($claim);
-
+    
         // Ensure relationships are loaded on the collection safely
         if ($claimCollection->isNotEmpty()) {
             $claimCollection->first()->newCollection($claimCollection->all())->loadMissing(['member.user', 'claimType']);
         }
-
+    
         foreach ($claimCollection as $singleClaim) {
             try {
                 $member = $singleClaim->member;     
-
+    
                 // 1. Structural Check: Ensure the claimant exists and has a valid user email
                 if (!$member || !$member->user || !$member->user->email) {
                     Log::warning("Cannot send status update. Claimant user account or email missing for claim ID: {$singleClaim->id}");
                     continue; 
                 }       
+    
+                $status = strtolower(trim($singleClaim->status));
 
-                // --- SECTION A: SEND MEMBER NOTIFICATION ---
-                $memberEmailData = [
-                    "recipientName" => $member->user->name,
-                    "claimNumber"   => $singleClaim->claim_number,
-                    "claimType"     => $singleClaim->claimType ? $singleClaim->claimType->name : 'N/A',
-                    "status"        => strtoupper($singleClaim->status), 
-                    "amount"        => $singleClaim->requested_amount ?? 0.00,
-                    "remarks"       => $singleClaim->status_remarks ?? 'No additional comments provided.',
-                    "updatedAt"     => $singleClaim->updated_at->format('F j, Y, g:i a'),
-                    "url"           => url('claims/my-list/' . $member->user->user_id)
-                ];      
-
-                Mail::to($member->user->email)
-                    ->send(new ClaimStatusUpdated('member', $memberEmailData));     
-
-
-                // --- SECTION B: SEND TREASURER NOTIFICATION (ONLY IF APPROVED) ---
-                if (strtoupper(trim($singleClaim->status)) === 'APPROVED') {
-
-                    // Query for the specific regional treasurer
-                    $treasurerMember = Member::with('user')
-                        ->where('campus_id', $member->campus_id)
-                        ->whereHas('user', function ($query) {
-                            // Tip: Ensure Spatie Laravel-Permission is configured correctly for array arguments
-                            $query->role(['Treasurer', 'Federated Treasurer']); 
-                        })
-                        ->first();      
-
-                    if ($treasurerMember && $treasurerMember->user && $treasurerMember->user->email) {
-
-                        $treasurerEmailData = [
-                            "recipientName" => $treasurerMember->user->name,
-                            "claimNumber"   => $singleClaim->claim_number,
-                            "claimType"     => $singleClaim->claimType ? $singleClaim->claimType->name : 'N/A',
-                            "status"        => strtoupper($singleClaim->status), 
-                            "amount"        => $singleClaim->approved_amount ?? 0.00, // Uses approved amount for treasurer
-                            "remarks"       => $singleClaim->status_remarks ?? 'No additional comments provided.', 
-                            "updatedAt"     => $singleClaim->updated_at->format('F j, Y, g:i a'),
-                            "url"           => url('claims/list') 
-                        ];      
-
-                        Mail::to($treasurerMember->user->email)
-                            ->send(new ClaimStatusUpdated('treasurer', $treasurerEmailData));
-
-                    } else {
-                        Log::warning("Treasurer alert skipped. No active 'Treasurer' or 'Federated Treasurer' role found linked to campus_id: {$member->campus_id}");
-                    }
-                }       
-
-                // --- SECTION C: SEND PRESIDENT NOTIFICATION (ONLY IF DISBURSED) ---
-                if (strtoupper(trim($singleClaim->status)) === 'DISBURSED') {
-
-                    // Query for the specific regional president
-                    $presidentMember = Member::with('user')
-                        ->where('campus_id', $member->campus_id)
-                        ->whereHas('user', function ($query) {
-                            $query->role(['President', 'Federated President']); 
-                        })
-                        ->first();   
-
-                    if ($presidentMember && $presidentMember->user && $presidentMember->user->email) {
-
-                        $presidentEmailData = [
-                            "recipientName" => $presidentMember->user->name,
-                            "claimNumber"   => $singleClaim->claim_number,
-                            "claimType"     => $singleClaim->claimType ? $singleClaim->claimType->name : 'N/A',
-                            "status"        => strtoupper($singleClaim->status), 
-                            "amount"        => $singleClaim->approved_amount ?? 0.00, // Uses approved amount for treasurer
-                            "remarks"       => $singleClaim->status_remarks ?? 'No additional comments provided.', 
-                            "updatedAt"     => $singleClaim->disbursed_at->format('F j, Y, g:i a'),
-                            "url"           => url('disbursements/list') 
-                        ];      
-
-                        Mail::to($presidentMember->user->email)
-                            ->send(new ClaimStatusUpdated('president', $presidentEmailData));
-
-                    } else {
-                        Log::warning("President alert skipped. No active 'Treasurer' or 'Federated Treasurer' role found linked to campus_id: {$member->campus_id}");
-                    }
-                }       
-
+                // Always notify the member
+                $this->sendMemberNotification($singleClaim, $member);
+                
+                // Dynamically route notifications based on status changes
+                switch ($status) {
+                    case 'rejected':
+                        // 1. Notify Member with their specific view layout instructions
+                        $this->sendMemberNotification($singleClaim, $member);
+                        
+                        // 2. Notify Local President so they see the audit trail closure
+                        $this->notifyOfficer($singleClaim, $member, 'President', 'president', 'claims/list', true);
+                        break;
+                    case 'approved':
+                    case 'for disbursement':
+                        // Parameters: $claim, $member, SpatieRole, MailType, RedirectPath, IsRegional?
+                        $this->notifyOfficer($singleClaim, $member, 'Treasurer', 'treasurer', 'claims/list', true);
+                        break;
+                
+                    case 'for review fp':
+                        $this->notifyOfficer($singleClaim, $member, 'Federated President', 'federated president', 'disbursed/list', false);
+                        break;
+                
+                    case 'processing':
+                        $this->notifyOfficer($singleClaim, $member, 'Federated Treasurer', 'federated treasurer', 'claims/list', false);
+                        break;
+                
+                    case 'disbursed':
+                        $this->notifyOfficer($singleClaim, $member, 'Treasurer', 'treasurer', 'claims/list', true);
+                        $this->notifyOfficer($singleClaim, $member, 'President', 'president', 'disbbursements/list', true);
+                        $this->notifyOfficer($singleClaim, $member, 'Federated President', 'federated president', 'disbbursements/list', false);
+                        $this->notifyOfficer($singleClaim, $member, 'Federated Treasurer', 'federated treasurer', 'claims/list', false);
+                        break;
+                }
+    
             } catch (\Exception $e) {
                 Log::error('Failed to send claim status update email for claim ID ' . ($singleClaim->id ?? 'unknown') . ': ' . $e->getMessage());
             }
         }
-
     }
+    
+    /*
+     * Handles sending notifications to the claim owner (member).
+     */
+    private function sendMemberNotification($singleClaim, $member): void
+    {
+        $emailData = [
+            "recipientName" => $member->user->name,
+            "claimNumber"   => $singleClaim->claim_number,
+            "claimType"     => $singleClaim->claimType ? $singleClaim->claimType->name : 'N/A',
+            "status"        => strtoupper($singleClaim->status), 
+            "amount"        => $singleClaim->requested_amount ?? 0.00, // Members see requested amount
+            "remarks"       => $singleClaim->status_remarks ?? 'No additional comments provided.',
+            "updatedAt"     => $singleClaim->updated_at->format('F j, Y, g:i a'),
+            "url"           => url('claims/my-list/' . $member->user->user_id)
+        ];          
 
-}
+        Mail::to($member->user->email)->send(new ClaimStatusUpdated('member', $emailData));     
+    }   
 
     /**
-     * Notification for the treasurer to disburse the claim
+     * Reusable helper to dynamically fetch and notify an organizational officer.
+     *
+     * @param mixed $singleClaim The current claim model instance
+     * @param mixed $member The claim owner's member profile (used for campus tracking)
+     * @param string $role The exact target Spatie permission role (e.g., 'Treasurer')
+     * @param string $mailType The internal slug identifier expected by your Mailable class
+     * @param string $redirectPath The target application subpath for the notification link
+     * @param bool $isRegional Set to true if the role must belong to the member's specific campus
      */
-    // public function sendDisbursementAlertToTresurer($claim): void
-    // {
-    //     $claimCollection = wrap_into_collection($claim);
+    private function notifyOfficer($singleClaim, $member, string $role, string $mailType, string $redirectPath, bool $isRegional = false): void
+    {
+        $query = Member::with('user')->whereHas('user', function ($q) use ($role) {
+            $q->role([$role]); 
+        }); 
+
+        if ($isRegional) {
+            $query->where('campus_id', $member->campus_id);
+        }   
+
+        $officer = $query->first();         
+
+        if (!$officer || !$officer->user || !$officer->user->email) {
+            $scopeInfo = $isRegional ? " linked to campus_id: {$member->campus_id}" : "";
+            Log::warning("Officer alert skipped. No active '{$role}' role found{$scopeInfo}.");
+            return;
+        }   
+
+        // Determine correct date format fallback based on status lifecycle
+        $statusLower = strtolower(trim($singleClaim->status));
+
+        if ($statusLower === 'disbursed') {
+            $updatedAt = optional($singleClaim->disbursed_at)->format('F j, Y, g:i a') ?? 'N/A';
+        } elseif ($statusLower === 'rejected') {
+            $updatedAt = optional($singleClaim->rejected_at)->format('F j, Y, g:i a') ?? $singleClaim->updated_at->format('F j, Y, g:i a');
+        } else {
+            $updatedAt = $singleClaim->updated_at->format('F j, Y, g:i a');
+        }
 
 
-    // } 
+        $emailData = [
+            "recipientName" => $officer->user->name,
+            "claimNumber"   => $singleClaim->claim_number,
+            "claimType"     => $singleClaim->claimType ? $singleClaim->claimType->name : 'N/A',
+            "status"        => strtoupper($singleClaim->status), 
+            "amount"        => $singleClaim->approved_amount ?? 0.00, // Officers see approved amount
+            "remarks"       => $singleClaim->status_remarks ?? 'No additional comments provided.', 
+            "updatedAt"     => $updatedAt,
+            "url"           => url($redirectPath) 
+        ];          
+
+        Mail::to($officer->user->email)->send(new ClaimStatusUpdated($mailType, $emailData));
+    }
+    
+}
 
 /**
  * Helper utility to normalize mixed types into a singular Collection instance.

@@ -74,7 +74,7 @@
             <td class="px-5 py-4">
                 <div class="space-y-1">
                     <div class="font-medium text-slate-900">
-                        {{ ucwords(strtolower($claim->member->full_name)) ?? 'Unknown Member' }}
+                        {{ ucwords(strtolower($claim->member->user->name  ?? 'Unknown Member')) }}
                     </div>
                     <div class="text-xs text-slate-500">
                         {{ $claim->member->campus->acronym ?? 'No Campus' }} | EMP ID: {{ $claim->member->employee_number ?? '' }}
@@ -190,14 +190,14 @@
                                         <span class="ml-3">Reject</span>
                                     </button>
                             @elseif($userRole === 'Treasurer')
-                                @if(trim($claim->status ?? '') === 'approved')
+                                @if(strtolower(trim($claim->status ?? '')) === 'approved')
                                 <button
-                                    @click="updateClaimStatus('{{ $claim->id }}', 'Forward to FP', @js($claim))"
+                                    @click="updateClaimStatus('{{ $claim->id }}', 'For Review FP', @js($claim))"
                                     class="flex w-full items-center px-4 py-2.5 text-sm text-blue-700 hover:bg-blue-50">
                                     <x-heroicon-o-arrow-path class="size-5 text-blue-500" />
                                     <span class="ml-3">Forward to FP</span>
                                 </button>
-                                @elseif(trim($claim->status ?? '') === 'for disbursement')
+                                @elseif(strtolower(trim($claim->status ?? '')) === 'for disbursement')
                                 <button
                                     @click="updateClaimStatus('{{ $claim->id }}', 'Disbursed', @js($claim))"
                                     class="flex w-full items-center px-4 py-2.5 text-sm text-emerald-700 hover:bg-emerald-50">

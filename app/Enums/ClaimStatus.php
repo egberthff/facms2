@@ -9,4 +9,7 @@ enum ClaimStatus: string
     case Approved = 'Approved';
     case Rejected = 'Rejected';
     case Disbursed = 'Disbursed';
+    case ForDisbursement = 'For Disbursement';
+    case ForReviewFp = 'For Review FP';
 }
+
