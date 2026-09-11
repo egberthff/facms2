@@ -1,8 +1,16 @@
 <x-app-layout>
+@php
+    $claimStatuses = array_map(
+        fn ($status) => $status->value,
+        \App\Enums\ClaimStatus::cases()
+    );
+    $claimStatusCounts = $claims->countBy('status')->all();
+@endphp
 <div class="max-w-auto mx-auto p-2" 
     x-data="{ 
             currentStatus: 'all', 
-            searchText: '',
+            totalClaims: {{ $claims->count() }},
+            statusCounts: @js($claimStatusCounts),
             openModal: false,
             activeClaim: {},
             filterClaims(status) {
@@ -13,14 +21,10 @@
                     dataTable.search(status === 'all' ? '' : status);
                 }
             },
-            matches(status, number, desc, type) {
-                const matchesStatus = this.currentStatus === 'all' || status.toLowerCase() === this.currentStatus.toLowerCase();
-                const searchLower = this.searchText.toLowerCase();
-                const matchesSearch = !this.searchText || 
-                                     number.toLowerCase().includes(searchLower) || 
-                                     desc.toLowerCase().includes(searchLower) ||
-                                     type.toLowerCase().includes(searchLower);
-                return matchesStatus && matchesSearch;
+            filteredCount() {
+                return this.currentStatus === 'all'
+                    ? this.totalClaims
+                    : (this.statusCounts[this.currentStatus] || 0);
             }
          }"  @close-modal.window="openModal = false">
     
@@ -46,10 +50,10 @@
             <div class="flex items-center gap-3">
                 <div class="text-right">
                     <div class="text-2xl font-bold text-slate-900">
-                        {{ $claims->count() }}
+                        <span x-text="filteredCount()"></span>
                     </div>
                     <div class="text-xs uppercase tracking-wide text-slate-500">
-                        Total Claims
+                        <span x-text="currentStatus === 'all' ? 'Total Claims' : currentStatus + ' Claims'"></span>
                     </div>
                 </div>
             </div>
@@ -70,7 +74,7 @@
             </div> --}}
             {{-- Status --}}
                 <div class="flex flex-wrap gap-2">
-                    <template x-for="status in ['all', 'Pending', 'Processing', 'Approved', 'Disbursed', 'Rejected']">
+                    <template x-for="status in ['all', ...@js($claimStatuses)]">
                         <button 
                             type="button"
                             @click="currentStatus = status; filterClaims(status)"
@@ -78,7 +82,7 @@
                                 ? 'bg-blue-400 text-blue-600 border-blue-600' 
                                 : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'"
                             class="px-4 py-2 text-sm rounded-lg border transition font-medium capitalize"
-                            x-text="status">
+                            x-text="status === 'all' ? 'All' : status">
                         </button>
                     </template>
                 </div>
@@ -302,21 +306,13 @@
 
                 <!-- Modal Action Footer Buttons Area -->
                 <div class="flex justify-end gap-2 border-t border-slate-100 pt-4 mt-5">
-                    @if(Auth::user()->hasAnyRole(['President', 'Treasurer']) || Auth::user()->can('update claims'))
+                    @if(!isset($isMemberMenu) || !$isMemberMenu)
+                    @if(Auth::user()->hasAnyRole(['President', 'Treasurer', 'Federated President', 'Federated Treasurer']) || Auth::user()->can('update claims'))
 
-                        <!-- PENDING STATE: Show only Processing -->
+                        <!-- PRESIDENT: Approve or reject pending claims -->
                         <button 
                             type="button" 
-                            x-show="activeClaim.status && activeClaim.status.toLowerCase().trim() === 'approved'" 
-                            @click="updateClaimStatus(activeClaim.id, 'Processing', activeClaim)" 
-                            class="px-5 py-2 text-sm font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-xl transition">
-                            Process Claim
-                        </button>
-
-                        <!-- PROCESSING STATE: Show Approved and Reject -->
-                        <button 
-                            type="button" 
-                            x-show="activeClaim.status && activeClaim.status.toLowerCase().trim() === 'pending'" 
+                            x-show="@js($userRole === 'President') && activeClaim.status && activeClaim.status.toLowerCase().trim() === 'pending'" 
                             @click="updateClaimStatus(activeClaim.id, 'Approved', activeClaim)" 
                             class="px-5 py-2 text-sm font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-xl transition">
                             Approve
@@ -324,21 +320,48 @@
 
                         <button 
                             type="button" 
-                            x-show="activeClaim.status && activeClaim.status.toLowerCase().trim() === 'pending'" 
+                            x-show="@js($userRole === 'President') && activeClaim.status && activeClaim.status.toLowerCase().trim() === 'pending'" 
                             @click="updateClaimStatus(activeClaim.id, 'Rejected', activeClaim)" 
                             class="px-5 py-2 text-sm font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-xl transition">
                             Reject
                         </button>
 
-                        <!-- APPROVED STATE: Show Disbursed -->
+                        <!-- TREASURER: Forward approved claims or disburse ready claims -->
                         <button 
                             type="button" 
-                            x-show="activeClaim.status && activeClaim.status.toLowerCase().trim() === 'processing'" 
-                            @click="updateClaimStatus(activeClaim.id, 'Disbursed', activeClaim)" 
-                            class="px-5 py-2 text-sm font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-xl transition">
-                            Disburse
+                            x-show="@js($userRole === 'Treasurer') && activeClaim.status && activeClaim.status.toLowerCase().trim() === 'approved'" 
+                            @click="updateClaimStatus(activeClaim.id, 'For Review FP', activeClaim)" 
+                            class="px-5 py-2 text-sm font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-xl transition">
+                            Forward to FP
                         </button>
 
+                        <button 
+                            type="button" 
+                            x-show="@js($userRole === 'Treasurer') && activeClaim.status && activeClaim.status.toLowerCase().trim() === 'for disbursement'" 
+                            @click="updateClaimStatus(activeClaim.id, 'Disbursed', activeClaim)" 
+                            class="px-5 py-2 text-sm font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-xl transition">
+                            Mark as Disbursed
+                        </button>
+
+                        <!-- FEDERATED PRESIDENT: Start processing reviewed claims -->
+                        <button 
+                            type="button" 
+                            x-show="@js($userRole === 'Federated President') && activeClaim.status && activeClaim.status.toLowerCase().trim() === 'for review fp'" 
+                            @click="updateClaimStatus(activeClaim.id, 'Processing', activeClaim)" 
+                            class="px-5 py-2 text-sm font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-xl transition">
+                            Processing
+                        </button>
+
+                        <!-- FEDERATED TREASURER: Send processed claims for disbursement -->
+                        <button 
+                            type="button" 
+                            x-show="@js($userRole === 'Federated Treasurer') && activeClaim.status && activeClaim.status.toLowerCase().trim() === 'processing'" 
+                            @click="updateClaimStatus(activeClaim.id, 'For Disbursement', activeClaim)" 
+                            class="px-5 py-2 text-sm font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-xl transition">
+                            For Disbursement
+                        </button>
+
+                    @endif
                     @endif
 
                     <!-- ALWAYS VISIBLE: Close Button (Active in all states: Pending, Processing, Approved, Rejected, Disbursed) -->

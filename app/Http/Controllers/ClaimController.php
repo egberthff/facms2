@@ -164,12 +164,6 @@ class ClaimController extends Controller
 
     public function myClaims(User $user)
     {
-    //      dd(
-    //     $user->member()->toSql(), 
-    //     $user->member()->getBindings(),
-    //     $user->user_id
-    // );
-        // dd($user);
         Gate::authorize('viewMyClaims', [Claim::class, $user]);
         $user->load(['member']); 
         $data['claims'] = $this->claimService->getClaimsForUser($user);
@@ -182,6 +176,7 @@ class ClaimController extends Controller
             $data['allCampuses'] = Campus::where('is_active', true)->get();
             $data['selectedCampusId'] = null;
         }
+        $data['isMemberMenu'] = true;
 
         return view('claims.claims-list', $data);
     }

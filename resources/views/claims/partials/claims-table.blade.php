@@ -28,17 +28,7 @@
     </thead>
     <tbody class="divide-y divide-slate-100 bg-white">   
         @forelse($claims as $claim)
-        <tr
-            x-show="matches(
-                '{{ $claim->status }}',
-                '{{ $claim->claim_number }}',
-                '{{ addslashes($claim->remarks ?? $claim->description) }}',
-                '{{ $claim->claimType->name }}'
-            )"
-            x-transition:enter="transition ease-out duration-200"
-            x-transition:enter-start="opacity-0 translate-y-1"
-            x-transition:enter-end="opacity-100 translate-y-0"
-            class="hover:bg-blue-50/40 transition-colors text-center duration-150 even:bg-slate-50/30">
+        <tr class="hover:bg-blue-50/40 transition-colors text-center duration-150 even:bg-slate-50/30">
             <!-- ============================================== -->
             <!-- SELECT -->
             <!-- ============================================== -->
@@ -114,6 +104,8 @@
                         'Approved'   => 'bg-emerald-100 text-emerald-800 ring-emerald-200',
                         'Rejected'   => 'bg-rose-100 text-rose-800 ring-rose-200',
                         'Disbursed'  => 'bg-purple-100 text-purple-800 ring-purple-200',
+                        'For Disbursement' => 'bg-orange-100 text-orange-800 ring-orange-200',
+                        'For Review FP' => 'bg-indigo-100 text-indigo-800 ring-indigo-200',
                         default      => 'bg-slate-100 text-slate-700 ring-slate-200',
                     };
                 @endphp
@@ -130,7 +122,7 @@
                 <div
                     x-data="{ open:false }"
                     class="relative inline-block text-left">
-                    @role('Member')
+                    @if(isset($isMemberMenu) && $isMemberMenu)
                         <button
                             @click="
                                 activeClaim = @js($claim);
@@ -158,7 +150,7 @@
                                 d="M19 9l-7 7-7-7"/>
                         </svg>
                     </button>
-                    @endrole
+                    @endif
                      
                     <div
                         x-show="open"
