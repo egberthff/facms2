@@ -1,7 +1,8 @@
 @php
     $isCycleYears = $setting->setting_key === 'claim_cycle_years';
     $isCycleMonth = $setting->setting_key === 'claim_cycle_start_month';
-    $inputType = $isCycleYears ? 'number' : 'text';
+    $isAssociationFund = $setting->setting_key === 'association_fund';
+    $inputType = $isCycleYears || $isAssociationFund ? 'number' : 'text';
 @endphp
 
 <div class="rounded-xl border border-slate-200 bg-slate-50/60 p-5 transition hover:border-blue-200 hover:bg-blue-50/20">
@@ -18,7 +19,7 @@
         @method('PUT')
         <input type="hidden" name="campus_filter" value="{{ $selectedCampusId ?? '' }}">
 
-        <label for="setting-{{ $setting->id }}" class="block text-xs font-semibold uppercase tracking-wide text-slate-500">Value</label>
+        <label for="setting-{{ $setting->id }}" class="block text-xs font-semibold uppercase tracking-wide text-slate-500">{{ $isAssociationFund ? 'Additional cash-in' : 'Value' }}</label>
         <div class="flex gap-2">
             @if($isCycleMonth)
                 <select id="setting-{{ $setting->id }}" name="setting_value" required @disabled(!$canEdit) class="block min-w-0 flex-1 rounded-lg border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-blue-500 focus:ring-blue-500 disabled:bg-slate-100">
@@ -33,6 +34,7 @@
                     type="{{ $inputType }}"
                     value="{{ old('setting_value', $setting->setting_value) }}"
                     @if($isCycleYears) min="1" max="20" @endif
+                    @if($isAssociationFund) min="0.01" step="0.01" @endif
                     required
                     @disabled(!$canEdit)
                     class="block min-w-0 flex-1 rounded-lg border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-blue-500 focus:ring-blue-500 disabled:bg-slate-100"
@@ -44,6 +46,8 @@
             <p class="text-xs text-slate-400">Claims cycle duration, from 1 to 20 years.</p>
         @elseif($isCycleMonth)
             <p class="text-xs text-slate-400">Claims cycle starts on the first day of this month.</p>
+        @elseif($isAssociationFund)
+            <p class="text-xs text-slate-400">Enter the additional capital amount to add to the treasury.</p>
         @endif
     </form>
 </div>

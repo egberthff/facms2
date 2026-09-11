@@ -6,6 +6,8 @@ use App\Models\User;
 use App\Models\Member;
 use App\Models\Claim;
 use App\Models\SystemSetting;
+use App\Models\TreasuryLedger;
+use App\Models\Scopes\CampusMemberScope;
 use Illuminate\Support\Facades\Auth;
 
 class DashboardService
@@ -27,7 +29,12 @@ class DashboardService
             'disbursedClaims'=> Claim::disbursed()->count(),
             'rejectedClaims' => Claim::rejected()->count(),
             'totalClaims'    => Claim::count(),
-            'balance'        => (float) SystemSetting::where('setting_key', 'association_fund')->sum('setting_value'),
+            'balance'        => (float) TreasuryLedger::withoutGlobalScope(CampusMemberScope::class)
+                ->orderByDesc('created_at')
+                ->orderByDesc('id')
+                ->get()
+                ->unique('campus_id')
+                ->sum('running_balance'),
         ];
     }
 

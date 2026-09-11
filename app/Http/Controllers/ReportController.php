@@ -8,6 +8,7 @@ use App\Services\ClaimService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
+use App\Models\User;
 
 class ReportController extends Controller
 {
