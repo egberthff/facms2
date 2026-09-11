@@ -160,11 +160,13 @@ class ReportController extends Controller
         $report = $this->reportService->generate('payroll-deduction-request', $filters);
         $treasurer = Auth::user();
         $treasurerMember = $treasurer->member()->withoutGlobalScopes()->first();
+        $president = User::hasRole('Federated President');
 
         return view('reports.payroll-deduction-request-form', [
             'rows' => $report['rows'],
             'totalDeduction' => $report['total_deduction'],
-            'treasurerName' => $treasurerMember?->full_name ?? $treasurer->name,
+            'federatedTreasurerName' => $treasurerMember?->full_name ?? $treasurer->name,
+            'federatedPresidentName' => $president?->name ?? "",
             'reportPeriod' => $this->formatClaimMonth($filters),
             'payrollMonth' => $this->formatPayrollMonth($filters),
             'claimTypes' => collect($report['rows'])->pluck('claim_type')->unique()->implode(', '),

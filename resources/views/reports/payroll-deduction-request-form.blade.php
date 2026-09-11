@@ -248,9 +248,9 @@
             <div class="sig-block" style="width: 70%; margin-left: 0;">
                 <p style="margin: 0 0 45px 0;">Requested by:</p>
                 <div class="sig-name" style="font-weight: bold; text-transform: uppercase; border-bottom: 1px solid black; display: inline-block; min-width: 300px; padding-bottom: 2px; text-align: center;">
-                    {{ strtoupper($treasurerName) }}
+                    {{ strtoupper($federatedTreasurerName) }}
                 </div>
-                <div style="font-size: 11pt; margin-top: 3px;">Signature Over Printed Name of Campus FA Treasurer</div>
+                <div style="font-size: 11pt; margin-top: 3px;">Signature Over Printed Name of Federated CVSCAFT FA Treasurer</div>
                 <div style="font-size: 11pt; margin-top: 3px;">Date: <span style="text-decoration: underline;">{{ $generatedDate }}</span></div>
             </div>
             
@@ -258,7 +258,7 @@
             <div class="sig-block" style="width: 70%; margin-left: 0;">
                 <p style="margin: 0 0 45px 0;">Attested by:</p>
                 <div class="sig-name" style="font-weight: bold; text-transform: uppercase; border-bottom: 1px solid black; display: inline-block; min-width: 300px; padding-bottom: 2px; text-align: center;">
-                    ________________________________
+                    {{ strtoupper($federatedPresidentName) }}
                 </div>
                 <div style="font-size: 11pt; margin-top: 3px;">Signature Over Printed Name of Federated CVSCAFT FA President</div>
                 <div style="font-size: 11pt; margin-top: 3px;">Date: <span style="text-decoration: underline;">{{ $generatedDate }}</span></div>
