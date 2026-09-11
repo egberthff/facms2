@@ -22,6 +22,7 @@ window.reportCenter = function(options)
 
         payrollPrintUrl: options.payrollPrintUrl,
 
+        collectionSummaryPrintUrl: options.collectionSummaryPrintUrl,
 
 
         /*
@@ -395,6 +396,12 @@ window.reportCenter = function(options)
                 return;
             }
 
+            if (this.selectedReport === 'collection-summary') {
+                this.openCollectionSummaryReport();
+
+                return;
+            }
+
             window.print();
 
         },
@@ -414,6 +421,22 @@ window.reportCenter = function(options)
             });
 
             window.open(`${this.payrollPrintUrl}?${params.toString()}`, '_blank');
+
+        },
+
+        openCollectionSummaryReport()
+        {
+            if (!this.hasGenerated || this.selectedReport !== 'collection-summary') {
+                return;
+            }
+
+            const params = new URLSearchParams();
+
+            if (this.filters.campus_id) {
+                params.set('campus_id', this.filters.campus_id);
+            }
+
+            window.open(`${this.collectionSummaryPrintUrl}?${params.toString()}`, '_blank');
 
         },
 

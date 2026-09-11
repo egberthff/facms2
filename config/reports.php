@@ -178,6 +178,34 @@ return [
 
         ],
 
+        'collection-summary' => [
+
+            'title' => 'Collection Summary',
+
+            'description' => 'Campus treasury collection and disbursement summary for the selected period.',
+
+            'category' => 'financial',
+
+            'handler' => ReportService::class,
+
+            'filters' => [
+
+                'campus',
+
+            ],
+
+            'cards' => [
+
+                'collections',
+
+                'disbursements',
+
+            ],
+
+            'table' => 'collection_summary',
+
+        ],
+
         'payroll-deduction-request' => [
 
             'title' => 'Payroll Deduction Request',

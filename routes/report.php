@@ -11,4 +11,16 @@ Route::middleware(['auth', 'active'])
     Route::get('reports/payroll-deduction-request', [ReportController::class, 'payrollDeductionRequest'])
         ->middleware('can:view reports')
         ->name('reports.payroll-deduction-request');
+
+    Route::get('reports/collection-summary', [\App\Http\Controllers\CollectionSummaryController::class, 'index'])
+        ->middleware('can:view reports')
+        ->name('reports.collection-summary');
+
+    Route::get('reports/collection-summary/print', [\App\Http\Controllers\CollectionSummaryController::class, 'print'])
+        ->middleware('can:view reports')
+        ->name('reports.collection-summary.print');
+
+    Route::post('reports/collection-summary', [\App\Http\Controllers\CollectionSummaryController::class, 'store'])
+        ->middleware('can:view reports')
+        ->name('reports.collection-summary.store');
     });

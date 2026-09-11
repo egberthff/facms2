@@ -33,6 +33,9 @@ class ReportService
             'disbursement-summary'
                 => $this->disbursementSummary($filters),
 
+            'collection-summary'
+                => $this->collectionSummary($filters),
+
             'allowance-utilization'
                 => $this->allowanceUtilization($filters),
 
@@ -395,6 +398,43 @@ class ReportService
             ],
 
             'rows' => $rows,
+        ];
+    }
+
+    protected function collectionSummary(array $filters): array
+    {
+        $campusId = $filters['campus_id'] ?? null;
+        $summaryService = app(\App\Services\CollectionSummaryService::class);
+        $summary = $summaryService->latestForCampus($campusId);
+
+        $rows = $summary?->items ?? collect();
+
+        $collections = $rows->where('section', 'collections')->values();
+        $disbursements = $rows->where('section', 'disbursements')->values();
+
+        return [
+            'context' => $this->buildContext(
+                'Collection Summary',
+                'Campus treasury collection and disbursement summary.',
+                $filters
+            ),
+            'cards' => [
+                ['key' => 'collections', 'label' => 'Collections', 'value' => (float) $collections->sum('amount')],
+                ['key' => 'disbursements', 'label' => 'Disbursements', 'value' => (float) $disbursements->sum('amount')],
+            ],
+            'columns' => [
+                ['key' => 'label', 'label' => 'Description', 'type' => 'text'],
+                ['key' => 'amount', 'label' => 'Amount', 'type' => 'currency'],
+            ],
+            'rows' => [
+                ...$collections->map(fn ($item) => ['label' => $item->label, 'amount' => (float) $item->amount, 'section' => 'collections'])->toArray(),
+                ...$disbursements->map(fn ($item) => ['label' => $item->label, 'amount' => (float) $item->amount, 'section' => 'disbursements'])->toArray(),
+            ],
+            'summary' => $summary ? [
+                'id' => $summary->id,
+                'title' => $summary->title,
+                'period_label' => $summary->period_label,
+            ] : null,
         ];
     }
 
