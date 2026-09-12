@@ -22,7 +22,7 @@ class AssociationFundTest extends TestCase
         $setting = SystemSetting::create([
             'setting_key' => 'association_fund',
             'setting_value' => '1000.00',
-            'description' => 'Current association fund balance.',
+            'description' => 'Association fund entry',
             'campus_id' => $campus->id,
         ]);
 

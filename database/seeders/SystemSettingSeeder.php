@@ -98,42 +98,42 @@ class SystemSettingSeeder extends Seeder
             [
                 'setting_key' => 'association_fund',
                 'setting_value' => '0',
-                'description' => 'Current association fund balance.',
+                'description' => 'Association fund entry',
                 'campus_id' => '019f6865-edd5-730f-accc-33e9fab1a422', //Bisu -Calape
             ],
 
             [
                 'setting_key' => 'association_fund',
                 'setting_value' => '0',
-                'description' => 'Current association fund balance.',
+                'description' => 'Association fund entry',
                 'campus_id' => '019f686b-6d0e-7027-98a0-c16ed47b318a', //Bisu - Main
             ],
 
             [
                 'setting_key' => 'association_fund',
                 'setting_value' => '0',
-                'description' => 'Current association fund balance.',
+                'description' => 'Association fund entry',
                 'campus_id' => '019f686b-6d17-713d-974e-eb7fca91c245', //Bisu - Balilihan
             ],
 
             [
                 'setting_key' => 'association_fund',
                 'setting_value' => '0',
-                'description' => 'Current association fund balance.',
+                'description' => 'Association fund entry',
                 'campus_id' => '019f686b-6d1a-7174-a19b-aca9360c5b6a', //Bisu - Bilar
             ],
 
             [
                 'setting_key' => 'association_fund',
                 'setting_value' => '0',
-                'description' => 'Current association fund balance.',
+                'description' => 'Association fund entry',
                 'campus_id' => '019f686b-6d1d-73bc-8e32-f9ab28f8e451', //Bisu - Candijay
             ],
 
             [
                 'setting_key' => 'association_fund',
                 'setting_value' => '0',
-                'description' => 'Current association fund balance.',
+                'description' => 'Association fund entry',
                 'campus_id' => '019f686b-6d20-711c-a538-433cb3f7b4f5', //Bisu - Clarin
             ],
 
