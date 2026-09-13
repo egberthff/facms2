@@ -1,4 +1,5 @@
 @php
+    $isCycleStartYear = $setting->setting_key === 'claim_cycle_start_year';
     $isCycleYears = $setting->setting_key === 'claim_cycle_years';
     $isCycleMonth = $setting->setting_key === 'claim_cycle_start_month';
     $isAssociationFund = $setting->setting_key === 'association_fund';
@@ -33,6 +34,7 @@
                     name="setting_value"
                     type="{{ $inputType }}"
                     value="{{ old('setting_value', $setting->setting_value) }}"
+                    @if($isCycleStartYear) min="1900" max="2200" @endif
                     @if($isCycleYears) min="1" max="20" @endif
                     @if($isAssociationFund) min="0.01" step="0.01" @endif
                     required
@@ -42,7 +44,9 @@
             @endif
             <button type="submit" @disabled(!$canEdit) class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-slate-300">{{ $canEdit ? 'Save' : 'Select campus' }}</button>
         </div>
-        @if($isCycleYears)
+        @if($isCycleStartYear)
+            <p class="text-xs text-slate-400">Initial year of the claims cycle. The end year and month are calculated automatically.</p>
+        @elseif($isCycleYears)
             <p class="text-xs text-slate-400">Claims cycle duration, from 1 to 20 years.</p>
         @elseif($isCycleMonth)
             <p class="text-xs text-slate-400">Claims cycle starts on the first day of this month.</p>

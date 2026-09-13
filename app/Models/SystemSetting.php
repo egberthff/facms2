@@ -73,6 +73,14 @@ class SystemSetting extends Model
         return self::getCycleValue('claim_cycle_start_month', $campusId, 10, 1, 12);
     }
 
+    public static function getCycleStartYear(?string $campusId = null): int
+    {
+        $startMonth = self::getCycleStartMonth($campusId);
+        $default = now()->month >= $startMonth ? now()->year : now()->year - 1;
+
+        return self::getCycleValue('claim_cycle_start_year', $campusId, $default, 1900, 2200);
+    }
+
     private static function getCycleValue(
         string $key,
         ?string $campusId,

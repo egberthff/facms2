@@ -131,11 +131,11 @@ class CycleService
 
         $years = SystemSetting::getCycleYears($campusId);
         $startMonth = SystemSetting::getCycleStartMonth($campusId);
-        $startYear = $date->month >= $startMonth ? $date->year : $date->year - 1;
+        $startYear = SystemSetting::getCycleStartYear($campusId);
         $start = Carbon::create($startYear, $startMonth, 1, 0, 0, 0);
         $end = (clone $start)->addYears($years)->subSecond();
 
-        return ClaimsCycle::create([
+        $cycle = ClaimsCycle::create([
             'campus_id' => $campusId,
             'cycle_label' => $startYear . '-' . ($startYear + $years),
             'start_date' => $start,
@@ -143,6 +143,12 @@ class CycleService
             'duration_years' => $years,
             'start_month' => $startMonth,
         ]);
+
+        while ($cycle->end_date->lt($date)) {
+            $cycle = $this->createNextCycle($cycle, $years, $startMonth);
+        }
+
+        return $cycle;
     }
 
     private function createNextCycle(ClaimsCycle $previous, int $years, int $startMonth): ClaimsCycle

@@ -193,6 +193,12 @@ class SystemSettingSeeder extends Seeder
 
         foreach ($campusIds as $campusId) {
             $settings[] = [
+                'setting_key' => 'claim_cycle_start_year',
+                'setting_value' => (string) (now()->month >= 10 ? now()->year : now()->year - 1),
+                'description' => 'Initial year when the claims cycle starts.',
+                'campus_id' => $campusId,
+            ];
+            $settings[] = [
                 'setting_key' => 'claim_cycle_years',
                 'setting_value' => '2',
                 'description' => 'Number of years in the claims cycle.',

@@ -3,18 +3,18 @@
 namespace App\Http\Controllers;
 
 use App\Models\Campus;
+use App\Models\ClaimsCycle;
 use App\Models\SystemSetting;
-use App\Services\CycleService;
 use App\Services\TreasuryLedgerService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class SettingController extends Controller
 {
     public function __construct(
-        private CycleService $cycleService,
         private TreasuryLedgerService $treasuryLedgerService,
     )
     {
@@ -39,22 +39,6 @@ class SettingController extends Controller
             ->get();
 
         $cyclesByCampus = collect();
-        if ($selectedCampusId) {
-            $campus = $allCampuses->firstWhere('id', $selectedCampusId);
-            if ($campus) {
-                $cyclesByCampus->put($campus->id, [
-                    'campus' => $campus,
-                    'cycles' => $this->cycleService->list($campus->id),
-                ]);
-            }
-        } elseif ($isPresident) {
-            $cyclesByCampus = $allCampuses->mapWithKeys(fn ($campus) => [
-                $campus->id => [
-                    'campus' => $campus,
-                    'cycles' => $this->cycleService->list($campus->id),
-                ],
-            ]);
-        }
 
         return view('settings.index', compact('settings', 'allCampuses', 'selectedCampusId', 'isPresident', 'cyclesByCampus'));
     }
@@ -96,17 +80,34 @@ class SettingController extends Controller
      */
     public function update(Request $request, SystemSetting $setting)
     {
-        $request->validate([
-            'setting_value' => $setting->setting_key === 'claim_cycle_years'
-                ? ['required', 'integer', 'between:1,20']
-                : ($setting->setting_key === 'claim_cycle_start_month'
-                    ? ['required', 'integer', 'between:1,12']
-                    : ($setting->setting_key === 'association_fund'
-                        ? ['required', 'numeric', 'decimal:0,2', 'gt:0']
-                        : ['required', 'string'])),
-            'campus_filter' => ['nullable', 'string'],
-        ]);
-    
+        $cycleSettingKeys = ['claim_cycle_start_year', 'claim_cycle_start_month', 'claim_cycle_years'];
+        $isCycleConfiguration = $setting->setting_key === 'claim_cycle_start_year'
+            && $request->has(['cycle_start_year', 'cycle_start_month', 'cycle_years']);
+
+        if ($isCycleConfiguration) {
+            $request->validate([
+                'cycle_start_year' => ['required', 'integer', 'between:1900,2200'],
+                'cycle_start_month' => ['required', 'integer', 'between:1,12'],
+                'cycle_years' => ['required', 'integer', 'between:1,20'],
+                'campus_filter' => ['nullable', 'string'],
+            ]);
+        }
+
+        $validationRules = match ($setting->setting_key) {
+            'claim_cycle_start_year' => ['required', 'integer', 'between:1900,2200'],
+            'claim_cycle_start_month' => ['required', 'integer', 'between:1,12'],
+            'claim_cycle_years' => ['required', 'integer', 'between:1,20'],
+            'association_fund' => ['required', 'numeric', 'decimal:0,2', 'gt:0'],
+            default => ['required', 'string'],
+        };
+
+        if (!$isCycleConfiguration) {
+            $request->validate([
+                'setting_value' => $validationRules,
+                'campus_filter' => ['nullable', 'string'],
+            ]);
+        }
+
         $user = Auth::user();
 
         $hasFullAccess = $user->can('view all campus data') 
@@ -114,8 +115,33 @@ class SettingController extends Controller
         
         abort_if(!$hasFullAccess && $user->getCachedCampusId() !== $setting->campus_id, 403);
 
-    
-        DB::transaction(function () use ($request, $setting) {
+        if (in_array($setting->setting_key, $cycleSettingKeys, true)
+            && ClaimsCycle::where('campus_id', $setting->campus_id)->exists()) {
+            throw ValidationException::withMessages([
+                'setting_value' => 'Claim cycle settings cannot be changed after a cycle has been initialized.',
+            ]);
+        }
+
+        DB::transaction(function () use ($request, $setting, $isCycleConfiguration) {
+            if ($isCycleConfiguration) {
+                foreach ([
+                    'claim_cycle_start_year' => $request->input('cycle_start_year'),
+                    'claim_cycle_start_month' => $request->input('cycle_start_month'),
+                    'claim_cycle_years' => $request->input('cycle_years'),
+                ] as $settingKey => $value) {
+                    $liveSetting = SystemSetting::query()
+                        ->where('setting_key', $settingKey)
+                        ->where('campus_id', $setting->campus_id)
+                        ->whereNull('cycle_label')
+                        ->lockForUpdate()
+                        ->firstOrFail();
+
+                    $liveSetting->update(['setting_value' => $value]);
+                }
+
+                return;
+            }
+
             $liveSetting = SystemSetting::query()
                 ->where('setting_key', $setting->setting_key)
                 ->where('campus_id', $setting->campus_id)
@@ -128,21 +154,25 @@ class SettingController extends Controller
                 $value = number_format((float) $liveSetting->setting_value + (float) $value, 2, '.', '');
             }
 
-            $currentCycleLabel = $this->cycleService
-                ->currentRecord($setting->campus_id)
-                ->cycle_label;
+            $currentCycle = ClaimsCycle::query()
+                ->where('campus_id', $setting->campus_id)
+                ->where('start_date', '<=', now())
+                ->where('end_date', '>=', now())
+                ->first();
 
-            SystemSetting::updateOrCreate(
-                [
-                    'campus_id' => $setting->campus_id,
-                    'setting_key' => $setting->setting_key,
-                    'cycle_label' => $currentCycleLabel,
-                ],
-                [
-                    'setting_value' => $value,
-                    'description' => "Historical snapshot of {$setting->setting_key} for cycle {$currentCycleLabel}",
-                ]
-            );
+            if ($currentCycle) {
+                SystemSetting::updateOrCreate(
+                    [
+                        'campus_id' => $setting->campus_id,
+                        'setting_key' => $setting->setting_key,
+                        'cycle_label' => $currentCycle->cycle_label,
+                    ],
+                    [
+                        'setting_value' => $value,
+                        'description' => "Historical snapshot of {$setting->setting_key} for cycle {$currentCycle->cycle_label}",
+                    ]
+                );
+            }
 
             $liveSetting->update(['setting_value' => $value]);
 
@@ -158,9 +188,6 @@ class SettingController extends Controller
                 ]);
             }
 
-            if (in_array($setting->setting_key, ['claim_cycle_years', 'claim_cycle_start_month'], true)) {
-                $this->cycleService->applyConfiguration($setting->campus_id);
-            }
         });
     
         return redirect()

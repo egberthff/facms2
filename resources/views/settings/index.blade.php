@@ -57,8 +57,8 @@
         @endif
 
         @php
-            $cycleSettings = $settings->whereIn('setting_key', ['claim_cycle_years', 'claim_cycle_start_month']);
-            $generalSettings = $settings;
+            $cycleSettings = $settings->whereIn('setting_key', ['claim_cycle_start_year', 'claim_cycle_start_month', 'claim_cycle_years']);
+            $generalSettings = $settings->reject(fn ($setting) => $cycleSettings->contains('id', $setting->id));
             $canEdit = !$isPresident || filled($selectedCampusId);
         @endphp
 
@@ -109,6 +109,10 @@
 
                 </section>
             @endif --}}
+
+            @if($cycleSettings->isNotEmpty())
+                @include('settings.partials.cycle-settings-card', ['cycleSettings' => $cycleSettings, 'canEdit' => $canEdit])
+            @endif
 
             @if($generalSettings->isNotEmpty())
                 <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
