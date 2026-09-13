@@ -9,8 +9,22 @@
         openDetailModal: false,
         openAnnualContributionSetupModal: false,
         contributionYear: '',
-        page: 1,
-        perPage: 5, 
+        formatAmount(value) {
+            const amount = Number(value ?? 0);
+            return '₱' + amount.toLocaleString('en-US', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+            });
+        },
+        batchCollectibleAmount() {
+            return Number(this.selectedBatch?.collectible_amount ?? this.selectedBatch?.amount_paid ?? 0);
+        },
+        batchCollectedAmount() {
+            return Number(this.selectedBatch?.collected_amount ?? this.selectedBatch?.amount_collected ?? 0);
+        },
+        batchOutstandingAmount() {
+            return Math.max(this.batchCollectibleAmount() - this.batchCollectedAmount(), 0);
+        },
         selectBatch(batch) {
             this.selectedBatch = batch;
             this.openModal = true;
@@ -42,18 +56,6 @@
                     .toLowerCase()
                     .includes(query);
             });
-        },
-         // 2. Add Dynamic Pagination Getters
-        get paginatedBatches() {
-            const start = (this.page - 1) * this.perPage;
-            const end = start + this.perPage;
-            return this.filteredBatches().slice(start, end);
-        },
-        get totalBatchesPages() {
-            return Math.ceil(this.filteredBatches().length / this.perPage) || 1;
-        },
-        get totalBatchesCount() {
-            return this.filteredBatches().length;
         },
         modalSearch: '',
         get filteredDetails() {

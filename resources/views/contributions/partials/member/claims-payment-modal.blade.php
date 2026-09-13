@@ -106,7 +106,7 @@
                     </div>
 
                     <!-- Section 4: Audit Status Info Badge Block -->
-                    <div class="p-4 rounded-xl border bg-slate-50/10 flex items-center justify-between"
+                    {{-- <div class="p-4 rounded-xl border bg-slate-50/10 flex items-center justify-between"
                          :class="activeContribution.status === 'Paid' ? 'border-emerald-100 bg-emerald-50/5' : 'border-slate-100'">
                         <div class="flex items-center gap-3">
                             <div class="p-2 rounded-lg" :class="activeContribution.status === 'Paid' ? 'bg-emerald-100 text-emerald-700' : 'bg-emerald-50 text-emerald-600'">
@@ -121,7 +121,7 @@
                               :class="activeContribution.status === 'Paid' ? 'text-white bg-emerald-600' : 'text-emerald-700 bg-emerald-50'"
                               x-text="activeContribution.status === 'Paid' ? 'Settled' : 'Audited'">
                         </span>
-                    </div>
+                    </div> --}}
 
                 </div> <!-- End of Scrollable Body Component Wrapper -->
 

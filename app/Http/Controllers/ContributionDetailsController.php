@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\ContributionDetails;
 use App\Http\Requests\StoreContributionDetailsRequest;
 use App\Http\Requests\UpdateContributionDetailsRequest;
-use App\Services\ContributionService;
+use App\Services\ContributionService; 
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
@@ -14,7 +14,9 @@ use Exception;
 class ContributionDetailsController extends Controller
 {
     protected ContributionService $contributionService;
-     public function __construct(ContributionService $contributionService)
+     public function __construct(
+        ContributionService $contributionService,
+        )
     {
         $this->contributionService = $contributionService;
     }
@@ -155,7 +157,7 @@ class ContributionDetailsController extends Controller
     {
         try {
             $updatedDetail = $this->contributionService->markAsPaid($id, 'claims');
-
+ 
             return response()->json([
                 'success' => true,
                 'message' => 'Contribution payment recorded successfully.',

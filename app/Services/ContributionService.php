@@ -11,6 +11,7 @@ use App\Models\ContributionBatch;
 use App\Models\ContributionDetail;
 use App\Models\AnnualContribution;
 use App\Models\SystemSetting;
+use App\Services\TreasuryLedgerService;
 USE App\Enums\ContributionStatus;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
@@ -23,6 +24,12 @@ use InvalidArgumentException;
 
 class ContributionService
 {
+    private TreasuryLedgerService $ledgerService;
+
+    public function __construct(TreasuryLedgerService $ledgerService)
+    {
+        $this->ledgerService = $ledgerService;
+    }
     /**
      * Store a new contribution batch and generate detail records for all active members.
      */
@@ -107,6 +114,13 @@ class ContributionService
             }
 
             $fixedAmount = (float) $setting->setting_value;
+
+            if ($fixedAmount <= 0) {
+                throw new Exception(
+                    "Generation failed: The annual contribution amount for this campus must be greater than zero. " .
+                    "Please update the 'annual_contribution' setting before generating records."
+                );
+            }
 
             // 3. Fetch active members who do not have records yet for this year
             $membersToProcess = Member::where('membership_status', 'active')
@@ -230,33 +244,41 @@ class ContributionService
     /**
      * Record a payment for an individual contribution detail line item.
      */
-    public function markAsPaid(string $id, string $tag): ContributionDetail | AnnualContribution
+    public function markAsPaid(string $id, string $tag, array $data = [])
     {
-        switch ($tag) {
-            case 'claims':
-                $detail = ContributionDetail::findOrFail($id);
-        
-                $detail->update([
-                    'status'  => ContributionStatus::Paid->value,
-                    'paid_at' => now(),
-                ]);
-    
-                return $detail;
-    
-            case 'annual': // Fixed typo from 'annula'
-                $detail = AnnualContribution::findOrFail($id);
-        
-                $detail->update([
-                    'status'  => ContributionStatus::Paid->value,
-                    'paid_at' => now(),
-                ]);
-    
-                return $detail;
-    
-            default:
-                // Throwing an exception prevents a PHP Type Hint violation error
-                throw new InvalidArgumentException("Invalid contribution tag type specified: {$tag}");
-        }
+        return DB::transaction(function () use ($id, $tag, $data) {
+            
+            $detail = match ($tag) {
+                'claims' => ContributionDetail::findOrFail($id),
+                'annual' => AnnualContribution::findOrFail($id),
+                default  => throw new InvalidArgumentException("Invalid contribution tag: {$tag}"),
+            };
+
+            $detail->update([
+                'status'  => ContributionStatus::Paid->value,
+                'paid_at' => now(),
+            ]);
+
+            $name = ($tag === 'claims') ? 'Claims' : 'Annual';
+            $description = "Receipt for {$name} Contribution - Member ID: " . $detail->member_id;
+            $amount = $tag === 'annual' ? $detail->amount_paid : $detail->amount;
+
+            if ($amount === null || (float) $amount < 0) {
+                throw new InvalidArgumentException('The contribution amount must be a valid non-negative value.');
+            }
+
+            $this->ledgerService->recordTransaction([
+                'campus_id'        => $detail->member->campus_id,
+                'sourceable_type'  => get_class($detail),
+                'sourceable_id'    => $detail->id,
+                'reference_number' => $data['reference_number'] ?? 'GL-' . time(),
+                'description'      => $description,
+                'type'             => 'Credit',
+                'amount'           => (float) $amount,
+            ]);
+
+            return $detail;
+        });
     }
 
      /**
@@ -302,6 +324,7 @@ class ContributionService
 
             return [
                 'id'                  => $batch->id,
+                'batch_reference'     => $batch->batch_reference,
                 'claim_id'            => $batch->claim_id,
                 'claim_number'        => $batch->claim?->claim_number ?? 'N/A',
                 'claimant'            => trim(sprintf('%s %s %s', $batch->claim?->member?->first_name, $batch->claim?->member?->middle_name, $batch->claim?->member?->last_name)),
@@ -404,13 +427,18 @@ class ContributionService
      /**
      * Get the total paid contributions sum, filtered by optional campus.
      */
-    public function getTotalContributions(?string $selectedCampusId = null): float
+    public function getTotalContributions(?string $selectedCampusId = null, ?string $cycle = null): float
     {
         $query = ContributionDetail::where('contribution_details.status', 'Paid')
             ->join('members', 'contribution_details.member_id', '=', 'members.id');
 
         if ($selectedCampusId) {
             $query->where('members.campus_id', $selectedCampusId);
+        }
+
+        if ($cycle && $selectedCampusId) {
+            [$cycleStart, $cycleEnd] = app(\App\Services\CycleService::class)->resolve($cycle, $selectedCampusId);
+            $query->whereBetween('contribution_details.paid_at', [$cycleStart, $cycleEnd]);
         }
 
         return (float) $query->sum('contribution_details.amount');

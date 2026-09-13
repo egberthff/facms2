@@ -8,11 +8,12 @@
         x-transition:leave-start="opacity-100"
         x-transition:leave-end="opacity-0"
         class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/50 backdrop-blur-sm p-4"
+        @click.self="openAnnualContributionSetupModal = false"
         style="display: none;">
         
         <!-- Modal Form Box -->
         <div 
-            @click.away="openAnnualContributionSetupModal = false"
+            @click.stop
             x-transition:enter="ease-out duration-300"
             x-transition:enter-start="opacity-0 scale-95"
             x-transition:enter-end="opacity-100 scale-100"
@@ -31,7 +32,7 @@
 
             <!-- Modal Form Body -->
             <form class="mt-4 space-y-4" method="POST" action="{{ route('contributions.create') }}"
-                onSubmit="sendAnnualContributionBatchSetup(this)"
+                onsubmit="return sendAnnualContributionBatchSetup(event, this)"
                 data-user-is-federated="{{ Auth::user()->hasAnyRole(['Federated President', 'Federated Treasurer']) || Auth::user()->hasPermissionTo('view all campus data') ? 'true' : 'false' }}">
                 <div>
                     @if(Auth::user()->hasAnyRole(['Federated President', 'Federated Treasurer']) || Auth::user()->hasPermissionTo('view all campus data'))

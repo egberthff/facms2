@@ -52,8 +52,8 @@ class AnnualContributionController extends Controller
                 'success' => true,
                 'message' => 'Contribution payment recorded successfully.',
                 'data'    => $updatedDetail
-            ]);
-        } catch (Exception $e) {
+            ], 200);
+        } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Unable to record payment line item assignment.'

@@ -49,11 +49,17 @@ class ClaimController extends Controller
         $data['isPresident'] = $user->can('view all campus data') || $user->hasAnyRole(['President', 'Treasurer']);
         $selectedCampusId = $data['isPresident'] ? $request->input('campus_filter') : null;
 
-        $data['claims'] = $this->claimService->getAllClaims($selectedCampusId);
+        // $isFederatedTreasuer = $user->hasRole('Federated Treasurer');
+        $roles = ['President', 'Treasurer', 'Federated President', 'Federated Treasurer'];
+        // Get only the roles the user actually has
+        $userRoles = array_values(array_filter($roles, fn($role) => $user->hasRole($role)));
+        $data['userRole'] = $userRoles[0] ?? null;
+        $data['claims'] = $this->claimService->getAllClaims($userRoles, $selectedCampusId);
 
         if ($data['isPresident']) {
             $data['allCampuses'] = Campus::where('is_active', true)->get();
             $data['selectedCampusId'] = $selectedCampusId;
+            $data['userRoles'] = $userRoles; // Pass the user roles to the view
         }
 
         return view('claims.claims-list', $data);
@@ -158,22 +164,19 @@ class ClaimController extends Controller
 
     public function myClaims(User $user)
     {
-    //      dd(
-    //     $user->member()->toSql(), 
-    //     $user->member()->getBindings(),
-    //     $user->user_id
-    // );
-        // dd($user);
         Gate::authorize('viewMyClaims', [Claim::class, $user]);
         $user->load(['member']); 
         $data['claims'] = $this->claimService->getClaimsForUser($user);
         // dd($data['claims']);   
         $data['isPresident'] = Auth::user()->can('view all campus data') || Auth::user()->hasAnyRole(['President', 'Treasurer']);
+        $data['userRole'] = collect(['President', 'Treasurer', 'Federated President', 'Federated Treasurer'])
+            ->first(fn($role) => Auth::user()->hasRole($role));
 
         if ($data['isPresident']) {
             $data['allCampuses'] = Campus::where('is_active', true)->get();
             $data['selectedCampusId'] = null;
         }
+        $data['isMemberMenu'] = true;
 
         return view('claims.claims-list', $data);
     }

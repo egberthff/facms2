@@ -3,7 +3,8 @@
                     <tr class="text-xs uppercase tracking-wider text-gray-700 bg-gray-50 dark:bg-gray-800 dark:text-gray-300"> 
                         <th class="px-6 py-4 font-semibold">Employee ID</th>
                         <th class="px-6 py-4 font-semibold">Member</th>
-                        @if(Auth::user()->hasAnyRole(['Federated President', 'Federated Treasurer']) || Auth::user()->can('view all campus data'))
+                        {{-- @if(Auth::user()->hasAnyRole(['Federated President', 'Federated Treasurer']) || Auth::user()->can('view all campus data')) --}}
+                        @if(($isPresident ?? false) || ($isTreasurer ?? false))
                         <th class="px-6 py-4 font-semibold">Campus</th>
                         @endif
                         <th class="px-6 py-4 font-semibold">Work Details</th>
@@ -11,7 +12,9 @@
                         <th class="px-6 py-4 font-semibold">Membership Status</th>
                         <th class="px-6 py-4 font-semibold">Claims</th>
                         <th class="px-6 py-4 font-semibold">Contributions</th>
+                        @if($isPresident ?? false)
                         <th class="px-6 py-4 font-semibold">Action</th>
+                        @endif
 
                      </tr> 
                 </thead>
@@ -21,7 +24,8 @@
                             <tr class="hover:bg-gray-50/70 dark:hover:bg-gray-800/50 transition-colors duration-150">
                                 <td class="px-6 py-4 font-semibold text-gray-900 dark:text-white whitespace-nowrap">{{ $member->employee_number }}</td>
                                 <td class="px-6 py-4 whitespace-nowrap">{{ ucwords($member->last_name) }}, {{ ucwords($member->first_name) }} {{ ucwords($member->middle_name) }}, {{ ucwords($member->suffex) }}</td>
-                                @if(Auth::user()->hasAnyRole(['Federated President', 'Federated Treasurer']) || Auth::user()->can('view all campus data'))
+                                {{-- @if(Auth::user()->hasAnyRole(['Federated President', 'Federated Treasurer']) || Auth::user()->can('view all campus data')) --}}
+                                @if(($isPresident ?? false) || ($isTreasurer ?? false))
                                 <td class="px-6 py-4 font-semibold">{{ $member->campus->acronym }}</td>
                                 @endif
                                 <td class="px-6 py-4 whitespace-nowrap">{{ $member->department }} - {{ $member->position }}</td>
@@ -47,6 +51,7 @@
                                          View Contributions 
                                     </x-button>
                                 </td>
+                                @if($isPresident ?? false)
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <x-button
                                         type="button"
@@ -58,7 +63,7 @@
                                         data-member-id="{{ $member->id }}"
                                         data-member-employee-number="{{ $member->employee_number }}"
                                         data-member-first-name="{{ $member->first_name }}"
-                                        data-member-last-name="{{ $member->lastname }}"
+                                        data-member-last-name="{{ $member->last_name }}"
                                         data-member-middle-name="{{ $member->middle_name }}"
                                         data-member-suffix="{{ $member->suffix }}"
                                         data-member-gender="{{ $member->gender }}"
@@ -72,11 +77,12 @@
                                         data-member-gcash-number="{{ $member->gcash_number }}"
                                         data-member-gcash-account-name="{{ $member->gcash_account_name }}"
                                         data-member-campus-id="{{ $member->campus_id }}"
-                                        data-member-email="{{ Auth::user()->email }}"
+                                        data-member-email="{{ $member->user->email }}"
                                     >
                                         Edit
                                     </x-button>
                                 </td>
+                                @endif
                             </tr>
                         @endforeach
                     @else

@@ -6,11 +6,17 @@ use Carbon\Carbon;
 use App\Models\Claim;
 use App\Models\Campus;
 use App\Models\Member;
+use App\Models\ContributionBatch;
 use App\Models\SystemSetting;
+use App\Models\ClaimsCycle;
 use InvalidArgumentException;
 
 class ReportService
 {
+    public function __construct(private CycleService $cycleService)
+    {
+    }
+
     /**
      * Generate report.
      */
@@ -27,11 +33,17 @@ class ReportService
             'disbursement-summary'
                 => $this->disbursementSummary($filters),
 
+            'collection-summary'
+                => $this->collectionSummary($filters),
+
             'allowance-utilization'
                 => $this->allowanceUtilization($filters),
 
             'allowance-forfeiture'
                 => $this->allowanceForfeiture($filters),
+
+            'payroll-deduction-request'
+                => $this->payrollDeductionRequest($filters),
 
             default => throw new InvalidArgumentException(
                 "Unknown report type [{$reportType}]"
@@ -389,6 +401,45 @@ class ReportService
         ];
     }
 
+    protected function collectionSummary(array $filters): array
+    {
+        $campusId = $filters['campus_id'] ?? null;
+        $summaryService = app(\App\Services\CollectionSummaryService::class);
+        $transfers = $summaryService->transfersForCampus($campusId, $filters['from'] ?? null, $filters['to'] ?? null);
+
+        $collections = collect($transfers['collections'] ?? [])
+            ->map(fn ($item) => ['label' => $item->label, 'amount' => (float) $item->amount, 'section' => 'collections'])
+            ->values();
+
+        $disbursements = collect($transfers['disbursements'] ?? [])
+            ->map(fn ($item) => ['label' => $item->label, 'amount' => (float) $item->amount, 'section' => 'disbursements'])
+            ->values();
+
+        $rows = $collections->merge($disbursements)->values();
+
+        return [
+            'context' => $this->buildContext(
+                'Collection Summary',
+                'Campus treasury collection and disbursement summary.',
+                $filters
+            ),
+            'cards' => [
+                ['key' => 'collections', 'label' => 'Collections', 'value' => (float) ($transfers['collection_total'] ?? 0)],
+                ['key' => 'disbursements', 'label' => 'Disbursements', 'value' => (float) ($transfers['disbursement_total'] ?? 0)],
+            ],
+            'columns' => [
+                ['key' => 'label', 'label' => 'Description', 'type' => 'text'],
+                ['key' => 'amount', 'label' => 'Amount', 'type' => 'currency'],
+            ],
+            'rows' => $rows->toArray(),
+            'summary' => [
+                'id' => null,
+                'title' => 'Approved transfers',
+                'period_label' => $summaryService->buildPrintableData($campusId, $filters['from'] ?? null, $filters['to'] ?? null)['period_label'] ?? 'All approved transfers',
+            ],
+        ];
+    }
+
         /*
     |--------------------------------------------------------------------------
     | Allowance Reports
@@ -397,8 +448,6 @@ class ReportService
 
     protected function allowanceUtilization(array $filters): array
     {
-        [$cycleStart, $cycleEnd, $cycleLabel] = $this->resolveCycleBounds($filters['cycle'] ?? 'current');
-
         $members = Member::query()
             ->active()
             ->when(!empty($filters['campus_id']), fn($query) => $query->where('campus_id', $filters['campus_id']))
@@ -406,7 +455,11 @@ class ReportService
             ->with('campus')
             ->get();
 
-        $rows = $members->map(function (Member $member) use ($cycleStart, $cycleEnd, $cycleLabel) {
+        $rows = $members->map(function (Member $member) use ($filters) {
+            [$cycleStart, $cycleEnd, $cycleLabel] = $this->resolveCycleBounds(
+                $filters['cycle'] ?? 'current',
+                $member->campus_id
+            );
             $cycleClaims = $member->claims()
                 ->whereBetween('submitted_at', [$cycleStart, $cycleEnd]);
 
@@ -471,14 +524,7 @@ class ReportService
 
     protected function allowanceForfeiture(array $filters): array
     {
-        // 1. Resolve cycle boundaries and label (e.g., "2024-2026")
-        [$cycleStart, $cycleEnd, $cycleLabel] = $this->resolveCycleBounds($filters['cycle'] ?? 'current');
-        // Construct the explicit target cycle string to search against the settings table
-        $startYear = $cycleStart->year;
-        $endYear = $startYear + 2;
-        $targetCycle = "{$startYear}-{$endYear}";
-
-        // 2. Fetch active members and eager load claims to eliminate the N+1 query performance bottleneck
+        // Fetch active members and eager load claims to eliminate the N+1 query performance bottleneck.
         $members = Member::query()
             ->active()
             ->when(!empty($filters['campus_id']), fn($query) => $query->where('campus_id', $filters['campus_id']))
@@ -489,13 +535,19 @@ class ReportService
         // 3. Eager load annual_limit configurations for all applicable campuses
         $campusIds = $members->pluck('campus_id')->unique()->filter()->toArray();
         $settingsMap = SystemSetting::whereIn('campus_id', $campusIds)
-            ->where('setting_key', 'annual_limit')
-            ->where(fn($q) => $q->whereNull('cycle_label')->orWhere('cycle_label', $targetCycle))
+            ->where('setting_key', 'annual_claim_limit')
             ->get()
             ->groupBy('campus_id');
 
         // 4. Map values strictly using secure, in-memory computations
-        $rows = $members->map(function (Member $member) use ($cycleStart, $cycleEnd, $cycleLabel, $settingsMap, $targetCycle) {
+        $rows = $members->map(function (Member $member) use ($filters, $settingsMap) {
+            [$cycleStart, $cycleEnd, $cycleLabel] = $this->resolveCycleBounds(
+                $filters['cycle'] ?? 'current',
+                $member->campus_id
+            );
+            $targetCycle = $cycleLabel === 'Current Cycle'
+                ? $this->cycleService->currentRecord($member->campus_id)->cycle_label
+                : $cycleLabel;
 
             // Isolate claims submitted strictly inside this cycle's date boundaries
             $cycleClaims = $member->claims->filter(function ($claim) use ($cycleStart, $cycleEnd) {
@@ -571,6 +623,108 @@ class ReportService
         ];
     }
 
+    protected function payrollDeductionRequest(array $filters): array
+    {
+        $campusId = $filters['treasurer_campus_id'] ?? null;
+
+        $query = ContributionBatch::query()
+            ->with([
+                'claim.member' => fn ($query) => $query->withoutGlobalScopes(),
+                'claim.member.campus' => fn ($query) => $query->withoutGlobalScopes(),
+                'claim.claimType',
+            ])
+            ->whereHas('contributionDetails')
+            ->whereHas('claim', function ($query) use ($campusId, $filters) {
+                $query->when(
+                    empty($filters['status']),
+                    fn ($query) => $query->whereIn('status', ['Approved', 'Disbursed'])
+                )
+                    ->when(!empty($filters['claim_month']), function ($query) use ($filters) {
+                        [$year, $month] = explode('-', $filters['claim_month']);
+
+                        $query->whereYear('submitted_at', $year)
+                            ->whereMonth('submitted_at', $month);
+                    })
+                    ->whereHas('member', function ($query) use ($campusId, $filters) {
+                        $query->withoutGlobalScopes()
+                            ->where('membership_status', 'Active')
+                            ->when($campusId, fn ($query) => $query->where('campus_id', $campusId))
+                            ->when(!empty($filters['member_id']), fn ($query) => $query->whereKey($filters['member_id']));
+                    });
+            })
+            ->when(!empty($filters['claim_type']), function ($query) use ($filters) {
+                $query->whereHas('claim', fn ($claim) =>
+                    $claim->where('claim_type_id', $filters['claim_type']));
+            })
+            ->when(!empty($filters['status']), function ($query) use ($filters) {
+                $query->whereHas('claim', fn ($claim) =>
+                    $claim->where('status', $filters['status']));
+            })
+            ->latest('generated_at');
+
+        $rows = $query->get()
+            ->map(function (ContributionBatch $batch) use ($filters) {
+                $claim = $batch->claim;
+                $claimant = $claim?->member;
+
+                return [
+                    'member' => $claimant?->full_name ?? 'Unknown Member',
+                    'campus' => $claimant?->campus?->acronym ?? 'Unassigned',
+                    'claim_type' => $claim?->claimType?->name ?? 'N/A',
+                    'approved' => (float) ($claim?->approved_amount ?? 0),
+                    'deduction' => (float) $batch->amount_per_member,
+                    'coverage' => $this->formatPayrollCoverage($claim),
+                ];
+            })
+            ->values()
+            ->all();
+
+        $totalDeduction = collect($rows)->sum('deduction');
+
+        return [
+            'context' => $this->buildContext(
+                'Payroll Deduction Request',
+                'All-campus payroll deductions for active claimants submitted in the selected month.',
+                $filters
+            ),
+            'cards' => [
+                ['key' => 'members', 'label' => 'Claimants', 'value' => count($rows)],
+                ['key' => 'amount', 'label' => 'Total Deduction', 'value' => $totalDeduction],
+            ],
+            'columns' => [
+                ['key' => 'member', 'label' => 'A Member-Claimant', 'type' => 'text'],
+                ['key' => 'campus', 'label' => 'Campus', 'type' => 'text'],
+                ['key' => 'claim_type', 'label' => 'Type of Claim', 'type' => 'text'],
+                ['key' => 'approved', 'label' => 'Approved Claim', 'type' => 'currency'],
+                ['key' => 'deduction', 'label' => 'Deduction', 'type' => 'currency'],
+                ['key' => 'coverage', 'label' => 'Medical Aid Deduction Coverage', 'type' => 'text'],
+            ],
+            'rows' => $rows,
+            'total_deduction' => $totalDeduction,
+        ];
+    }
+
+    private function formatPayrollCoverage(?Claim $claim): string
+    {
+        $campusId = $claim?->member?->campus_id;
+        $submittedAt = $claim?->submitted_at;
+
+        if (!$campusId || !$submittedAt) {
+            return 'N/A';
+        }
+
+        $cycle = ClaimsCycle::query()
+            ->where('campus_id', $campusId)
+            ->where('start_date', '<=', $submittedAt)
+            ->where('end_date', '>=', $submittedAt)
+            ->first();
+
+        return $cycle
+            ? $cycle->start_date->format('F Y') . '-' . $cycle->end_date->format('F Y')
+            : 'N/A';
+    }
+
+
         /*
     |--------------------------------------------------------------------------
     | Helpers
@@ -602,24 +756,9 @@ class ReportService
             });
     }
 
-    private function resolveCycleBounds(?string $cycle): array
+    private function resolveCycleBounds(?string $cycle, ?string $campusId = null): array
     {
-        if (empty($cycle) || $cycle === 'current') {
-            $now = Carbon::now();
-            $startYear = $now->month >= 10 ? $now->year : $now->year - 1;
-            $cycleStart = Carbon::create($startYear, 10, 1, 0, 0, 0);
-            $cycleEnd = (clone $cycleStart)->addYears(2)->subSecond();
-            return [$cycleStart, $cycleEnd, 'Current Cycle'];
-        }
-
-        $parts = explode('-', $cycle);
-        if (count($parts) === 2 && is_numeric($parts[0]) && is_numeric($parts[1])) {
-            $cycleStart = Carbon::create((int) $parts[0], 10, 1, 0, 0, 0);
-            $cycleEnd = (clone $cycleStart)->addYears(2)->subSecond();
-            return [$cycleStart, $cycleEnd, trim($cycle)];
-        }
-
-        return $this->resolveCycleBounds('current');
+        return $this->cycleService->resolve($cycle, $campusId);
     }
 
     protected function buildContext(
@@ -637,7 +776,9 @@ class ReportService
         // 2. Format a clean date range string based on dates or reporting year
         $dateRange = 'All Dates';
 
-        if (!empty($filters['date_from']) || !empty($filters['date_to'])) {
+        if (!empty($filters['claim_month'])) {
+            $dateRange = 'Claims submitted in ' . Carbon::parse($filters['claim_month'] . '-01')->format('F Y');
+        } elseif (!empty($filters['date_from']) || !empty($filters['date_to'])) {
             // User explicitly picked specific date boundaries
             $from = !empty($filters['date_from']) ? Carbon::parse($filters['date_from'])->format('M d, Y') : 'Beginning';
             $to = !empty($filters['date_to']) ? Carbon::parse($filters['date_to'])->format('M d, Y') : 'Present';
@@ -669,6 +810,10 @@ class ReportService
                     'label' => 'Date Range',
                     'value' => $dateRange,
                 ],
+                ...(!empty($filters['payroll_month']) ? [[
+                    'label' => 'Payroll Month',
+                    'value' => Carbon::parse($filters['payroll_month'] . '-01')->format('F Y'),
+                ]] : []),
             ],
         ];
     }
@@ -696,14 +841,23 @@ class ReportService
             ['value' => 'current', 'label' => 'Current Cycle'],
         ];
 
-        $now = Carbon::now();
-        $pivotYear = $now->month >= 10 ? $now->year : $now->year - 1;
+        $campusIds = Campus::query()->where('is_active', true)->pluck('id');
+        $storedCycles = collect();
 
-        for ($offset = 2; $offset <= 6; $offset += 2) {
-            $startYear = $pivotYear - $offset;
+        foreach ($campusIds as $campusId) {
+            $this->cycleService->list($campusId);
+            $storedCycles = $storedCycles->merge(
+                ClaimsCycle::where('campus_id', $campusId)
+                    ->orderByDesc('start_date')
+                    ->limit(4)
+                    ->pluck('cycle_label')
+            );
+        }
+
+        foreach ($storedCycles->unique()->values() as $label) {
             $cycles[] = [
-                'value' => "{$startYear}-" . ($startYear + 2),
-                'label' => "{$startYear} - " . ($startYear + 2),
+                'value' => $label,
+                'label' => str_replace('-', ' - ', $label),
             ];
         }
 

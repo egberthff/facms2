@@ -9,6 +9,14 @@
             openAnnualModal : false,
             activeAnnual: {},
             activeContribution: {},
+            filterContributions(status) {
+                const table = document.querySelector('.dt-table');
+                const dataTable = table?.dataTableInstance;
+
+                if (dataTable) {
+                    dataTable.search(status === 'all' ? '' : status);
+                }
+            },
             matches(status, number, desc, type) {
                 const matchesStatus = this.currentStatus === 'all' || status.toLowerCase() === this.currentStatus.toLowerCase();
                 const searchLower = this.searchText.toLowerCase();

@@ -34,13 +34,7 @@ return new class extends Migration
             // $table->decimal('paid_amount', 12, 2)
             //     ->default(0);
             // Workflow
-            $table->enum('status', [
-                'Pending',
-                'Processing',
-                'Approved',
-                'Rejected',
-                'Disbursed',
-            ])->default('Pending');
+            $table->string('status')->default('Pending');
             $table->text('description')->nullable();
             $table->text('remarks')->nullable();
             // Dates

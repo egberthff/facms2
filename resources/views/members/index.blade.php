@@ -1,7 +1,7 @@
 <x-app-layout>
    
-    {{-- @if(isset($isPresident) && $isPresident) --}}
-    @if(Auth::user()->hasAnyRole(['Federated President', 'Federated Treasurer']) || Auth::user()->can('view all campus data'))
+    @if(($isPresident ?? false) || ($isTreasurer ?? false))
+    {{-- @if(Auth::user()->hasAnyRole(['Federated President', 'Federated Treasurer']) || Auth::user()->can('view all campus data')) --}}
         <div class="p-6 bg-gray-50 dark:bg-zinc-800/40 rounded-xl border border-gray-200 dark:border-zinc-800/80 mb-6">
             <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
@@ -39,8 +39,9 @@
                 </select>
             </div>  
 
-            <!-- Right End: Add Action -->
+            <!-- Right End: Add Action --> 
             <div class="flex gap-2">  
+                @if($isPresident ?? false)  
                 <x-button
                     id="add-new-member-btn-csv"
                     type="button"
@@ -60,8 +61,10 @@
                     data-modal-toggle="member-modal">
                         Add New Member
                 </x-button>
+                @endif
             </div>
         </div>
+         
 
         <div class="w-full">
             @include('members.partials.members-table')
@@ -142,6 +145,11 @@
                 });
             }
 
+            const currencyFormatter = new Intl.NumberFormat('en-PH', {
+                style: 'currency',
+                currency: 'PHP'
+            });
+
             /**
              * Dynamic modal injection script for Member Claims
              * Supports both an array of claims or a single claim object.
@@ -159,6 +167,14 @@
                 } else {
                     modalTitle.textContent = 'Member Claims History';
                 }
+
+                const balance = data.balance || [];
+                document.getElementById('balance-approved').textContent = currencyFormatter.format(balance?.approvedBalance ?? 0);
+                document.getElementById('balance-actual').textContent = currencyFormatter.format(balance?.actualBalance ?? 0);
+                document.getElementById('balance-base-limit').textContent = currencyFormatter.format(balance?.baseLimit ?? 0);
+                document.getElementById('balance-approved-cycle').textContent = currencyFormatter.format(balance?.totalApprovedCycle ?? 0);
+                document.getElementById('balance-disbursed-cycle').textContent = currencyFormatter.format(balance?.totalDisbursedCycle ?? 0);
+                document.getElementById('balance-cycle-start').textContent = balance?.cycleStartDate ?? '-';
             
                 // 2. Extract records array from response structure
                 const claims = data.records || [];
@@ -168,48 +184,59 @@
                 if (claims.length === 0) {
                     tbody.innerHTML = `
                         <tr>
-                            <td colspan="4" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
-                                No claims history found for this member.
+                            <td colspan="4" class="px-6 py-12 text-center text-sm text-gray-400 dark:text-zinc-500">
+                                <div class="flex flex-col items-center justify-center space-y-2">
+                                    <svg class="w-8 h-8 text-gray-300 dark:text-zinc-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://w3.org">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
+                                    </svg>
+                                    <span>No claims history found for this member.</span>
+                                </div>
                             </td>
                         </tr>
                     `;
                 } else {
-                    // 4. Populate table using payload arrays
+                    // Clear content before populating
+                    tbody.innerHTML = '';
+                
                     claims.forEach(claim => {
-                        // ISO Split cleaner converts '2026-07-17T13:31:05.000000Z' to '2026-07-17'
                         const submittedDate = claim.submitted_at ? claim.submitted_at.split('T')[0] : '—';
-                        
-                        // Format currency fields
+
                         const requestedAmount = parseFloat(claim.requested_amount || 0).toLocaleString('en-PH', {
                             minimumFractionDigits: 2,
                             maximumFractionDigits: 2
                         });
                     
-                        // Map responsive status colors 
-                        let statusClasses = 'bg-gray-100 text-gray-800 dark:bg-zinc-800 dark:text-gray-300';
                         const status = claim.status || 'Pending';
-                        
+
+                        // Match modern styling variants
+                        let badgeClasses = 'bg-gray-50 text-gray-700 border-gray-200 dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-700';
+                        let dotClasses = 'bg-gray-400';
+
                         if (['Approved', 'Disbursed'].includes(status)) {
-                            statusClasses = 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400';
+                            badgeClasses = 'bg-green-50 text-green-700 border-green-200 dark:bg-green-950/40 dark:text-green-400 dark:border-green-900/50';
+                            dotClasses = 'bg-green-500';
                         } else if (['Pending', 'Processing'].includes(status)) {
-                            statusClasses = 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400';
+                            badgeClasses = 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-900/50';
+                            dotClasses = 'bg-amber-500';
                         } else if (['Rejected'].includes(status)) {
-                            statusClasses = 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400';
+                            badgeClasses = 'bg-red-50 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-400 dark:border-red-900/50';
+                            dotClasses = 'bg-red-500';
                         }
                     
                         const rowHTML = `
-                            <tr class="bg-white border-b dark:bg-zinc-900 dark:border-zinc-800 hover:bg-gray-50 dark:hover:bg-zinc-800/50">
-                                <td class="px-4 py-3 font-medium text-gray-900 dark:text-white whitespace-nowrap">
+                            <tr class="bg-white dark:bg-zinc-900/50 hover:bg-gray-50 dark:hover:bg-zinc-800/60 transition-colors duration-150">
+                                <td class="px-6 py-4 font-medium text-gray-900 dark:text-white whitespace-nowrap">
                                     ${claim.claim_number || '—'}
                                 </td>
-                                <td class="px-4 py-3">
+                                <td class="px-6 py-4 text-gray-600 dark:text-zinc-400 whitespace-nowrap">
                                     ${submittedDate}
                                 </td>
-                                <td class="px-4 py-3 font-semibold text-gray-900 dark:text-white">
+                                <td class="px-6 py-4 font-medium text-gray-900 dark:text-white whitespace-nowrap">
                                     ₱${requestedAmount}
                                 </td>
-                                <td class="px-4 py-3">
-                                    <span class="px-2.5 py-0.5 text-xs font-medium rounded-full ${statusClasses}">
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="inline-flex items-center px-2.5 py-1 text-xs font-semibold rounded-md border ${badgeClasses}">
+                                        <span class="w-1.5 h-1.5 me-1.5 rounded-full ${dotClasses}"></span>
                                         ${status}
                                     </span>
                                 </td>
@@ -219,6 +246,7 @@
                         tbody.insertAdjacentHTML('beforeend', rowHTML);
                     });
                 }
+
             
                 // 5. Unhide Modal Layout container on screen
                 modal.classList.remove('hidden');
@@ -250,49 +278,60 @@
             if (contributions.length === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="4" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
-                            No contribution history records found for this member.
+                        <td colspan="4" class="px-6 py-12 text-center text-sm text-gray-400 dark:text-zinc-500">
+                            <div class="flex flex-col items-center justify-center space-y-2">
+                                <svg class="w-8 h-8 text-gray-300 dark:text-zinc-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://w3.org">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
+                                </svg>
+                                <span>No contribution history records found for this member.</span>
+                            </div>
                         </td>
                     </tr>
                 `;
             } else {
-                // 4. Populate table using payload arrays matching your 4 explicit headers
+                // Clear content before populating
+                tbody.innerHTML = '';           
+
                 contributions.forEach(item => {
-                    // Formats currency string to standard PHP Peso locale 
                     const contributionAmount = parseFloat(item.amount || 0).toLocaleString('en-PH', {
                         minimumFractionDigits: 2,
                         maximumFractionDigits: 2
                     });
                 
-                    // Isolate clean date formatting for paid_at records
                     const paidDate = item.paid_at ? item.paid_at.split('T')[0] : '—';
                 
-                    // Clean string checks for active status badge mapping
                     const rawStatus = (item.status || 'Unpaid').toLowerCase();
-                    let statusClasses = 'bg-gray-100 text-gray-800 dark:bg-zinc-800 dark:text-gray-300';
+
+                    // Define modern style variants for status pills
+                    let badgeClasses = 'bg-gray-50 text-gray-700 border-gray-200 dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-700';
+                    let dotClasses = 'bg-gray-400';         
 
                     if (rawStatus === 'paid') {
-                        statusClasses = 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400';
+                        badgeClasses = 'bg-green-50 text-green-700 border-green-200 dark:bg-green-950/40 dark:text-green-400 dark:border-green-900/50';
+                        dotClasses = 'bg-green-500';
                     } else if (rawStatus === 'pending') {
-                        statusClasses = 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400';
+                        badgeClasses = 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-900/50';
+                        dotClasses = 'bg-amber-500';
                     } else if (rawStatus === 'unpaid') {
-                        statusClasses = 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400';
+                        badgeClasses = 'bg-red-50 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-400 dark:border-red-900/50';
+                        dotClasses = 'bg-red-500';
                     }
                 
                     const rowHTML = `
-                        <tr class="bg-white border-b dark:bg-zinc-900 dark:border-zinc-800 hover:bg-gray-50 dark:hover:bg-zinc-800/50">
-                            <td class="px-4 py-3 font-medium text-xs text-gray-400 font-mono whitespace-nowrap">
-                                ${item.contribution_batch_id || '—'}
+                        <tr class="bg-white dark:bg-zinc-900/50 hover:bg-gray-50 dark:hover:bg-zinc-800/60 transition-colors duration-150">
+                            <td class="px-6 py-4 font-mono text-xs text-gray-500 dark:text-zinc-400 whitespace-nowrap">
+                                ${item.contribution_batch.batch_reference || '—'}
                             </td>
-                            <td class="px-4 py-3 font-semibold text-gray-900 dark:text-white">
+                            <td class="px-6 py-4 font-medium text-gray-900 dark:text-white whitespace-nowrap">
                                 ₱${contributionAmount}
                             </td>
-                            <td class="px-4 py-3">
-                                <span class="px-2.5 py-0.5 text-xs font-medium rounded-full ${statusClasses}">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="inline-flex items-center px-2.5 py-1 text-xs font-semibold rounded-md border ${badgeClasses}">
+                                    <span class="w-1.5 h-1.5 me-1.5 rounded-full ${dotClasses}"></span>
                                     ${item.status || 'Unpaid'}
                                 </span>
                             </td>
-                            <td class="px-4 py-3 text-gray-500 dark:text-gray-400">
+                            <td class="px-6 py-4 text-gray-600 dark:text-zinc-400 whitespace-nowrap">
                                 ${paidDate}
                             </td>
                         </tr>
@@ -301,6 +340,7 @@
                     tbody.insertAdjacentHTML('beforeend', rowHTML);
                 });
             }
+
 
             modalElement.classList.remove('hidden');
             modalElement.classList.add('flex');
@@ -336,17 +376,30 @@
                             title: 'Error',
                             text: response.message,
                         })
-                    }
-                },
-                error: function(xhr, status, error) {
-                    console.error('Form submission failed:', error);
-                    // Optionally, display an error message to the user
-                    Swal.fire({ 
+                    }else {
+                        Swal.fire({ 
                             icon: 'error',
                             title: 'Error',
-                            text: response.message,
+                            text: response.message
                         })
+                    }
+                },
+               error: function(xhr, status, error) {
+                    console.error('Form submission failed:', error);
+
+                    // Safely get the message from the server response
+                    let errorMsg = 'An unexpected error occurred.';
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        errorMsg = xhr.responseJSON.message;
+                    }
+                
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: errorMsg,
+                    });
                 }
+
             });
 
         }
@@ -376,14 +429,39 @@
                              document.querySelector('[data-modal-hide="member-modal"]').click(); // Close the modal
                              window.location.reload();
                         })
+                    }else{
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: response.message
+                        });
                     }
                 },
                 error: function(xhr, status, error) {
                     console.error('Form submission failed:', error);
-                    // Optionally, display an error message to the user
+                            
+                    // Safely get the message from the server response
+                    let errorMsg = 'An unexpected error occurred.';
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        errorMsg = xhr.responseJSON.message;
+                    }
+                
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: errorMsg,
+                    });
                 }
-            });
+            });   
         }
+
+        //Date format helper
+        const formatToHTMLDate = (dateString) => {
+            if (!dateString) return '';
+                const date = new Date(dateString);
+                // Check if the date is valid
+                return isNaN(date.getTime()) ? '' : date.toISOString().split('T')[0];
+            };
 
         document.addEventListener('click', function (e) {
             const btn = e.target.closest('[data-modal-target="member-modal"]');
@@ -444,8 +522,8 @@
                 document.getElementById('suffix').value =
                     btn.getAttribute('data-member-suffix') || '';
             
-                document.getElementById('birth_date').value =
-                    btn.getAttribute('data-member-birth-date') || '';
+                document.getElementById('birth_date').value = 
+                    formatToHTMLDate(btn.getAttribute('data-member-birth-date')) || '';
             
                 document.getElementById('gender').value =
                     btn.getAttribute('data-member-gender') || '';
@@ -479,6 +557,11 @@
 
                 document.getElementById('email').value = 
                     btn.getAttribute('data-member-email') || '';
+
+                const memberModal = document.getElementById('member-modal');
+                memberModal.classList.remove('hidden');
+                memberModal.classList.add('flex');
+                memberModal.setAttribute('aria-hidden', 'false');
 
             
             } else if (action === 'add-new-member') {

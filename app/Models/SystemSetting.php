@@ -62,4 +62,42 @@ class SystemSetting extends Model
         $setting = self::annualLimit($campusId)->first();   
         return $setting ? (float) $setting->setting_value : 23000.00; 
     }
+
+    public static function getCycleYears(?string $campusId = null): int
+    {
+        return self::getCycleValue('claim_cycle_years', $campusId, 2, 1, 20);
+    }
+
+    public static function getCycleStartMonth(?string $campusId = null): int
+    {
+        return self::getCycleValue('claim_cycle_start_month', $campusId, 10, 1, 12);
+    }
+
+    public static function getCycleStartYear(?string $campusId = null): int
+    {
+        $startMonth = self::getCycleStartMonth($campusId);
+        $default = now()->month >= $startMonth ? now()->year : now()->year - 1;
+
+        return self::getCycleValue('claim_cycle_start_year', $campusId, $default, 1900, 2200);
+    }
+
+    private static function getCycleValue(
+        string $key,
+        ?string $campusId,
+        int $default,
+        int $minimum,
+        int $maximum
+    ): int {
+        $value = self::query()
+            ->where('setting_key', $key)
+            ->whereNull('cycle_label')
+            ->when($campusId, fn ($query) => $query->where('campus_id', $campusId))
+            ->value('setting_value');
+
+        $value = filter_var($value, FILTER_VALIDATE_INT);
+
+        return $value !== false && $value >= $minimum && $value <= $maximum
+            ? $value
+            : $default;
+    }
 }

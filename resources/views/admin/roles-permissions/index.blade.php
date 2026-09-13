@@ -3,9 +3,13 @@
         
         <!-- Header -->
         <header class="mb-10 flex flex-col md:flex-row md:items-center md:justify-between border-b border-gray-200 pb-6">
-            <div>
+            {{-- <div>
                 <h1 class="text-3xl font-bold tracking-tight text-gray-900">Access Control</h1>
                 <p class="mt-2 text-sm text-gray-500">Configure global application roles and fine-tune individual module permissions.</p>
+            </div> --}}
+            <div>
+                <h1 class="text-3xl font-bold tracking-tight text-gray-900">Access Control</h1>
+                <p class="mt-2 text-sm text-gray-500">Configure global application roles.</p>
             </div>
             <!-- Action Buttons -->
             {{-- <div class="mt-4 md:mt-0 flex space-x-3">
@@ -28,14 +32,14 @@
                 <dt class="truncate text-sm font-medium text-gray-500">Total System Roles</dt>
                 <dd class="mt-1 text-3xl font-semibold tracking-tight text-indigo-600">{{ $roles->count() }}</dd>
             </div>
-            <div class="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6 border border-gray-100">
+            {{-- <div class="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6 border border-gray-100">
                 <dt class="truncate text-sm font-medium text-gray-500">System Permissions</dt>
                 <dd class="mt-1 text-3xl font-semibold tracking-tight text-emerald-600">{{ $permissions->count() }}</dd>
             </div>
             <div class="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6 border border-gray-100">
                 <dt class="truncate text-sm font-medium text-gray-500">Active Core Guards</dt>
                 <dd class="mt-1 text-3xl font-semibold tracking-tight text-gray-900">web / api</dd>
-            </div>
+            </div> --}}
         </div>
 
         {{-- <x-select onchange="toggleForm(this.value)">
@@ -52,15 +56,17 @@
               onchange="toggleForm(this.value)" 
               class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
             >
-              <option value="role-based" selected>Role Based Access Config</option>
-              <option value="user-based">User Based Access Config</option>
+              {{-- <option value="role-based">Role Based Access Config</option> --}}
+              <option value="user-based" selected>User Based Access Config</option>
             </select>
         </div>
 
         <!-- Master Matrix Form -->
         <div id="permission-form-container">
             <!-- Load the default form immediately on page render -->
-            @include('admin.roles-permissions.partials.role-based-form')
+            {{-- @include('admin.roles-permissions.partials.role-based-form') --}}
+            @include('admin.roles-permissions.partials.user-based-form')
+
         </div>
 
         <div id="form-templates" style="display: none;">

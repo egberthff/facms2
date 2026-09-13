@@ -76,12 +76,13 @@
                     <option value="pending" {{ ($filters['status'] ?? '') === 'pending' ? 'selected' : '' }}>Pending</option>
                 </select>
                 @if($isPresident)
-                    <select name="campus_filter" class="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400">
+                <input type="hidden" name="campus_filter" value="{{ $selectedCampusId }}">
+                    {{-- <select name="campus_filter" class="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400">
                         <option value="">All Campuses</option>
                         @foreach($allCampuses as $campus)
                             <option value="{{ $campus->id }}" {{ ($selectedCampusId ?? '') == $campus->id ? 'selected' : '' }}>{{ $campus->acronym }}</option>
                         @endforeach
-                    </select>
+                    </select> --}}
                 @endif
                 <button type="submit" class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700">Apply</button>
                 <a href="{{ route('disbursement.index') }}" class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50">Reset</a>
@@ -94,6 +95,9 @@
                     <tr class="border-b border-gray-200 bg-gray-50 text-gray-500 font-semibold tracking-wider text-xs uppercase">
                         <th class="px-6 py-3">Ref#</th>
                         <th class="px-6 py-3">Member</th>
+                        @if($isPresident) 
+                        <th class="px-6 py-3">Campus</th>
+                        @endif
                         <th class="px-6 py-3">Type</th>
                         <th class="px-6 py-3">Amount</th>
                         <th class="px-6 py-3">Payment Method</th>
@@ -106,6 +110,7 @@
                     @forelse ($disbursements as $row)
                         @php
                             $member = $row->claim?->member;
+                            $campus = $row->claim?->member?->campus?->acronym;
                             $claim = $row->claim;
                             $claimType = $claim?->claimType;
                             $statusText = $row->released_at ? 'Released' : ($claim?->status ?? 'Pending');
@@ -114,6 +119,7 @@
                                 'id' => $row->id,
                                 'claim_number' => $claim?->claim_number ?? 'N/A',
                                 'member_name' => trim(sprintf('%s %s %s', $member?->first_name, $member?->middle_name, $member?->last_name)) ?: 'N/A',
+                                'campus' => $campus,
                                 'claim_type' => $claimType?->name ?? 'N/A',
                                 'amount' => number_format((float) $row->amount, 2),
                                 'payment_method' => $row->paymentMethod?->name ?? 'N/A',
@@ -128,6 +134,9 @@
                         <tr>
                             <td class="px-6 py-4 text-center">{{ $claim?->claim_number ?? 'N/A' }}</td>
                             <td class="px-6 py-4 text-center">{{ trim(sprintf('%s %s %s', $member?->first_name, $member?->middle_name, $member?->last_name)) ?: 'N/A' }}</td>
+                            @if($isPresident) 
+                            <td class="px-6 py-4 text-center">{{ $campus ?? 'N/A' }}</td>
+                            @endif
                             <td class="px-6 py-4 text-center">{{ $claimType?->name ?? 'N/A' }}</td>
                             <td class="px-6 py-4 text-center">₱{{ number_format((float) $row->amount, 2) }}</td>
                             <td class="px-6 py-4 text-center">{{ $row->paymentMethod?->name ?? 'N/A' }}</td>
@@ -274,13 +283,21 @@
                     <span class="text-base font-semibold text-gray-900">{{ $summary['approved_claims'] }}</span>
                 </div>
                 <div class="flex justify-between items-center px-6 py-4">
+                    <span class="text-sm text-gray-600 font-medium">Released Claims</span>
+                    <span class="text-base font-semibold text-blue-600">{{ $summary['released_count'] }}</span>
+                </div>
+                <div class="flex justify-between items-center px-6 py-4 bg-gray-50/30">
+                    <span class="text-sm text-gray-900 font-bold">Available for Release</span>
+                    <span class="text-lg font-extrabold text-indigo-600">{{ $summary['approved_claims'] - $summary['released_count'] }}</span>
+                </div>
+                {{-- <div class="flex justify-between items-center px-6 py-4">
                     <span class="text-sm text-gray-600 font-medium">Already Disbursed</span>
                     <span class="text-base font-semibold text-emerald-600">₱{{ number_format($summary['released_amount'], 2) }}</span>
                 </div>
                 <div class="flex justify-between items-center px-6 py-4">
                     <span class="text-sm text-gray-600 font-medium">Pending Disbursement</span>
                     <span class="text-base font-semibold text-amber-600">₱{{ number_format($summary['pending_amount'], 2) }}</span>
-                </div>
+                </div> --}}
             </div>
         </div>
 
@@ -294,13 +311,21 @@
                     <span class="text-base font-semibold text-gray-900">₱{{ number_format($summary['approved_amount'], 2) }}</span>
                 </div>
                 <div class="flex justify-between items-center px-6 py-4">
+                    <span class="text-sm text-gray-600 font-medium">Already Disbursed</span>
+                    <span class="text-base font-semibold text-emerald-600">₱{{ number_format($summary['released_amount'], 2) }}</span>
+                </div>
+                <div class="flex justify-between items-center px-6 py-4">
+                    <span class="text-sm text-gray-600 font-medium">Pending Disbursement</span>
+                    <span class="text-base font-semibold text-amber-600">₱{{ number_format($summary['pending_amount'], 2) }}</span>
+                </div>
+                {{-- <div class="flex justify-between items-center px-6 py-4">
                     <span class="text-sm text-gray-600 font-medium">Released Entries</span>
                     <span class="text-base font-semibold text-blue-600">{{ $summary['released_count'] }}</span>
-                </div>
-                <div class="flex justify-between items-center px-6 py-4 bg-gray-50/30">
+                </div> --}}
+                {{-- <div class="flex justify-between items-center px-6 py-4 bg-gray-50/30">
                     <span class="text-sm text-gray-900 font-bold">Available for Release</span>
                     <span class="text-lg font-extrabold text-indigo-600">₱{{ number_format($summary['pending_amount'], 2) }}</span>
-                </div>
+                </div> --}}
             </div>
         </div>
     </div>

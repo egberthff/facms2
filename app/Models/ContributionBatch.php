@@ -25,6 +25,7 @@ class ContributionBatch extends Model
      */
     protected $fillable = [
         'claim_id',
+        'batch_reference',
         'amount_per_member',
         'total_members',
         'total_amount', 

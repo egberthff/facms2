@@ -115,8 +115,6 @@ return [
 
             'filters' => [
 
-                'date_range',
-
                 'campus',
 
                 'status',
@@ -177,6 +175,70 @@ return [
             ],
 
             'table' => 'disbursement',
+
+        ],
+
+        'collection-summary' => [
+
+            'title' => 'Collection Summary',
+
+            'description' => 'Campus treasury collection and disbursement summary for the selected period.',
+
+            'category' => 'financial',
+
+            'handler' => ReportService::class,
+
+            'filters' => [
+
+                'campus',
+
+            ],
+
+            'cards' => [
+
+                'collections',
+
+                'disbursements',
+
+            ],
+
+            'table' => 'collection_summary',
+
+        ],
+
+        'payroll-deduction-request' => [
+
+            'title' => 'Payroll Deduction Request',
+
+            'description' => 'Printable all-campus payroll deduction request for active claimants.',
+
+            'category' => 'financial',
+
+            'handler' => ReportService::class,
+
+            'filters' => [
+
+                'claim_month',
+
+                'payroll_month',
+
+                'member',
+
+                'claim_type',
+
+                'status',
+
+            ],
+
+            'cards' => [
+
+                'members',
+
+                'amount',
+
+            ],
+
+            'table' => 'payroll_deduction',
 
         ],
 
@@ -279,6 +341,22 @@ return [
             'label' => 'Date Range',
 
             'type' => 'date-range',
+
+        ],
+
+        'claim_month' => [
+
+            'label' => 'Claim Submission Month',
+
+            'type' => 'month',
+
+        ],
+
+        'payroll_month' => [
+
+            'label' => 'Payroll Month',
+
+            'type' => 'month',
 
         ],
 

@@ -18,9 +18,11 @@ class TreasuryLedger extends Model
     protected $keyType = 'string';
 
     protected $fillable = [
-        'campus_id',         // 2. EXPOSE THE CAMPUS FOREIGN KEY
+        'campus_id',
+        'fund_account_id',
         'sourceable_type',
         'sourceable_id',
+        'transfer_id',
         'reference_number',
         'description',
         'type',
@@ -58,4 +60,14 @@ class TreasuryLedger extends Model
 {
     return $this->belongsTo(Campus::class, 'campus_id');
 }
+
+    public function fundAccount()
+    {
+        return $this->belongsTo(FundAccount::class, 'fund_account_id');
+    }
+
+    public function transfer()
+    {
+        return $this->belongsTo(FundTransfer::class, 'transfer_id');
+    }
 }

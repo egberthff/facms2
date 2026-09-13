@@ -28,17 +28,7 @@
     </thead>
     <tbody class="divide-y divide-slate-100 bg-white">   
         @forelse($claims as $claim)
-        <tr
-            x-show="matches(
-                '{{ $claim->status }}',
-                '{{ $claim->claim_number }}',
-                '{{ addslashes($claim->remarks ?? $claim->description) }}',
-                '{{ $claim->claimType->name }}'
-            )"
-            x-transition:enter="transition ease-out duration-200"
-            x-transition:enter-start="opacity-0 translate-y-1"
-            x-transition:enter-end="opacity-100 translate-y-0"
-            class="hover:bg-blue-50/40 transition-colors text-center duration-150 even:bg-slate-50/30">
+        <tr class="hover:bg-blue-50/40 transition-colors text-center duration-150 even:bg-slate-50/30">
             <!-- ============================================== -->
             <!-- SELECT -->
             <!-- ============================================== -->
@@ -74,7 +64,7 @@
             <td class="px-5 py-4">
                 <div class="space-y-1">
                     <div class="font-medium text-slate-900">
-                        {{ ucwords(strtolower($claim->member->full_name)) ?? 'Unknown Member' }}
+                        {{ ucwords(strtolower($claim->member->user->name  ?? 'Unknown Member')) }}
                     </div>
                     <div class="text-xs text-slate-500">
                         {{ $claim->member->campus->acronym ?? 'No Campus' }} | EMP ID: {{ $claim->member->employee_number ?? '' }}
@@ -114,6 +104,8 @@
                         'Approved'   => 'bg-emerald-100 text-emerald-800 ring-emerald-200',
                         'Rejected'   => 'bg-rose-100 text-rose-800 ring-rose-200',
                         'Disbursed'  => 'bg-purple-100 text-purple-800 ring-purple-200',
+                        'For Disbursement' => 'bg-orange-100 text-orange-800 ring-orange-200',
+                        'For Review FP' => 'bg-indigo-100 text-indigo-800 ring-indigo-200',
                         default      => 'bg-slate-100 text-slate-700 ring-slate-200',
                     };
                 @endphp
@@ -130,6 +122,18 @@
                 <div
                     x-data="{ open:false }"
                     class="relative inline-block text-left">
+                    @if(isset($isMemberMenu) && $isMemberMenu)
+                        <button
+                            @click="
+                                activeClaim = @js($claim);
+                                openModal = true;
+                                open = false;
+                                "
+                                class="flex w-full items-center px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-100">
+                                <x-heroicon-o-eye class="size-6 text-blue-600" />
+                                <span class="ml-3">View Details</span>
+                            </button>
+                        @else
                     <button
                         @click="open=!open"
                         class="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-100 transition">
@@ -146,6 +150,8 @@
                                 d="M19 9l-7 7-7-7"/>
                         </svg>
                     </button>
+                    @endif
+                     
                     <div
                         x-show="open"
                         @click.away="open=false"
@@ -162,19 +168,7 @@
                                 <x-heroicon-o-eye class="size-6 text-blue-600" />
                                 <span class="ml-3">View Details</span>
                             </button>
-                            <!-- ADMINISTRATOR BUTTON ONLY -->
-                            <!-- PENDING STATE: Show Process Claim -->
-                            @if(Auth::user()->hasAnyRole(['President', 'Treasurer']) || Auth::user()->can('update claims'))
-                                @if($claim->status && strtolower(trim($claim->status)) === 'pending')
-                                    <button
-                                        @click="updateClaimStatus('{{ $claim->id }}', 'Processing', @js($claim))"
-                                        class="flex w-full items-center px-4 py-2.5 text-sm text-amber-700 hover:bg-amber-50">
-                                        <x-heroicon-o-arrow-path class="size-5 text-amber-500" />
-                                        <span class="ml-3">Process Claim</span>
-                                    </button>
-                                @endif
-                                <!-- PROCESSING STATE: Show Approve and Reject -->
-                                @if($claim->status && strtolower(trim($claim->status)) === 'processing')
+                            @if($userRole === 'President' && strtolower(trim($claim->status ?? '')) === 'pending')
                                     <button
                                         @click="updateClaimStatus('{{ $claim->id }}', 'Approved', @js($claim))"
                                         class="flex w-full items-center px-4 py-2.5 text-sm text-blue-700 hover:bg-blue-50">
@@ -187,16 +181,36 @@
                                         <x-heroicon-o-x-mark class="size-5 text-rose-500" />
                                         <span class="ml-3">Reject</span>
                                     </button>
+                            @elseif($userRole === 'Treasurer')
+                                @if(strtolower(trim($claim->status ?? '')) === 'approved')
+                                <button
+                                    @click="updateClaimStatus('{{ $claim->id }}', 'For Review FP', @js($claim))"
+                                    class="flex w-full items-center px-4 py-2.5 text-sm text-blue-700 hover:bg-blue-50">
+                                    <x-heroicon-o-arrow-path class="size-5 text-blue-500" />
+                                    <span class="ml-3">Forward to FP</span>
+                                </button>
+                                @elseif(strtolower(trim($claim->status ?? '')) === 'for disbursement')
+                                <button
+                                    @click="updateClaimStatus('{{ $claim->id }}', 'Disbursed', @js($claim))"
+                                    class="flex w-full items-center px-4 py-2.5 text-sm text-emerald-700 hover:bg-emerald-50">
+                                    <x-heroicon-o-credit-card class="size-5 text-emerald-500" />
+                                    <span class="ml-3">Mark as Disbursed</span>
+                                </button>
                                 @endif
-                                <!-- APPROVED STATE: Show Mark as Disbursed -->
-                                @if($claim->status && strtolower(trim($claim->status)) === 'approved')
-                                    <button
-                                        @click="updateClaimStatus('{{ $claim->id }}', 'Disbursed', @js($claim))"
-                                        class="flex w-full items-center px-4 py-2.5 text-sm text-emerald-700 hover:bg-emerald-50">
-                                        <x-heroicon-o-credit-card class="size-5 text-emerald-500" />
-                                        <span class="ml-3">Mark as Disbursed</span>
-                                    </button>
-                                @endif
+                            @elseif($userRole === 'Federated President' && strtolower(trim($claim->status ?? '')) === 'for review fp')
+                                <button
+                                    @click="updateClaimStatus('{{ $claim->id }}', 'Processing', @js($claim))"
+                                    class="flex w-full items-center px-4 py-2.5 text-sm text-amber-700 hover:bg-amber-50">
+                                    <x-heroicon-o-arrow-path class="size-5 text-amber-500" />
+                                    <span class="ml-3">Processing</span>
+                                </button>
+                            @elseif($userRole === 'Federated Treasurer' && strtolower(trim($claim->status ?? '')) === 'processing')
+                                <button
+                                    @click="updateClaimStatus('{{ $claim->id }}', 'For Disbursement', @js($claim))"
+                                    class="flex w-full items-center px-4 py-2.5 text-sm text-emerald-700 hover:bg-emerald-50">
+                                    <x-heroicon-o-credit-card class="size-5 text-emerald-500" />
+                                    <span class="ml-3">For Disbursement</span>
+                                </button>
                             @endif
                             
                             {{-- <button class="flex w-full items-center px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-100">

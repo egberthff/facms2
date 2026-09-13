@@ -20,6 +20,9 @@ window.reportCenter = function(options)
 
         generateUrl: options.generateUrl,
 
+        payrollPrintUrl: options.payrollPrintUrl,
+
+        collectionSummaryPrintUrl: options.collectionSummaryPrintUrl,
 
 
         /*
@@ -92,7 +95,11 @@ window.reportCenter = function(options)
 
             date_from: '',
 
-            date_to: ''
+            date_to: '',
+
+            claim_month: '',
+
+            payroll_month: ''
 
         },
 
@@ -237,7 +244,11 @@ window.reportCenter = function(options)
 
                 date_from: '',
 
-                date_to: ''
+                date_to: '',
+
+                claim_month: '',
+
+                payroll_month: ''
 
             };
 
@@ -379,7 +390,68 @@ window.reportCenter = function(options)
 
             }
 
+            if (this.selectedReport === 'payroll-deduction-request') {
+                this.openPayrollDeductionReport();
+
+                return;
+            }
+
+            if (this.selectedReport === 'collection-summary') {
+                this.openCollectionSummaryReport();
+
+                return;
+            }
+
             window.print();
+
+        },
+
+        openPayrollDeductionReport()
+        {
+            if (!this.hasGenerated || this.selectedReport !== 'payroll-deduction-request') {
+                return;
+            }
+
+            const params = new URLSearchParams();
+
+            Object.entries(this.filters).forEach(([key, value]) => {
+                if (value) {
+                    params.set(key, value);
+                }
+            });
+
+            window.open(`${this.payrollPrintUrl}?${params.toString()}`, '_blank');
+
+        },
+
+        openCollectionSummaryReport()
+        {
+            if (!this.hasGenerated || this.selectedReport !== 'collection-summary') {
+                return;
+            }
+
+            const params = new URLSearchParams();
+
+            if (this.filters.campus_id) {
+                params.set('campus_id', this.filters.campus_id);
+            }
+
+            if (this.filters.date_from) {
+                params.set('from', this.filters.date_from);
+            }
+
+            if (this.filters.date_to) {
+                params.set('to', this.filters.date_to);
+            }
+
+            params.set('auto_print', '1');
+            console.log('Opening print window with URL:', `${this.collectionSummaryPrintUrl}?${params.toString()}`);
+
+            const printWindow = window.open(`${this.collectionSummaryPrintUrl}?${params.toString()}`, '_blank');
+            console.log('Print window opened:', printWindow);
+            if (printWindow) {
+                printWindow.focus();
+            }
 
         },
 
