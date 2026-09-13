@@ -222,7 +222,7 @@ return [
 
                 'payroll_month',
 
-                'member',
+                // 'member',
 
                 'claim_type',
 
@@ -241,6 +241,26 @@ return [
             'table' => 'payroll_deduction',
 
         ],
+
+        'faculy-deduction-summary' => [
+            'title' => 'Faculty Deductions Summary',
+
+            'description' => 'Printable faculty deductions summary for the year',
+
+            'category' => 'financial',
+
+            'handler' => ReportService::class,
+
+            'filters' => [
+
+                'date_range',
+ 
+            ],
+
+            'table' => 'deductions',
+        ],
+
+        
 
         /*
         |--------------------------------------------------------------------------

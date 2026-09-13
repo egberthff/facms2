@@ -38,7 +38,6 @@
         }
 
         .header-logo-left, .header-logo-right {
-            width: 80px;
             height: 80px;
             border: 1px dashed #ccc; /* Placeholder box border */
             display: flex;
@@ -47,6 +46,14 @@
             font-size: 11px;
             color: #777;
             text-align: center;
+        }
+
+        .header-logo-left {
+            width: 80px
+        }
+
+        .header-logo-right {
+            width: 200px
         }
 
         .header-text {
@@ -221,28 +228,12 @@
     <div class="print">
         
         <!-- Header -->
-        <header class="report-header">
-            <div class="header-logo-left">
-                <!-- Replace with <img src="logo1.png" alt="Logo"> -->
-                Logo Left
-            </div>
-            <div class="header-text">
-                <p>Republic of the Philippines</p>
-                <h2>Bohol Island State University</h2>
-                <p>Magsija, Balilihan 6342, Bohol, Philippines</p>
-                    <p>Faculty Association - {{ $campus?->campus_name ?? 'Selected Campus' }}</p>
-                <p class="motto">Balance | Integrity | Stewardship | Uprightness</p>
-            </div>
-            <div class="header-logo-right">
-                <!-- Replace with <img src="logo2.png" alt="Logo"> -->
-                Logo Right
-            </div>
-        </header>
+        <x-bisu-header :campusName="$campus?->campus_name ?? 'Balilihan Campus'" :address="$campus?->address ?? 'Magsija, Balilihan 6342, Bohol, Philippines'" />
 
         <!-- Document Sub-Title -->
         <div class="report-title">
             <h3>BISU {{ strtoupper($campus?->campus_name ?? 'FACULTY ASSOCIATION') }}</h3>
-            <p>{{ strtoupper($periodLabel ?? 'ALL APPROVED TRANSFERS') }}</p>
+            {{-- <p>{{ strtoupper($periodLabel ?? 'ALL APPROVED TRANSFERS') }}</p> --}}
         </div>
 
         <!-- Financial Statement Table -->

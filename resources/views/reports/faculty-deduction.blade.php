@@ -187,9 +187,9 @@
 
             <!-- Center Headings -->
             <div class="header">
-                <h1>Bohol Island State University Balilihan Campus</h1>
+                <h1> {{ $campusName ?? "" }} </h1>
                 <h2>Faculty Association - Faculty Deductions</h2>
-                <p>October 2024 to November 2025</p>
+                <p> {{ $deductionPeriod ?? "" }} </p>s
             </div>
 
             <!-- Master Data Matrix Grid -->
@@ -197,18 +197,18 @@
                 <thead>
                     <!-- Row 1: High Level Calendar Periods & System Categories -->
                     <tr>
-                        <th rowspan="2" style="width: 3%;">No</th>
-                        <th rowspan="2" style="width: 15%;">Faculty Association
+                        <th rowspan="3" style="width: 3%;">No</th>
+                        <th rowspan="3" style="width: 15%;">Faculty Association
                             Member</th>
                         <th>January</th>
                         <th>January</th>
                         <th>February</th>
-                        <th class="bg-yellow">March</th>
-                        <th class="bg-yellow">April</th>
-                        <th class="bg-yellow">May</th>
-                        <th class="bg-yellow">June</th>
+                        <th>March</th>
+                        <th>April</th>
+                        <th>May</th>
+                        <th>June</th>
                         <th>July</th>
-                        <th class="bg-yellow">August</th>
+                        <th>August</th>
                         <th>September</th>
                         <th>October</th>
                         <th>November</th>
@@ -221,21 +221,21 @@
                                 Assistance</span></th>
                         <th><span class="sub-header-title">Medical
                                 Assistance</span></th>
-                        <th class="bg-yellow"><span
+                        <th><span
                                 class="sub-header-title">Medical
                                 Assistance</span></th>
-                        <th class="bg-yellow"><span
+                        <th><span
                                 class="sub-header-title">Medical
                                 Assistance</span></th>
-                        <th class="bg-yellow"><span
+                        <th><span
                                 class="sub-header-title">Medical
                                 Assistance</span></th>
-                        <th class="bg-yellow"><span
+                        <th><span
                                 class="sub-header-title">Medical
                                 Assistance</span></th>
                         <th><span class="sub-header-title">Medical
                                 Assistance</span></th>
-                        <th class="bg-yellow"><span
+                        <th><span
                                 class="sub-header-title">Medical
                                 Assistance</span></th>
                         <th><span class="sub-header-title">Medical
@@ -244,6 +244,21 @@
                                 Assistance</span></th>
                         <th><span class="sub-header-title">Unpaid
                                 Deductions</span></th>
+                    </tr>
+                    <tr class="bg-yellow font-bold text-center">
+                        <td class="border p-1">500</td>
+                        <td class="border p-1">200</td>
+                        <td class="border p-1">250</td>
+                        <td class="border p-1">250</td>
+                        <td class="border p-1">250</td>
+                        <td class="border p-1">250</td>
+                        <td class="border p-1">250</td>
+                        <td class="border p-1">250</td>
+                        <td class="border p-1">250</td>
+                        <td class="border p-1">250</td>
+                        <td class="border p-1">250</td>
+                        <td class="border p-1">250</td>
+                        <td class="border p-1">250</td>
                     </tr>
                 </thead>
                 <tbody>
@@ -254,12 +269,12 @@
                         <td class="text-right">500</td>
                         <td class="text-right">200</td>
                         <td class="text-right">250</td>
-                        <td class="text-right bg-yellow">350</td>
-                        <td class="text-right bg-yellow">650</td>
-                        <td class="text-right bg-yellow">300</td>
-                        <td class="text-right bg-yellow">550</td>
+                        <td class="text-right">350</td>
+                        <td class="text-right">650</td>
                         <td class="text-right">300</td>
-                        <td class="text-right bg-yellow">400</td>
+                        <td class="text-right">550</td>
+                        <td class="text-right">300</td>
+                        <td class="text-right">400</td>
                         <td class="text-right">450</td>
                         <td class="text-right">500</td>
                         <td class="text-right">0</td>
@@ -271,12 +286,12 @@
                         <td class="text-right">500</td>
                         <td class="text-right">200</td>
                         <td class="text-right">250</td>
-                        <td class="text-right bg-yellow">350</td>
-                        <td class="text-right bg-yellow">650</td>
-                        <td class="text-right bg-yellow">300</td>
-                        <td class="text-right bg-yellow">650</td>
+                        <td class="text-right">350</td>
+                        <td class="text-right">650</td>
                         <td class="text-right">300</td>
-                        <td class="text-right bg-yellow">400</td>
+                        <td class="text-right">650</td>
+                        <td class="text-right">300</td>
+                        <td class="text-right">400</td>
                         <td class="text-right">350</td>
                         <td class="text-right">500</td>
                         <td class="text-right">0</td>
@@ -288,12 +303,12 @@
                         <td class="text-right">500</td>
                         <td class="text-right">200</td>
                         <td class="text-right">250</td>
-                        <td class="text-right bg-yellow">350</td>
-                        <td class="text-right bg-yellow">650</td>
-                        <td class="text-right bg-yellow">300</td>
-                        <td class="text-right bg-yellow">650</td>
+                        <td class="text-right">350</td>
+                        <td class="text-right">650</td>
                         <td class="text-right">300</td>
-                        <td class="text-right bg-yellow">400</td>
+                        <td class="text-right">650</td>
+                        <td class="text-right">300</td>
+                        <td class="text-right">400</td>
                         <td class="text-right">350</td>
                         <td class="text-right">500</td>
                         <td class="text-right">1900</td>
@@ -305,170 +320,18 @@
                         <td class="text-right">500</td>
                         <td class="text-right">200</td>
                         <td class="text-right">250</td>
-                        <td class="text-right bg-yellow">350</td>
-                        <td class="text-right bg-yellow">650</td>
-                        <td class="text-right bg-yellow">300</td>
-                        <td class="text-right bg-yellow">650</td>
+                        <td class="text-right">350</td>
+                        <td class="text-right">650</td>
                         <td class="text-right">300</td>
-                        <td class="text-right bg-yellow">400</td>
+                        <td class="text-right">650</td>
+                        <td class="text-right">300</td>
+                        <td class="text-right">400</td>
                         <td class="text-right">350</td>
                         <td class="text-right">500</td>
                         <td class="text-right">0</td>
                         <td class="text-right font-bold">4450</td>
                     </tr>
-                    <tr>
-                        <td class="text-center">5</td>
-                        <td>Asvergonzado, Jhonmar</td>
-                        <td class="text-right">500</td>
-                        <td class="text-right">200</td>
-                        <td class="text-right">250</td>
-                        <td class="text-right bg-yellow">350</td>
-                        <td class="text-right bg-yellow">650</td>
-                        <td class="text-right bg-yellow">300</td>
-                        <td class="text-right bg-yellow">650</td>
-                        <td class="text-right">300</td>
-                        <td class="text-right bg-yellow">400</td>
-                        <td class="text-right">350</td>
-                        <td class="text-right">500</td>
-                        <td class="text-right">0</td>
-                        <td class="text-right font-bold">4450</td>
-                    </tr>
-                    <tr>
-                        <td class="text-center">6</td>
-                        <td>Banal, Dessymae</td>
-                        <td class="text-right">500</td>
-                        <td class="text-right">200</td>
-                        <td class="text-right">250</td>
-                        <td class="text-right bg-yellow">350</td>
-                        <td class="text-right bg-yellow">650</td>
-                        <td class="text-right bg-yellow">300</td>
-                        <td class="text-right bg-yellow">650</td>
-                        <td class="text-right">300</td>
-                        <td class="text-right bg-yellow">400</td>
-                        <td class="text-right">350</td>
-                        <td class="text-right">500</td>
-                        <td class="text-right">0</td>
-                        <td class="text-right font-bold">4450</td>
-                    </tr>
-                    <tr>
-                        <td class="text-center">7</td>
-                        <td>Biasco, Julie</td>
-                        <td class="text-right">500</td>
-                        <td class="text-right">200</td>
-                        <td class="text-right">250</td>
-                        <td class="text-right bg-yellow">360</td>
-                        <td class="text-right bg-yellow">650</td>
-                        <td class="text-right bg-yellow">300</td>
-                        <td class="text-right bg-yellow">650</td>
-                        <td class="text-right">300</td>
-                        <td class="text-right bg-yellow">400</td>
-                        <td class="text-right">350</td>
-                        <td class="text-right">500</td>
-                        <td class="text-right">0</td>
-                        <td class="text-right font-bold">4450</td>
-                    </tr>
-                    <tr>
-                        <td class="text-center">8</td>
-                        <td>Bungabong, Randall Lyn</td>
-                        <td class="text-right">500</td>
-                        <td class="text-right">200</td>
-                        <td class="text-right">250</td>
-                        <td class="text-right bg-yellow">350</td>
-                        <td class="text-right bg-yellow">650</td>
-                        <td class="text-right bg-yellow">300</td>
-                        <td class="text-right bg-yellow">650</td>
-                        <td class="text-right">300</td>
-                        <td class="text-right bg-yellow">400</td>
-                        <td class="text-right">350</td>
-                        <td class="text-right">500</td>
-                        <td class="text-right">0</td>
-                        <td class="text-right font-bold">4450</td>
-                    </tr>
-                    <tr>
-                        <td class="text-center">9</td>
-                        <td>Bungabong, Estrella Marie</td>
-                        <td class="text-right">500</td>
-                        <td class="text-right">200</td>
-                        <td class="text-right">250</td>
-                        <td class="text-right bg-yellow">350</td>
-                        <td class="text-right bg-yellow">650</td>
-                        <td class="text-right bg-yellow">300</td>
-                        <td class="text-right bg-yellow">650</td>
-                        <td class="text-right">300</td>
-                        <td class="text-right bg-yellow">400</td>
-                        <td class="text-right">350</td>
-                        <td class="text-right">500</td>
-                        <td class="text-right">0</td>
-                        <td class="text-right font-bold">4450</td>
-                    </tr>
-                    <tr>
-                        <td class="text-center">10</td>
-                        <td>Carpio, Eduardo Jr.</td>
-                        <td class="text-right">500</td>
-                        <td class="text-right">200</td>
-                        <td class="text-right">250</td>
-                        <td class="text-right bg-yellow">350</td>
-                        <td class="text-right bg-yellow">650</td>
-                        <td class="text-right bg-yellow">300</td>
-                        <td class="text-right bg-yellow">650</td>
-                        <td class="text-right">300</td>
-                        <td class="text-right bg-yellow">400</td>
-                        <td class="text-right">350</td>
-                        <td class="text-right">500</td>
-                        <td class="text-right">0</td>
-                        <td class="text-right font-bold">4450</td>
-                    </tr>
-                    <tr>
-                        <td class="text-center">11</td>
-                        <td>Dumapias, Ervin</td>
-                        <td class="text-right">500</td>
-                        <td class="text-right">200</td>
-                        <td class="text-right">250</td>
-                        <td class="text-right bg-yellow">350</td>
-                        <td class="text-right bg-yellow">650</td>
-                        <td class="text-right bg-yellow">300</td>
-                        <td class="text-right bg-yellow">650</td>
-                        <td class="text-right">300</td>
-                        <td class="text-right bg-yellow">400</td>
-                        <td class="text-right">350</td>
-                        <td class="text-right">500</td>
-                        <td class="text-right">0</td>
-                        <td class="text-right font-bold">4450</td>
-                    </tr>
-                    <tr>
-                        <td class="text-center">12</td>
-                        <td>Gabo, Catherine Leah G.</td>
-                        <td class="text-right">500</td>
-                        <td class="text-right">200</td>
-                        <td class="text-right">250</td>
-                        <td class="text-right bg-yellow">350</td>
-                        <td class="text-right bg-yellow">650</td>
-                        <td class="text-right bg-yellow">300</td>
-                        <td class="text-right bg-yellow">650</td>
-                        <td class="text-right">300</td>
-                        <td class="text-right bg-yellow">400</td>
-                        <td class="text-right">350</td>
-                        <td class="text-right">500</td>
-                        <td class="text-right">0</td>
-                        <td class="text-right font-bold">4450</td>
-                    </tr>
-                    <tr>
-                        <td class="text-center">13</td>
-                        <td>Lemosbog, Maricel</td>
-                        <td class="text-right">500</td>
-                        <td class="text-right">200</td>
-                        <td class="text-right">250</td>
-                        <td class="text-right bg-yellow">350</td>
-                        <td class="text-right bg-yellow">650</td>
-                        <td class="text-right bg-yellow">300</td>
-                        <td class="text-right bg-yellow">650</td>
-                        <td class="text-right">300</td>
-                        <td class="text-right bg-yellow">400</td>
-                        <td class="text-right">350</td>
-                        <td class="text-right">500</td>
-                        <td class="text-right">0</td>
-                        <td class="text-right font-bold">4450</td>
-                    </tr>
+                    
                     <!-- Calculation Matrix Summary Footers -->
                     <tr class="font-bold" style="background-color: #fafafa;">
                         <td colspan="2" class="text-right">TOTAL MONTHLY
@@ -476,12 +339,12 @@
                         <td class="text-right">12500</td>
                         <td class="text-right">5000</td>
                         <td class="text-right">6250</td>
-                        <td class="text-right bg-yellow">8750</td>
-                        <td class="text-right bg-yellow">16250</td>
-                        <td class="text-right bg-yellow">7500</td>
-                        <td class="text-right bg-yellow">13750</td>
+                        <td class="text-right">8750</td>
+                        <td class="text-right">16250</td>
                         <td class="text-right">7500</td>
-                        <td class="text-right bg-yellow">10000</td>
+                        <td class="text-right">13750</td>
+                        <td class="text-right">7500</td>
+                        <td class="text-right">10000</td>
                         <td class="text-right">11250</td>
                         <td class="text-right">12500</td>
                         <td class="text-right">0</td>
@@ -493,12 +356,12 @@
                         <td class="text-right">12500</td>
                         <td class="text-right">5000</td>
                         <td class="text-right">6250</td>
-                        <td class="text-right bg-yellow">8750</td>
-                        <td class="text-right bg-yellow">16250</td>
-                        <td class="text-right bg-yellow">7500</td>
-                        <td class="text-right bg-yellow">14950</td>
+                        <td class="text-right">8750</td>
+                        <td class="text-right">16250</td>
+                        <td class="text-right">7500</td>
+                        <td class="text-right">14950</td>
                         <td class="text-right">7200</td>
-                        <td class="text-right bg-yellow">9200</td>
+                        <td class="text-right">9200</td>
                         <td class="text-right">8050</td>
                         <td class="text-right">11500</td>
                         <td class="text-right">2200</td>
@@ -510,12 +373,12 @@
                         <td class="text-right">0</td>
                         <td class="text-right">0</td>
                         <td class="text-right">0</td>
-                        <td class="text-right bg-yellow">0</td>
-                        <td class="text-right bg-yellow">0</td>
-                        <td class="text-right bg-yellow">0</td>
-                        <td class="text-right bg-orange">-1200</td>
+                        <td class="text-right">0</td>
+                        <td class="text-right">0</td>
+                        <td class="text-right">0</td>
+                        <td class="text-right">-1200</td>
                         <td class="text-right">300</td>
-                        <td class="text-right bg-yellow">800</td>
+                        <td class="text-right">800</td>
                         <td class="text-right">3200</td>
                         <td class="text-right">1000</td>
                         <td class="text-right">4100</td>

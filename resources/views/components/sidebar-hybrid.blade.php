@@ -223,6 +223,14 @@
                 </ul>
             </div>
         @endcanany
+        <li>
+            <a href="{{ route('faculty-deductions-summary') }}"
+                class="flex items-center p-3 rounded-lg transition
+                {{ request()->routeIs('reports.*') ? 'bg-slate-700 text-white' : 'text-white hover:bg-slate-700' }}">
+                <x-heroicon-o-document-chart-bar class="w-5 h-5"/>
+                <span class="ml-3">Faculty Deductions Summary</span>
+            </a>
+        </li>
 
         <!-- ========================================= -->
         <!-- ACCOUNT / GLOBAL PROFILE -->

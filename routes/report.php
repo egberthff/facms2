@@ -28,3 +28,6 @@ Route::middleware(['auth', 'active'])
         ->middleware('can:view reports')
         ->name('reports.fund-transfers.approve');
     });
+
+    Route::get('faculty-deductions-summary', [ReportController::class, 'facultyDeductionsSummaryView'])
+        ->name('faculty-deductions-summary');

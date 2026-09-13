@@ -45,6 +45,9 @@ class ReportService
             'payroll-deduction-request'
                 => $this->payrollDeductionRequest($filters),
 
+            'faculy-deduction-summary'
+                => $this->facultyDeductionsSummary($filters),
+
             default => throw new InvalidArgumentException(
                 "Unknown report type [{$reportType}]"
             ),
@@ -702,6 +705,14 @@ class ReportService
             'rows' => $rows,
             'total_deduction' => $totalDeduction,
         ];
+    }
+
+    private function facultyDeductionsSummary(array $filters): array
+    {
+        
+
+
+        return [];
     }
 
     private function formatPayrollCoverage(?Claim $claim): string

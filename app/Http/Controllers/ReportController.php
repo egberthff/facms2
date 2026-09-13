@@ -136,6 +136,15 @@ class ReportController extends Controller
             $validated = $this->payrollFilters($validated);
         }
 
+        if($validated['report_type'] === 'faculy-deduction-summary') {
+            $validated = array_merge($validated, $request->validate([
+                'date_from' => ['required', 'date'],
+                'date_to' => ['required', 'date', 'after_or_equal:date_from'],
+            ]));
+
+            $validated = $this->facultyDeductionsSummary($validated);
+        }
+
         $report = $this->reportService->generate(
 
             $validated['report_type'],
@@ -181,6 +190,18 @@ class ReportController extends Controller
         abort_unless(Auth::user()->hasRole('Federated Treasurer'), 403);
 
         $filters['campus_id'] = null;
+        $filters['treasurer_campus_id'] = null;
+
+        return $filters;
+    }
+
+    private function facultyDeductionsSummary(array $filters): array
+    {
+        abort_unless(Auth::user()->hasRole('Federated Treasurer'), 403);
+
+        $filters['campus_id'] = null;
+        $filters['date_from'] = $filters['date_from'] ?? null;
+        $filters['date_to'] = $filters['date_to'] ?? null;
         $filters['treasurer_campus_id'] = null;
 
         return $filters;
@@ -245,4 +266,10 @@ class ReportController extends Controller
 
     //     );
     // }
+
+    public function facultyDeductionsSummaryView(){
+        return view('reports.faculty-deduction', [
+            'campuses' => $this->memberService->getCampus(),
+        ]);
+    }
 }
