@@ -436,7 +436,22 @@ window.reportCenter = function(options)
                 params.set('campus_id', this.filters.campus_id);
             }
 
-            window.open(`${this.collectionSummaryPrintUrl}?${params.toString()}`, '_blank');
+            if (this.filters.date_from) {
+                params.set('from', this.filters.date_from);
+            }
+
+            if (this.filters.date_to) {
+                params.set('to', this.filters.date_to);
+            }
+
+            params.set('auto_print', '1');
+            console.log('Opening print window with URL:', `${this.collectionSummaryPrintUrl}?${params.toString()}`);
+
+            const printWindow = window.open(`${this.collectionSummaryPrintUrl}?${params.toString()}`, '_blank');
+            console.log('Print window opened:', printWindow);
+            if (printWindow) {
+                printWindow.focus();
+            }
 
         },
 

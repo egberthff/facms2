@@ -2,83 +2,110 @@
 
 namespace App\Services;
 
-use App\Models\CollectionSummaryItem;
-use App\Models\CollectionSummaryPeriod;
 use App\Models\Campus;
+use App\Models\FundAccount;
+use App\Models\FundTransfer;
 use App\Models\User;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Database\Eloquent\Collection;
+use Carbon\Carbon;
+use Illuminate\Validation\ValidationException;
 
 class CollectionSummaryService
 {
-    public function store(array $data, User $user): CollectionSummaryPeriod
+    public function createTransfer(array $data, User $user): FundTransfer
     {
-        $summaryData = [
-            'campus_id' => $data['campus_id'],
-            'period_label' => $data['period_label'],
-            'title' => $data['title'] ?? 'Collection Summary',
-            'description' => $data['description'] ?? null,
-            'prepared_by' => $user->user_id,
-            'status' => $data['status'] ?? 'draft',
-        ];
+        $account = FundAccount::query()->where('code', 'FFA')->where('is_active', true)->first();
 
-        return DB::transaction(function () use ($summaryData, $data) {
-            $summary = CollectionSummaryPeriod::create($summaryData);
-
-            $items = $data['items'] ?? [];
-
-            foreach ($items as $index => $item) {
-                CollectionSummaryItem::create([
-                    'summary_id' => $summary->id,
-                    'section' => $item['section'] ?? 'collections',
-                    'label' => $item['label'] ?? 'Untitled item',
-                    'amount' => (float) ($item['amount'] ?? 0),
-                    'is_manual' => (bool) ($item['is_manual'] ?? true),
-                    'sort_order' => $index,
-                    'source_type' => $item['source_type'] ?? null,
-                    'source_reference' => $item['source_reference'] ?? null,
-                    'notes' => $item['notes'] ?? null,
-                ]);
-            }
-
-            return $summary->load('items');
-        });
-    }
-
-    public function latestForCampus(?string $campusId = null): ?CollectionSummaryPeriod
-    {
-        $query = CollectionSummaryPeriod::query()->with('items')->latest('created_at');
-
-        if ($campusId) {
-            $query->where('campus_id', $campusId);
+        if (!$account) {
+            throw ValidationException::withMessages(['fund_account' => 'The FFA fund account is not configured.']);
         }
 
-        return $query->first();
+        $isRemittance = $data['type'] === 'campus_remittance';
+
+        return FundTransfer::create([
+            'fund_account_id' => $account->id,
+            'type' => $data['type'],
+            'source_campus_id' => $isRemittance ? $data['campus_id'] : null,
+            'destination_campus_id' => $isRemittance ? null : $data['campus_id'],
+            'reference_number' => $data['reference_number'],
+            'description' => $data['description'],
+            'amount' => $data['amount'],
+            'created_by' => $user->user_id,
+            'status' => 'pending',
+        ]);
     }
 
-    public function buildPrintableData(?string $campusId = null, ?string $periodLabel = null): array
+    public function approveTransfer(FundTransfer $transfer, User $user): FundTransfer
     {
-        $summary = $this->latestForCampus($campusId);
+        return app(\App\Services\TreasuryLedgerService::class)->postApprovedTransfer($transfer, $user->user_id);
+    }
 
-        if (!$summary) {
-            return [
-                'summary' => null,
-                'collections' => [],
-                'disbursements' => [],
-                'collection_total' => 0.00,
-                'disbursement_total' => 0.00,
-            ];
+    public function fundAccount(): ?FundAccount
+    {
+        return FundAccount::query()->where('code', 'FFA')->where('is_active', true)->first();
+    }
+
+    public function transfersForCampus(?string $campusId, ?string $from = null, ?string $to = null): array
+    {
+        $query = FundTransfer::query()->approved()->with(['sourceCampus', 'destinationCampus']);
+
+        if ($from) {
+            $query->where('created_at', '>=', Carbon::parse($from)->startOfDay());
         }
 
-        $collections = $summary->items()->where('section', 'collections')->orderBy('sort_order')->get();
-        $disbursements = $summary->items()->where('section', 'disbursements')->orderBy('sort_order')->get();
+        if ($to) {
+            $query->where('created_at', '<=', Carbon::parse($to)->endOfDay());
+        }
+
+        $collections = (clone $query)
+            ->where('type', 'campus_remittance')
+            ->when($campusId, fn ($query) => $query->where('source_campus_id', $campusId))
+            ->oldest('created_at')
+            ->get()
+            ->map(fn (FundTransfer $transfer) => (object) [
+                'label' => $transfer->description,
+                'amount' => $transfer->amount,
+                'date' => $transfer->created_at,
+                'reference_number' => $transfer->reference_number,
+            ]);
+
+        $disbursements = (clone $query)
+            ->where('type', 'ffa_disbursement')
+            ->when($campusId, fn ($query) => $query->where('destination_campus_id', $campusId))
+            ->oldest('created_at')
+            ->get()
+            ->map(fn (FundTransfer $transfer) => (object) [
+                'label' => $transfer->description,
+                'amount' => $transfer->amount,
+                'date' => $transfer->created_at,
+                'reference_number' => $transfer->reference_number,
+            ]);
 
         return [
-            'summary' => $summary,
             'collections' => $collections,
             'disbursements' => $disbursements,
             'collection_total' => (float) $collections->sum('amount'),
             'disbursement_total' => (float) $disbursements->sum('amount'),
         ];
+    }
+
+    public function buildPrintableData(?string $campusId = null, ?string $from = null, ?string $to = null): array
+    {
+        $campus = $campusId ? Campus::find($campusId) : null;
+        $data = $this->transfersForCampus($campusId, $from, $to);
+
+        return [
+            'campus' => $campus,
+            ...$data,
+            'period_label' => $from && $to
+                ? Carbon::parse($from)->format('F Y') . ' - ' . Carbon::parse($to)->format('F Y')
+                : 'All approved transfers',
+        ];
+    }
+
+    public function store(array $data, User $user): never
+    {
+        throw ValidationException::withMessages([
+            'items' => 'Manual collection summary rows are no longer supported. Record a fund transfer instead.',
+        ]);
     }
 }

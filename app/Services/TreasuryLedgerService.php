@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\TreasuryLedger;
 use App\Models\Campus;
+use App\Models\FundTransfer;
 use App\Models\Scopes\CampusMemberScope;
 use App\Services\CycleService;
 use Illuminate\Support\Facades\DB;
@@ -59,6 +60,83 @@ class TreasuryLedgerService
                 'entry_by'          => Auth::id(),
             ]);
         });
+    }
+
+    public function postApprovedTransfer(FundTransfer $transfer, int|string $approverId): FundTransfer
+    {
+        return DB::transaction(function () use ($transfer, $approverId) {
+            $transfer = FundTransfer::query()->lockForUpdate()->findOrFail($transfer->id);
+
+            if ($transfer->status !== 'pending') {
+                throw new Exception('Only pending transfers can be approved.');
+            }
+
+            $isRemittance = $transfer->type === 'campus_remittance';
+            $sourceCampusId = $isRemittance ? $transfer->source_campus_id : null;
+            $destinationCampusId = $isRemittance ? null : $transfer->destination_campus_id;
+            $sourceType = $isRemittance ? 'Debit' : 'Debit';
+            $destinationType = $isRemittance ? 'Credit' : 'Credit';
+
+            $sourceEntry = $this->recordTransferEntry([
+                'campus_id' => $sourceCampusId,
+                'fund_account_id' => $isRemittance ? null : $transfer->fund_account_id,
+                'transfer_id' => $transfer->id,
+                'reference_number' => $transfer->reference_number . '-SRC',
+                'description' => $transfer->description,
+                'type' => $sourceType,
+                'amount' => $transfer->amount,
+            ]);
+
+            $destinationEntry = $this->recordTransferEntry([
+                'campus_id' => $destinationCampusId,
+                'fund_account_id' => $isRemittance ? $transfer->fund_account_id : null,
+                'transfer_id' => $transfer->id,
+                'reference_number' => $transfer->reference_number . '-DST',
+                'description' => $transfer->description,
+                'type' => $destinationType,
+                'amount' => $transfer->amount,
+            ]);
+
+            $transfer->update([
+                'status' => 'approved',
+                'approved_by' => $approverId,
+                'approved_at' => now(),
+                'source_ledger_id' => $sourceEntry->id,
+                'destination_ledger_id' => $destinationEntry->id,
+            ]);
+
+            return $transfer->fresh();
+        });
+    }
+
+    private function recordTransferEntry(array $data): TreasuryLedger
+    {
+        $query = TreasuryLedger::withoutGlobalScope(CampusMemberScope::class)
+            ->lockForUpdate()
+            ->when($data['campus_id'], fn ($query) => $query->where('campus_id', $data['campus_id']))
+            ->when($data['fund_account_id'], fn ($query) => $query->where('fund_account_id', $data['fund_account_id']))
+            ->latest('created_at')
+            ->latest('id');
+
+        $latestRow = $query->first();
+        $previousBalance = (float) ($latestRow?->running_balance ?? 0);
+        $newBalance = $data['type'] === 'Credit'
+            ? $previousBalance + (float) $data['amount']
+            : $previousBalance - (float) $data['amount'];
+
+        return TreasuryLedger::withoutGlobalScope(CampusMemberScope::class)->create([
+            'campus_id' => $data['campus_id'],
+            'fund_account_id' => $data['fund_account_id'],
+            'sourceable_type' => FundTransfer::class,
+            'sourceable_id' => $data['transfer_id'],
+            'transfer_id' => $data['transfer_id'],
+            'reference_number' => $data['reference_number'],
+            'description' => $data['description'],
+            'type' => $data['type'],
+            'amount' => $data['amount'],
+            'running_balance' => $newBalance,
+            'entry_by' => Auth::id(),
+        ]);
     }
 
      /**

@@ -23,4 +23,8 @@ Route::middleware(['auth', 'active'])
     Route::post('reports/collection-summary', [\App\Http\Controllers\CollectionSummaryController::class, 'store'])
         ->middleware('can:view reports')
         ->name('reports.collection-summary.store');
+
+    Route::post('reports/fund-transfers/{transfer}/approve', [\App\Http\Controllers\CollectionSummaryController::class, 'approve'])
+        ->middleware('can:view reports')
+        ->name('reports.fund-transfers.approve');
     });

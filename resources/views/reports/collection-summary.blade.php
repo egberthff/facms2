@@ -210,7 +210,7 @@
         }
     </style>
 </head>
-<body>
+<body @if(request()->boolean('auto_print')) onload="window.print()" @endif>
 
     <!-- Print trigger button for testing -->
     <div class="print-btn-container">
@@ -230,7 +230,7 @@
                 <p>Republic of the Philippines</p>
                 <h2>Bohol Island State University</h2>
                 <p>Magsija, Balilihan 6342, Bohol, Philippines</p>
-                <p>Faculty Association - Balilihan Campus</p>
+                    <p>Faculty Association - {{ $campus?->campus_name ?? 'Selected Campus' }}</p>
                 <p class="motto">Balance | Integrity | Stewardship | Uprightness</p>
             </div>
             <div class="header-logo-right">
@@ -241,8 +241,8 @@
 
         <!-- Document Sub-Title -->
         <div class="report-title">
-            <h3>BISU BALILIHAN FACULTY ASSOCIATION</h3>
-            <p>NOVEMBER 2024 - SEPT 2025</p>
+            <h3>BISU {{ strtoupper($campus?->campus_name ?? 'FACULTY ASSOCIATION') }}</h3>
+            <p>{{ strtoupper($periodLabel ?? 'ALL APPROVED TRANSFERS') }}</p>
         </div>
 
         <!-- Financial Statement Table -->
@@ -278,7 +278,7 @@
                 </tr>
 
                 <tr>
-                    <td class="table-section-head">Funds Disbursed by FFA to FA Balilihan Campus</td>
+                    <td class="table-section-head">Funds Disbursed by FFA to FA {{ $campus?->campus_name ?? 'Selected Campus' }}</td>
                     <td class="table-section-head"></td>
                 </tr>
 

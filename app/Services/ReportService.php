@@ -405,12 +405,17 @@ class ReportService
     {
         $campusId = $filters['campus_id'] ?? null;
         $summaryService = app(\App\Services\CollectionSummaryService::class);
-        $summary = $summaryService->latestForCampus($campusId);
+        $transfers = $summaryService->transfersForCampus($campusId, $filters['from'] ?? null, $filters['to'] ?? null);
 
-        $rows = $summary?->items ?? collect();
+        $collections = collect($transfers['collections'] ?? [])
+            ->map(fn ($item) => ['label' => $item->label, 'amount' => (float) $item->amount, 'section' => 'collections'])
+            ->values();
 
-        $collections = $rows->where('section', 'collections')->values();
-        $disbursements = $rows->where('section', 'disbursements')->values();
+        $disbursements = collect($transfers['disbursements'] ?? [])
+            ->map(fn ($item) => ['label' => $item->label, 'amount' => (float) $item->amount, 'section' => 'disbursements'])
+            ->values();
+
+        $rows = $collections->merge($disbursements)->values();
 
         return [
             'context' => $this->buildContext(
@@ -419,22 +424,19 @@ class ReportService
                 $filters
             ),
             'cards' => [
-                ['key' => 'collections', 'label' => 'Collections', 'value' => (float) $collections->sum('amount')],
-                ['key' => 'disbursements', 'label' => 'Disbursements', 'value' => (float) $disbursements->sum('amount')],
+                ['key' => 'collections', 'label' => 'Collections', 'value' => (float) ($transfers['collection_total'] ?? 0)],
+                ['key' => 'disbursements', 'label' => 'Disbursements', 'value' => (float) ($transfers['disbursement_total'] ?? 0)],
             ],
             'columns' => [
                 ['key' => 'label', 'label' => 'Description', 'type' => 'text'],
                 ['key' => 'amount', 'label' => 'Amount', 'type' => 'currency'],
             ],
-            'rows' => [
-                ...$collections->map(fn ($item) => ['label' => $item->label, 'amount' => (float) $item->amount, 'section' => 'collections'])->toArray(),
-                ...$disbursements->map(fn ($item) => ['label' => $item->label, 'amount' => (float) $item->amount, 'section' => 'disbursements'])->toArray(),
+            'rows' => $rows->toArray(),
+            'summary' => [
+                'id' => null,
+                'title' => 'Approved transfers',
+                'period_label' => $summaryService->buildPrintableData($campusId, $filters['from'] ?? null, $filters['to'] ?? null)['period_label'] ?? 'All approved transfers',
             ],
-            'summary' => $summary ? [
-                'id' => $summary->id,
-                'title' => $summary->title,
-                'period_label' => $summary->period_label,
-            ] : null,
         ];
     }
 

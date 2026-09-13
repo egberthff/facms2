@@ -3,8 +3,10 @@
 namespace Tests\Feature;
 
 use App\Models\Campus;
-use App\Models\Member;
+use App\Models\FundAccount;
+use App\Models\FundTransfer;
 use App\Models\User;
+use App\Models\TreasuryLedger;
 use App\Services\CollectionSummaryService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Permission;
@@ -21,9 +23,13 @@ class CollectionSummaryTest extends TestCase
 
         Role::firstOrCreate(['name' => 'Federated Treasurer', 'guard_name' => 'web']);
         Permission::firstOrCreate(['name' => 'view reports', 'guard_name' => 'web']);
+        FundAccount::firstOrCreate(
+            ['code' => 'FFA'],
+            ['name' => 'FFA Global Fund', 'is_active' => true],
+        );
     }
 
-    public function test_it_can_store_manual_collection_summary_items(): void
+    public function test_an_approved_transfer_posts_both_ledger_entries(): void
     {
         $campus = Campus::create([
             'campus_name' => 'Balilihan Campus',
@@ -36,41 +42,24 @@ class CollectionSummaryTest extends TestCase
         $user->assignRole('Federated Treasurer');
         $user->givePermissionTo('view reports');
 
-        $member = Member::create([
-            'user_id' => $user->user_id,
-            'campus_id' => $campus->id,
-            'first_name' => 'Treasurer',
-            'last_name' => 'User',
-            'gender' => 'Male',
-            'department' => 'Administration',
-            'position' => 'Treasurer',
-            'employment_status' => 'Permanent',
-            'contact_number' => '09123456789',
-            'address' => 'Bohol',
-            'employee_number' => 'T-001',
-            'membership_status' => 'Active',
-        ]);
-
         $service = app(CollectionSummaryService::class);
+        $this->actingAs($user);
 
-        $summary = $service->store([
+        $transfer = $service->createTransfer([
             'campus_id' => $campus->id,
-            'period_label' => 'NOVEMBER 2024 - SEPT 2025',
-            'description' => 'BISU Balilihan FFA collection summary',
-            'items' => [
-                ['section' => 'collections', 'label' => 'Annual Dues', 'amount' => 5000.00],
-                ['section' => 'collections', 'label' => 'Medical Assistance', 'amount' => 93750.00],
-                ['section' => 'disbursements', 'label' => 'CNA Share 2024', 'amount' => 5000.00],
-            ],
+            'type' => 'campus_remittance',
+            'reference_number' => 'REM-001',
+            'description' => 'Annual dues remittance',
+            'amount' => 5000.00,
         ], $user);
+        $this->assertSame('pending', $transfer->status);
+        $this->assertCount(0, TreasuryLedger::withoutGlobalScopes()->get());
 
-        $this->assertDatabaseHas('collection_summary_periods', [
-            'campus_id' => $campus->id,
-            'period_label' => 'NOVEMBER 2024 - SEPT 2025',
-        ]);
+        $service->approveTransfer($transfer, $user);
 
-        $this->assertCount(3, $summary->items);
-        $this->assertSame(98750.00, (float) $summary->items()->where('section', 'collections')->sum('amount'));
+        $this->assertDatabaseHas('fund_transfers', ['id' => $transfer->id, 'status' => 'approved']);
+        $this->assertSame(2, TreasuryLedger::withoutGlobalScopes()->where('transfer_id', $transfer->id)->count());
+        $this->assertSame(-5000.00, (float) TreasuryLedger::withoutGlobalScopes()->where('campus_id', $campus->id)->value('running_balance'));
     }
 
     public function test_it_renders_the_printable_collection_summary_view(): void
@@ -86,23 +75,43 @@ class CollectionSummaryTest extends TestCase
         $user->assignRole('Federated Treasurer');
         $user->givePermissionTo('view reports');
 
-        $summary = app(CollectionSummaryService::class)->store([
+        $service = app(CollectionSummaryService::class);
+        $this->actingAs($user);
+        $transfer = $service->createTransfer([
             'campus_id' => $campus->id,
-            'period_label' => 'NOVEMBER 2024 - SEPT 2025',
-            'description' => 'BISU Balilihan FFA collection summary',
-            'items' => [
-                ['section' => 'collections', 'label' => 'Annual Dues', 'amount' => 5000.00],
-                ['section' => 'collections', 'label' => 'Medical Assistance', 'amount' => 93750.00],
-                ['section' => 'disbursements', 'label' => 'CNA Share 2024', 'amount' => 5000.00],
-                ['section' => 'disbursements', 'label' => 'Mortuary Aid', 'amount' => 0],
-            ],
+            'type' => 'ffa_disbursement',
+            'reference_number' => 'DIS-001',
+            'description' => 'CNA Share 2024',
+            'amount' => 5000.00,
         ], $user);
+        $service->approveTransfer($transfer, $user);
 
-        $response = $this->actingAs($user)->get(route('reports.collection-summary.print', ['campus_id' => $campus->id]));
+        $response = $this->get(route('reports.collection-summary.print', [
+            'campus_id' => $campus->id,
+            'from' => now()->subDay()->toDateString(),
+            'to' => now()->addDay()->toDateString(),
+        ]));
 
         $response->assertOk();
-        $response->assertSeeText('BISU BALILIHAN FACULTY ASSOCIATION');
-        $response->assertSee('Annual Dues');
+        $response->assertSeeText('BISU BALILIHAN CAMPUS');
         $response->assertSee('CNA Share 2024');
+
+        $data = $service->buildPrintableData($campus->id, now()->subDay()->toDateString(), now()->addDay()->toDateString());
+        $this->assertSame(5000.00, $data['disbursement_total']);
+        $this->assertCount(0, $data['collections']);
+    }
+
+    public function test_print_url_without_campus_id_renders_the_template(): void
+    {
+        $user = User::factory()->create(['is_active' => true]);
+        $user->assignRole('Federated Treasurer');
+        $user->givePermissionTo('view reports');
+
+        $response = $this->actingAs($user)->get(route('reports.collection-summary.print', [
+            'auto_print' => 1,
+        ]));
+
+        $response->assertOk();
+        $response->assertSeeText('ALL APPROVED TRANSFERS');
     }
 }
