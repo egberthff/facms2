@@ -161,7 +161,7 @@ class ReportController extends Controller
         $report = $this->reportService->generate('payroll-deduction-request', $filters);
         $treasurer = Auth::user();
         $treasurerMember = $treasurer->member()->withoutGlobalScopes()->first();
-        $president = User::hasRole('Federated President');
+        $president = User::role('Federated President')->first(); 
 
         return view('reports.payroll-deduction-request-form', [
             'rows' => $report['rows'],
