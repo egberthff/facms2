@@ -242,7 +242,7 @@ return [
 
         ],
 
-        'faculy-deduction-summary' => [
+        'faculty-deduction-summary' => [
             'title' => 'Faculty Deductions Summary',
 
             'description' => 'Printable faculty deductions summary for the year',
@@ -254,6 +254,8 @@ return [
             'filters' => [
 
                 'date_range',
+
+                'campus',
  
             ],
 

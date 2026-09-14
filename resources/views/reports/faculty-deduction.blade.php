@@ -189,7 +189,7 @@
             <div class="header">
                 <h1> {{ $campusName ?? "" }} </h1>
                 <h2>Faculty Association - Faculty Deductions</h2>
-                <p> {{ $deductionPeriod ?? "" }} </p>s
+                <p> {{ $deductionPeriod ?? "" }} </p>
             </div>
 
             <!-- Master Data Matrix Grid -->
@@ -410,7 +410,7 @@
                 <div class="sig-block">
                     <span class="sig-meta-title">Prepared by:</span>
                     <div class="sig-underline-container">
-                        <div class="sig-name">ESTRELLA MARIE DUNGABONG</div>
+                        <div class="sig-name"> {{ $signatories['campusTreasurer'] ?? '' }}</div>
                     </div>
                     <span class="sig-assignment">Campus FA Treasurer</span>
                     <span class="sig-date">Date: ________________________</span>

@@ -45,7 +45,7 @@ class ReportService
             'payroll-deduction-request'
                 => $this->payrollDeductionRequest($filters),
 
-            'faculy-deduction-summary'
+            'faculty-deduction-summary'
                 => $this->facultyDeductionsSummary($filters),
 
             default => throw new InvalidArgumentException(

@@ -193,4 +193,32 @@ class MemberService
         return Campus::all()->where('is_active', TRUE);
     }
 
+    public function getTreasurer($data, ?string $campusId = null): Collection|Member|User|null
+    {
+        if($campusId) {
+            return User::role('Treasurer')
+            ->whereHas('member', function ($query) use ($data) {
+                $query->where('campus_id', $data['campus_id']);
+            })
+            ->with('member')
+            ->first();
+        } 
+
+        return User::role('Federated Treasurer')->with('member')->first();
+    } 
+
+    public function getPresident($data, ?string $campusId = null): Collection|Member|User|null
+    {
+        if($campusId) {
+            return User::role('President')
+            ->whereHas('member', function ($query) use ($data) {
+                $query->where('campus_id', $data['campus_id']);
+            })
+            ->with('member')
+            ->first();
+        } 
+
+        return User::role('Federated President')->with('member')->first();
+    } 
+
 }

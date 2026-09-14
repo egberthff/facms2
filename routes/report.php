@@ -30,4 +30,5 @@ Route::middleware(['auth', 'active'])
     });
 
     Route::get('faculty-deductions-summary', [ReportController::class, 'facultyDeductionsSummaryView'])
-        ->name('faculty-deductions-summary');
+        ->name('reports.faculty-deduction-summary');
+  

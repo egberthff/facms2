@@ -24,6 +24,8 @@ window.reportCenter = function(options)
 
         collectionSummaryPrintUrl: options.collectionSummaryPrintUrl,
 
+        facultyDeductionSummary: options.facultyDeductionSummaryPrintUrl,
+
 
         /*
         |--------------------------------------------------------------------------
@@ -402,6 +404,12 @@ window.reportCenter = function(options)
                 return;
             }
 
+            if (this.selectedReport === 'faculty-deduction-summary') {
+                this.openFacultyDeductionSummary();
+
+                return;
+            }
+
             window.print();
 
         },
@@ -445,14 +453,42 @@ window.reportCenter = function(options)
             }
 
             params.set('auto_print', '1');
-            console.log('Opening print window with URL:', `${this.collectionSummaryPrintUrl}?${params.toString()}`);
 
             const printWindow = window.open(`${this.collectionSummaryPrintUrl}?${params.toString()}`, '_blank');
-            console.log('Print window opened:', printWindow);
             if (printWindow) {
                 printWindow.focus();
             }
 
+        },
+
+        openFacultyDeductionSummary()  {
+            if(!this.hasGenerated || this.selectedReport !== 'faculty-deduction-summary') {
+                return;
+            }    
+
+            if (this.filters.date_from && this.filters.date_to && !this.filters.campus_id) {
+                return;
+            }
+
+            const params = new URLSearchParams();
+
+            if (this.filters.date_from) {
+                params.set('date_from', this.filters.date_from);
+            }
+
+            if (this.filters.date_to) {
+                params.set('date_to', this.filters.date_to);
+            }
+
+            if (this.filters.campus_id) {
+                params.set('campus_id', this.filters.campus_id);
+            }
+
+            params.set('auto_print', '1');
+            const printWindow = window.open(`${this.facultyDeductionSummary}?${params.toString()}`, '_blank');
+            if (printWindow) {
+                printWindow.focus();
+            }
         },
 
 

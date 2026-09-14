@@ -9,7 +9,8 @@
         claimTypes: @js($claimTypes),
         generateUrl: '{{ route('reports.generate') }}',
         payrollPrintUrl: '{{ route('reports.payroll-deduction-request') }}',
-        collectionSummaryPrintUrl: '{{ route('reports.collection-summary.print') }}'
+        collectionSummaryPrintUrl: '{{ route('reports.collection-summary.print') }}',
+        facultyDeductionSummaryPrintUrl: '{{ route('reports.faculty-deduction-summary') }}'
     })"
     x-init="initialize()"
     class="max-w-7xl mx-auto px-4 py-6 space-y-6">

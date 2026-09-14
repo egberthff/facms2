@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 use App\Models\User;
-
+use Carbon\Carbon;
 class ReportController extends Controller
 {
     /**
@@ -136,7 +136,7 @@ class ReportController extends Controller
             $validated = $this->payrollFilters($validated);
         }
 
-        if($validated['report_type'] === 'faculy-deduction-summary') {
+        if($validated['report_type'] === 'faculty-deduction-summary') {
             $validated = array_merge($validated, $request->validate([
                 'date_from' => ['required', 'date'],
                 'date_to' => ['required', 'date', 'after_or_equal:date_from'],
@@ -187,7 +187,8 @@ class ReportController extends Controller
 
     private function payrollFilters(array $filters): array
     {
-        abort_unless(Auth::user()->hasRole('Federated Treasurer'), 403);
+        $user = Auth::user();
+        abort_unless($user()->hasRole('Federated Treasurer') || $user()->can('view reports'), 403);
 
         $filters['campus_id'] = null;
         $filters['treasurer_campus_id'] = null;
@@ -197,7 +198,8 @@ class ReportController extends Controller
 
     private function facultyDeductionsSummary(array $filters): array
     {
-        abort_unless(Auth::user()->hasRole('Federated Treasurer'), 403);
+        $user = Auth::user();
+        abort_unless($user->hasRole('Federated Treasurer') || $user->can('view reports'), 403);
 
         $filters['campus_id'] = null;
         $filters['date_from'] = $filters['date_from'] ?? null;
@@ -267,9 +269,25 @@ class ReportController extends Controller
     //     );
     // }
 
-    public function facultyDeductionsSummaryView(){
+    public function facultyDeductionsSummaryView(Request $request){
+        $data = $request->all(); 
+        $campus = $this->memberService->getCampus($data['campus_id']);
+        $period = Carbon::parse($request->date_from)->format('F Y') . ' to ' . Carbon::parse($request->date_to)->format('F Y');
+        $campusTreasurer =  $this->memberService->getTreasurer($data, $data['campus_id']);
+        $campusPresident =  $this->memberService->getPresident($data, $data['campus_id']);
+
+        $signatories = [
+            'campusTreasurer' => $campusTreasurer?->name,
+            'campusPresident' => $campusPresident?->name,
+            'campusAuditor'   => ''
+        ];
+        $tableData  = [];
+
         return view('reports.faculty-deduction', [
-            'campuses' => $this->memberService->getCampus(),
+            'campusName'      =>  $campus->campus_name,
+            'deductionPeriod' => $period,
+            'signatories'     => $signatories,
+            'data'            => $tableData
         ]);
     }
 }
