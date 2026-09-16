@@ -101,13 +101,14 @@ class ReportController extends Controller
      */
     public function generate(Request $request)
     {
+        \Log::error(print_r($request['campus_id'], true));
         $validated = $request->validate([
 
             'report_type' => ['required', 'string'],
 
-            'campus_id' => ['nullable'],
+            'campus_id' => ['nullable', 'string'],
 
-            'member_id' => ['nullable'],
+            'member_id' => ['nullable', 'string'],
 
             'claim_type' => ['nullable', 'string'],
 
@@ -140,6 +141,7 @@ class ReportController extends Controller
             $validated = array_merge($validated, $request->validate([
                 'date_from' => ['required', 'date'],
                 'date_to' => ['required', 'date', 'after_or_equal:date_from'],
+                'campus_id' => ['string'],
             ]));
 
             $validated = $this->facultyDeductionsSummary($validated);
@@ -201,10 +203,10 @@ class ReportController extends Controller
         $user = Auth::user();
         abort_unless($user->hasRole('Federated Treasurer') || $user->can('view reports'), 403);
 
-        $filters['campus_id'] = null;
+        $filters['campus_id'] = $filters['campus_id'] ?? null;
         $filters['date_from'] = $filters['date_from'] ?? null;
         $filters['date_to'] = $filters['date_to'] ?? null;
-        $filters['treasurer_campus_id'] = null;
+        $filters['treasurer_campus_id'] = $filters['treasurer_campus_id'] ?? null;
 
         return $filters;
     }
@@ -271,23 +273,8 @@ class ReportController extends Controller
 
     public function facultyDeductionsSummaryView(Request $request){
         $data = $request->all(); 
-        $campus = $this->memberService->getCampus($data['campus_id']);
-        $period = Carbon::parse($request->date_from)->format('F Y') . ' to ' . Carbon::parse($request->date_to)->format('F Y');
-        $campusTreasurer =  $this->memberService->getTreasurer($data, $data['campus_id']);
-        $campusPresident =  $this->memberService->getPresident($data, $data['campus_id']);
+        $reportData = $this->reportService->facultyDeductionSummary($data);;
 
-        $signatories = [
-            'campusTreasurer' => $campusTreasurer?->name,
-            'campusPresident' => $campusPresident?->name,
-            'campusAuditor'   => ''
-        ];
-        $tableData  = [];
-
-        return view('reports.faculty-deduction', [
-            'campusName'      =>  $campus->campus_name,
-            'deductionPeriod' => $period,
-            'signatories'     => $signatories,
-            'data'            => $tableData
-        ]);
+                return view('reports.faculty-deduction', $reportData);
     }
 }

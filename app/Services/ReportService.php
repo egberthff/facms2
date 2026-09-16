@@ -9,12 +9,24 @@ use App\Models\Member;
 use App\Models\ContributionBatch;
 use App\Models\SystemSetting;
 use App\Models\ClaimsCycle;
+use App\Services\MemberService;
+use App\Services\ContributionService;
+use Illuminate\Http\Request;
 use InvalidArgumentException;
 
 class ReportService
 {
-    public function __construct(private CycleService $cycleService)
+    private CycleService $cycleService;
+    private MemberService $memberService;
+    private ContributionService $contributionService;
+    public function __construct(
+        CycleService $cycleService, 
+        MemberService $memberService, 
+        ContributionService $contributionService)
     {
+        $this->cycleService = $cycleService;
+        $this->memberService = $memberService;
+        $this->contributionService = $contributionService;
     }
 
     /**
@@ -46,7 +58,7 @@ class ReportService
                 => $this->payrollDeductionRequest($filters),
 
             'faculty-deduction-summary'
-                => $this->facultyDeductionsSummary($filters),
+                => $this->facultyDeductionSummary($filters),
 
             default => throw new InvalidArgumentException(
                 "Unknown report type [{$reportType}]"
@@ -707,13 +719,36 @@ class ReportService
         ];
     }
 
-    private function facultyDeductionsSummary(array $filters): array
+    public function facultyDeductionSummary(array $filters): array 
     {
-        
+         
+        $request = new Request($filters);
+        // \Log::error(print_r($request, true));
+        $campusId = $request['campus_id'] ?? null;
+        // \Log::error($campusId);
 
+        $dateFrom = isset($filters['date_from']) ? Carbon::parse($filters['date_from'])->format('F Y') : '';
+        $dateTo = isset($filters['date_to']) ? Carbon::parse($filters['date_to'])->format('F Y') : '';
+        $period = ($dateFrom && $dateTo) ? "{$dateFrom} to {$dateTo}" : '';
 
-        return [];
+        // 2. Fetch required services data
+        $campus = $this->memberService->getCampus($campusId);
+        $campusTreasurer = $this->memberService->getTreasurer($filters, $campusId);
+        $campusPresident = $this->memberService->getPresident($filters, $campusId);
+        $members = $this->memberService->getMembers($request, $campusId);
+        $contributionPerMonth = $this->contributionService->getContributionPerMonth($request, $campusId);
+        return [
+            'campus' => $campus,
+            'period' => $period,
+            'table_data' => $contributionPerMonth,
+            'signatories' => [
+                'campus_treasurer' => $campusTreasurer?->name,
+                'campus_president' => $campusPresident?->name,
+                'campus_auditor'   => '',
+            ],
+        ];
     }
+
 
     private function formatPayrollCoverage(?Claim $claim): string
     {

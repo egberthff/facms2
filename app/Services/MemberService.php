@@ -23,6 +23,7 @@ class MemberService
         $search = $request->search;
 
          return Member::query()
+            ->with('user')
             ->when($selectedCampusId, function ($query) use ($selectedCampusId) {
                 $query->where('campus_id', $selectedCampusId);
             })

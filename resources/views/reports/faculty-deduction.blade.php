@@ -212,6 +212,7 @@
                         <th>September</th>
                         <th>October</th>
                         <th>November</th>
+                        <th>December</th>
                         <th rowspan="2" style="width: 7%;">Total</th>
                     </tr>
                     <!-- Row 2: Inner Local Purpose Metadata Subheadings -->
@@ -247,143 +248,86 @@
                     </tr>
                     <tr class="bg-yellow font-bold text-center">
                         <td class="border p-1">500</td>
-                        <td class="border p-1">200</td>
-                        <td class="border p-1">250</td>
-                        <td class="border p-1">250</td>
-                        <td class="border p-1">250</td>
-                        <td class="border p-1">250</td>
-                        <td class="border p-1">250</td>
-                        <td class="border p-1">250</td>
-                        <td class="border p-1">250</td>
-                        <td class="border p-1">250</td>
-                        <td class="border p-1">250</td>
-                        <td class="border p-1">250</td>
-                        <td class="border p-1">250</td>
+
+                        {{-- 1. Grab both the $month key and the $amount value --}}
+                        @foreach ($table_data['header_months_amount'] as $month => $amount)
+                            {{-- 2. Skip the row if the key is 'total' --}}
+                            @if($month !== 'total')
+                                <td class="border p-1">{{ $amount }}</td>
+                            @endif
+                        @endforeach
+
+                        {{-- 3. Correctly output the grand total at the end --}}
+                        <td class="border p-1">{{ $table_data['header_months_amount']['total'] }}</td>
                     </tr>
+
                 </thead>
                 <tbody>
+                    {{-- @dd($table_data) --}}
                     <!-- Entry row structural layout example based on first ledger item -->
-                    <tr>
-                        <td class="text-center">1</td>
-                        <td>Ale, Marry Joyce</td>
-                        <td class="text-right">500</td>
-                        <td class="text-right">200</td>
-                        <td class="text-right">250</td>
-                        <td class="text-right">350</td>
-                        <td class="text-right">650</td>
-                        <td class="text-right">300</td>
-                        <td class="text-right">550</td>
-                        <td class="text-right">300</td>
-                        <td class="text-right">400</td>
-                        <td class="text-right">450</td>
-                        <td class="text-right">500</td>
-                        <td class="text-right">0</td>
-                        <td class="text-right font-bold">4450</td>
-                    </tr>
-                    <tr>
-                        <td class="text-center">2</td>
-                        <td>Asucan, Ernesto Jr.</td>
-                        <td class="text-right">500</td>
-                        <td class="text-right">200</td>
-                        <td class="text-right">250</td>
-                        <td class="text-right">350</td>
-                        <td class="text-right">650</td>
-                        <td class="text-right">300</td>
-                        <td class="text-right">650</td>
-                        <td class="text-right">300</td>
-                        <td class="text-right">400</td>
-                        <td class="text-right">350</td>
-                        <td class="text-right">500</td>
-                        <td class="text-right">0</td>
-                        <td class="text-right font-bold">4450</td>
-                    </tr>
-                    <tr>
-                        <td class="text-center">3</td>
-                        <td>Asucan, Ivy Jane</td>
-                        <td class="text-right">500</td>
-                        <td class="text-right">200</td>
-                        <td class="text-right">250</td>
-                        <td class="text-right">350</td>
-                        <td class="text-right">650</td>
-                        <td class="text-right">300</td>
-                        <td class="text-right">650</td>
-                        <td class="text-right">300</td>
-                        <td class="text-right">400</td>
-                        <td class="text-right">350</td>
-                        <td class="text-right">500</td>
-                        <td class="text-right">1900</td>
-                        <td class="text-right font-bold">4450</td>
-                    </tr>
-                    <tr>
-                        <td class="text-center">4</td>
-                        <td>Asucan, Ghena</td>
-                        <td class="text-right">500</td>
-                        <td class="text-right">200</td>
-                        <td class="text-right">250</td>
-                        <td class="text-right">350</td>
-                        <td class="text-right">650</td>
-                        <td class="text-right">300</td>
-                        <td class="text-right">650</td>
-                        <td class="text-right">300</td>
-                        <td class="text-right">400</td>
-                        <td class="text-right">350</td>
-                        <td class="text-right">500</td>
-                        <td class="text-right">0</td>
-                        <td class="text-right font-bold">4450</td>
-                    </tr>
-                    
+                    @forelse ($table_data['members'] as $index => $member)
+                        <tr>
+                            <td class="text-center">{{ $index + 1 }}</td>
+                            <td>{{ ucwords($member['name']) }}</td>
+                            <td class="text-right font-bold">{{ $member['cma_share'] }}</td>
+
+                            {{-- Loop safely directly through the 12 clean months array --}}
+                            @foreach ($member['months'] as $month => $amount)
+                                <td class="text-right">{{ $amount }}</td>
+                            @endforeach
+
+                            <td class="text-right font-bold">{{ $member['total_contributed'] }}</td>
+                        </tr>
+                    @empty
+                        <tr>
+                            {{-- Fixed the closing tag here --}}
+                            <td colspan="16" class="text-center text-gray-500 py-4">No records found!</td>
+                        </tr>
+                    @endforelse
+
                     <!-- Calculation Matrix Summary Footers -->
+                    <!-- 1. TOTAL MONTHLY COLLECTION TARGET -->
                     <tr class="font-bold" style="background-color: #fafafa;">
-                        <td colspan="2" class="text-right">TOTAL MONTHLY
-                            COLLECTION TARGET</td>
-                        <td class="text-right">12500</td>
-                        <td class="text-right">5000</td>
-                        <td class="text-right">6250</td>
-                        <td class="text-right">8750</td>
-                        <td class="text-right">16250</td>
-                        <td class="text-right">7500</td>
-                        <td class="text-right">13750</td>
-                        <td class="text-right">7500</td>
-                        <td class="text-right">10000</td>
-                        <td class="text-right">11250</td>
-                        <td class="text-right">12500</td>
-                        <td class="text-right">0</td>
-                        <td class="text-right">111250</td>
+                        <td colspan="2" class="text-right">TOTAL MONTHLY COLLECTION TARGET</td>
+                        <td class="text-right">0</td> <!-- Placeholder for total cma share -->
+
+                        @foreach ($table_data['total_monthly_collection_target'] as $month => $amount)
+                            @if ($month !== 'total')
+                                <td class="text-right">{{ $amount }}</td>
+                            @endif
+                        @endforeach
+
+                        <td class="text-right">{{ $table_data['total_monthly_collection_target']['total'] }}</td>
                     </tr>
+
+                    <!-- 2. ACTUAL MONTHLY COLLECTION -->
                     <tr class="font-bold">
-                        <td colspan="2" class="text-right">ACTUAL MONTHLY
-                            COLLECTION</td>
-                        <td class="text-right">12500</td>
-                        <td class="text-right">5000</td>
-                        <td class="text-right">6250</td>
-                        <td class="text-right">8750</td>
-                        <td class="text-right">16250</td>
-                        <td class="text-right">7500</td>
-                        <td class="text-right">14950</td>
-                        <td class="text-right">7200</td>
-                        <td class="text-right">9200</td>
-                        <td class="text-right">8050</td>
-                        <td class="text-right">11500</td>
-                        <td class="text-right">2200</td>
-                        <td class="text-right">111250</td>
+                        <td colspan="2" class="text-right">ACTUAL MONTHLY COLLECTION</td>
+                        <td class="text-right">0</td> <!-- Placeholder for cma share -->
+
+                        @foreach ($table_data['actual_monthly_collection'] as $month => $amount)
+                            @if ($month !== 'total')
+                                <td class="text-right">{{ $amount }}</td>
+                            @endif
+                        @endforeach
+
+                        <td class="text-right">{{ $table_data['actual_monthly_collection']['total'] }}</td>
                     </tr>
+
+                    <!-- 3. BALANCE COLLECTIBLE -->
                     <tr class="font-bold">
-                        <td colspan="2" class="text-right">BALANCE
-                            COLLECTIBLE</td>
-                        <td class="text-right">0</td>
-                        <td class="text-right">0</td>
-                        <td class="text-right">0</td>
-                        <td class="text-right">0</td>
-                        <td class="text-right">0</td>
-                        <td class="text-right">0</td>
-                        <td class="text-right">-1200</td>
-                        <td class="text-right">300</td>
-                        <td class="text-right">800</td>
-                        <td class="text-right">3200</td>
-                        <td class="text-right">1000</td>
-                        <td class="text-right">4100</td>
-                        <td class="text-right">111250</td>
+                        <td colspan="2" class="text-right">BALANCE COLLECTIBLE</td>
+                        <td class="text-right">0</td> <!-- Placeholder for cma share -->
+
+                        @foreach ($table_data['balance_collectible'] as $month => $amount)
+                            @if ($month !== 'total')
+                                <td class="text-right">{{ $amount }}</td>
+                            @endif
+                        @endforeach
+
+                        <td class="text-right">{{ $table_data['balance_collectible']['total'] }}</td>
                     </tr>
+
                 </tbody>
             </table>
 

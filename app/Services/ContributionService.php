@@ -19,6 +19,8 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
+use Illuminate\Http\Request;
+// use Illuminate\Support\Collection;
 use Exception;
 use InvalidArgumentException;
 
@@ -443,5 +445,329 @@ class ContributionService
 
         return (float) $query->sum('contribution_details.amount');
     }
+
+     public function getContributionPerMonth(Request $request, string $campusId): array
+{
+    $dateFrom = $request->date_from
+        ? Carbon::parse($request->date_from)->startOfMonth()
+        : null;
+
+    $dateTo = $request->date_to
+        ? Carbon::parse($request->date_to)->endOfMonth()
+        : null;
+
+    if (!$dateFrom || !$dateTo) {
+        return [
+            'header_months_amount' => [],
+            'total_monthly_collection_target' => [],
+            'actual_monthly_collection' => [],
+            'balance_collectible' => [],
+            'members' => [],
+        ];
+    }
+
+    /*
+     * ---------------------------------------------------------
+     * 1. Initialize report months and totals.
+     *
+     * "total" represents the grand total across all months.
+     * ---------------------------------------------------------
+     */
+    $headerMonthsAmount = [
+        'total' => 0,
+    ];
+
+    $totalMonthlyCollectionTarget = [
+        'total' => 0,
+    ];
+
+    $actualMonthlyCollection = [
+        'total' => 0,
+    ];
+
+    $balanceCollectible = [
+        'total' => 0,
+    ];
+
+    $months = [];
+
+    $currentMonth = $dateFrom->copy();
+
+    while ($currentMonth->lte($dateTo)) {
+
+        $monthKey = strtolower($currentMonth->format('F'));
+
+        $months[$monthKey] = 0;
+
+        $headerMonthsAmount[$monthKey] = 0;
+        $totalMonthlyCollectionTarget[$monthKey] = 0;
+        $actualMonthlyCollection[$monthKey] = 0;
+        $balanceCollectible[$monthKey] = 0;
+
+        $currentMonth->addMonth();
+    }
+
+    /*
+     * ---------------------------------------------------------
+     * 2. Get all members belonging to the selected campus.
+     *
+     * Each member gets:
+     * - monthly contribution values
+     * - total_contributed = Y-axis / row total
+     * ---------------------------------------------------------
+     */
+    $members = Member::query()
+        ->with('user')
+        ->where('campus_id', $campusId)
+        ->get();
+
+    $memberData = [];
+
+    foreach ($members as $member) {
+
+        $memberData[$member->id] = [
+            'member_id' => $member->id,
+            'name' => $member->user->name ?? '',
+            'months' => $months,
+
+            // Y-axis / row total
+            'total_contributed' => 0,
+
+            // Placeholder for future CMA share calculations
+            'cma_share' => 0,
+        ];
+    }
+
+    /*
+     * ---------------------------------------------------------
+     * 3. Get claims within the report period.
+     *
+     * claims.created_at determines which month the claim
+     * belongs to.
+     * ---------------------------------------------------------
+     */
+    $claims = Claim::query()
+        ->with([
+            'claimType',
+
+            'contributionBatches.contributionDetails' => function ($query) use ($campusId) {
+                $query->whereHas('member', function ($query) use ($campusId) {
+                    $query->where('campus_id', $campusId);
+                });
+            },
+        ])
+        ->whereBetween('created_at', [
+            $dateFrom,
+            $dateTo,
+        ])
+        ->get();
+
+    /*
+     * ---------------------------------------------------------
+     * 4. Process claims.
+     * ---------------------------------------------------------
+     */
+    foreach ($claims as $claim) {
+
+        $monthKey = strtolower(
+            Carbon::parse($claim->created_at)->format('F')
+        );
+
+        if (!isset($months[$monthKey])) {
+            continue;
+        }
+
+        /*
+         * -----------------------------------------------------
+         * A. HEADER MONTH AMOUNT
+         *
+         * Total required amount of all claims created during
+         * this month.
+         *
+         * Example:
+         *
+         * Burial       = 5,000
+         * Burial       = 5,000
+         * Medical      = 3,000
+         * Educational  = 2,000
+         *
+         * January = 15,000
+         *
+         * This is NOT based on the number of members.
+         * -----------------------------------------------------
+         */
+        if ($claim->claimType) {
+
+            $claimAmount = (float) $claim->claimType->required_amount;
+
+            $headerMonthsAmount[$monthKey] += $claimAmount;
+
+            // Grand total
+            $headerMonthsAmount['total'] += $claimAmount;
+        }
+
+        /*
+         * -----------------------------------------------------
+         * B. CONTRIBUTION BATCHES
+         * -----------------------------------------------------
+         */
+        foreach ($claim->contributionBatches as $batch) {
+
+            $amountPerMember = (float) $batch->amount_per_member;
+
+            /*
+             * -------------------------------------------------
+             * C. TOTAL MONTHLY COLLECTION TARGET
+             *
+             * Expected collection for this batch:
+             *
+             * amount_per_member × total_members
+             *
+             * total_members is the number of members included
+             * in the contribution batch.
+             * -------------------------------------------------
+             */
+            $memberCount = (int) $batch->total_members;
+
+            $batchTarget = $amountPerMember * $memberCount;
+
+            // X-axis monthly target
+            $totalMonthlyCollectionTarget[$monthKey] += $batchTarget;
+
+            // Grand total target
+            $totalMonthlyCollectionTarget['total'] += $batchTarget;
+
+            /*
+             * -------------------------------------------------
+             * D. ACTUAL MEMBER CONTRIBUTIONS
+             *
+             * These values produce:
+             *
+             * 1. Monthly X-axis / column totals
+             * 2. Member Y-axis / row totals
+             * -------------------------------------------------
+             */
+            foreach ($batch->contributionDetails as $detail) {
+
+                $memberId = $detail->member_id;
+
+                /*
+                 * Ignore contribution details belonging to
+                 * members outside the selected campus.
+                 */
+                if (!isset($memberData[$memberId])) {
+                    continue;
+                }
+
+                $actualAmount = (float) $detail->amount;
+
+                /*
+                 * -------------------------------------------------
+                 * X-AXIS / COLUMN TOTAL
+                 *
+                 * Add actual contribution to the month's total.
+                 * -------------------------------------------------
+                 */
+                $actualMonthlyCollection[$monthKey] += $actualAmount;
+
+                /*
+                 * Grand total of all actual collections.
+                 */
+                $actualMonthlyCollection['total'] += $actualAmount;
+
+                /*
+                 * -------------------------------------------------
+                 * MEMBER MONTHLY CONTRIBUTION
+                 * -------------------------------------------------
+                 */
+                $memberData[$memberId]['months'][$monthKey] +=
+                    $actualAmount;
+
+                /*
+                 * -------------------------------------------------
+                 * Y-AXIS / ROW TOTAL
+                 *
+                 * Total contribution of this member across
+                 * all months.
+                 * -------------------------------------------------
+                 */
+                $memberData[$memberId]['total_contributed'] +=
+                    $actualAmount;
+            }
+        }
+    }
+
+    /*
+     * ---------------------------------------------------------
+     * 5. Calculate collectible balance.
+     *
+     * Balance = Expected Collection - Actual Collection
+     *
+     * This is calculated for every month and for the grand
+     * total.
+     * ---------------------------------------------------------
+     */
+    foreach ($months as $monthKey => $unused) {
+
+        $balanceCollectible[$monthKey] =
+            $totalMonthlyCollectionTarget[$monthKey]
+            - $actualMonthlyCollection[$monthKey];
+    }
+
+    /*
+     * Grand total balance.
+     */
+    $balanceCollectible['total'] =
+        $totalMonthlyCollectionTarget['total']
+        - $actualMonthlyCollection['total'];
+
+    /*
+     * ---------------------------------------------------------
+     * 6. Return report-ready data.
+     * ---------------------------------------------------------
+     */
+    return [
+        /*
+         * Claim amount per month + grand total.
+         */
+        'header_months_amount' =>
+            $headerMonthsAmount,
+
+        /*
+         * Expected collection per month + grand total.
+         */
+        'total_monthly_collection_target' =>
+            $totalMonthlyCollectionTarget,
+
+        /*
+         * X-axis / column totals.
+         *
+         * Example:
+         *
+         * january => 1500
+         * february => 2200
+         * march => 1600
+         * total => 5300
+         */
+        'actual_monthly_collection' =>
+            $actualMonthlyCollection,
+
+        /*
+         * Expected - Actual.
+         */
+        'balance_collectible' =>
+            $balanceCollectible,
+
+        /*
+         * Member rows.
+         *
+         * Each member contains:
+         * - monthly contribution
+         * - total_contributed = Y-axis / row total
+         */
+        'members' =>
+            array_values($memberData),
+    ];
+}
 
 }
