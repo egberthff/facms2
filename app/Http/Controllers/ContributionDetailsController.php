@@ -3,11 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\ContributionDetails;
+use App\Enums\ContributionAdjustment;
 use App\Http\Requests\StoreContributionDetailsRequest;
 use App\Http\Requests\UpdateContributionDetailsRequest;
 use App\Services\ContributionService; 
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Auth;
 use Exception;
 
@@ -171,6 +173,34 @@ class ContributionDetailsController extends Controller
         }
     }
 
+    public function contributionAdjustment(Request $request) : JsonResponse
+    {
+        // Validate inputs matching your form layout names and database types
+        $validated = $request->validate([
+            'campus_id'        => ['required', 'uuid', 'exists:campuses,id'],
+            'adjustment_month' => ['required', 'date_format:Y-m'],
+            'reference_month'  => ['nullable', 'date_format:Y-m'], 
+            // Leverages native framework enum validation directly
+            'adjustment_type'  => ['required', Rule::enum(ContributionAdjustment::class)],
+            'amount'           => ['required', 'numeric'],
+            'description'      => ['nullable', 'string', 'max:1000'],
+        ]);
+    
+        try {
+            $this->contributionService->contributionAdjustment($validated);
+    
+            return response()->json([
+                'success' => true,
+                'message' => 'Contribution adjustment applied successfully.'
+            ], 200);
+    
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'An error occurred while saving the collection adjustment configuration.'
+            ], 500);
+        }
+    }
     /**
      * Display the specified resource.
      */
