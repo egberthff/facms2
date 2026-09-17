@@ -228,11 +228,11 @@
     <div class="print">
         
         <!-- Header -->
-        <x-bisu-header :campusName="$campus?->campus_name ?? 'Balilihan Campus'" :address="$campus?->address ?? 'Magsija, Balilihan 6342, Bohol, Philippines'" />
+        <x-bisu-header :campusName="$campus?->campus_name ?? ''" :address="$campus?->address ?? ''" />
 
         <!-- Document Sub-Title -->
         <div class="report-title">
-            <h3>BISU {{ strtoupper($campus?->campus_name ?? 'FACULTY ASSOCIATION') }}</h3>
+            <h3> {{ strtoupper($campus?->campus_name ?? 'FACULTY ASSOCIATION') }}</h3>
             {{-- <p>{{ strtoupper($periodLabel ?? 'ALL APPROVED TRANSFERS') }}</p> --}}
         </div>
 
