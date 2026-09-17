@@ -43,9 +43,9 @@ class ReportController extends Controller
     {
         $reportConfiguration = config('reports');
 
-        if (!Auth::user()->hasRole('Federated Treasurer')) {
-            unset($reportConfiguration['types']['payroll-deduction-request']);
-        }
+        // if (!Auth::user()->hasRole('Federated Treasurer')) {
+        //     unset($reportConfiguration['types']['payroll-deduction-request']);
+        // }
 
         return view('reports.index', [
 
@@ -190,7 +190,7 @@ class ReportController extends Controller
     private function payrollFilters(array $filters): array
     {
         $user = Auth::user();
-        abort_unless($user()->hasRole('Federated Treasurer') || $user()->can('view reports'), 403);
+        // abort_unless($user->hasRole('Federated Treasurer') || $user->can('view reports'), 403);
 
         $filters['campus_id'] = null;
         $filters['treasurer_campus_id'] = null;

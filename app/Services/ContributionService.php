@@ -1328,7 +1328,7 @@ class ContributionService
  * Persist the collection adjustment records into the database engine.
  *
  * @param array $data The validated payload values array map context.
- * @return CollectionAdjustment
+ * @return CollectionsAdjustments
  */
 public function contributionAdjustment(array $data)
 {
@@ -1341,7 +1341,7 @@ public function contributionAdjustment(array $data)
         'adjustment_type'  => $data['adjustment_type'], // Pass validation clean data
         'amount'           => $data['amount'], 
         'description'      => $data['description'] ?? null,
-        'created_by'       => auth()->id(),
+        'created_by'       => Auth::user()->id,
     ]);
 }
 

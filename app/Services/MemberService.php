@@ -222,4 +222,18 @@ class MemberService
         return User::role('Federated President')->with('member')->first();
     } 
 
+    public function getAuditor($data, ?string $campusId = null): Collection|Member|User|null   
+    {
+         if($campusId) {
+            return User::role('Auditor')
+            ->whereHas('member', function ($query) use ($data) {
+                $query->where('campus_id', $data['campus_id']);
+            })
+            ->with('member')
+            ->first();
+        } 
+
+        return User::role('Federated Auditor')->with('member')->first();
+    } 
+
 }

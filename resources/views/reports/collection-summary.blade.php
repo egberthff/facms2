@@ -299,13 +299,13 @@
                 <div class="sig-block">
                     <p>Prepared by:</p>
                     <div class="sig-line"></div>
-                    <div class="sig-name">ESTRELLA MARIE V. BUNGABONG</div>
+                    <div class="sig-name">{{ $campusTreasurer }}</div>
                     <div class="sig-title">Campus FA Treasurer</div>
                 </div>
                 <div class="sig-block">
                     <p>Checked by:</p>
                     <div class="sig-line"></div>
-                    <div class="sig-name">GHENA ASUCAN</div>
+                    <div class="sig-name">{{ $campusAuditor }}</div>
                     <div class="sig-title">Campus FA Auditor</div>
                 </div>
             </div>
@@ -314,7 +314,7 @@
                 <div class="sig-block">
                     <p>Approved by:</p>
                     <div class="sig-line"></div>
-                    <div class="sig-name">MARC BENIGNO C. OLAGUIR</div>
+                    <div class="sig-name">{{ $campusPresident }}</div>
                     <div class="sig-title">FA President</div>
                 </div>
             </div>

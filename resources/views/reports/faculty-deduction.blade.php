@@ -209,7 +209,7 @@
                     </tr>
                     <!-- Row 2: Inner Local Purpose Metadata Subheadings -->
                     <tr>
-                        <th><span class="sub-header-title">CMA Share</span></th>
+                        <th><span class="sub-header-title">CNA Share</span></th>
                         @for ($i = 0; $i<count($table_data['header_month_label']) - 1; $i++)
                         <th><span class="sub-header-title">Medical
                             Assistance</span></th>
@@ -260,7 +260,7 @@
                     <!-- 1. TOTAL MONTHLY COLLECTION TARGET -->
                     <tr class="font-bold" style="background-color: #fafafa;">
                         <td colspan="2" class="text-right">TOTAL MONTHLY COLLECTION TARGET</td>
-                        <td class="text-right">0</td> <!-- Placeholder for total cma share -->
+                        <td class="text-right">0</td> <!-- Placeholder for total cna share -->
 
                         @foreach ($table_data['total_monthly_collection_target'] as $month => $amount)
                             @if ($month !== 'total')
@@ -274,7 +274,7 @@
                     <!-- 2. ACTUAL MONTHLY COLLECTION -->
                     <tr class="font-bold">
                         <td colspan="2" class="text-right">ACTUAL MONTHLY COLLECTION</td>
-                        <td class="text-right">0</td> <!-- Placeholder for cma share -->
+                        <td class="text-right">0</td> <!-- Placeholder for cna share -->
 
                         @foreach ($table_data['actual_monthly_collection'] as $month => $amount)
                             @if ($month !== 'total')
@@ -288,7 +288,7 @@
                     <!-- 3. BALANCE COLLECTIBLE -->
                     <tr class="font-bold">
                         <td colspan="2" class="text-right">BALANCE COLLECTIBLE</td>
-                        <td class="text-right">0</td> <!-- Placeholder for cma share -->
+                        <td class="text-right">0</td> <!-- Placeholder for cna share -->
 
                         @foreach ($table_data['balance_collectible'] as $month => $amount)
                             @if ($month !== 'total')
