@@ -737,8 +737,9 @@ class ReportService
         $campusPresident = $this->memberService->getPresident($filters, $campusId);
         $members = $this->memberService->getMembers($request, $campusId);
         $contributionPerMonth = $this->contributionService->getContributionPerMonth($request, $campusId);
+        \Log::error(print_r($contributionPerMonth, true));
         return [
-            'campus' => $campus,
+            'campus' => $campus?->campus_name ?? '',
             'period' => $period,
             'table_data' => $contributionPerMonth,
             'signatories' => [

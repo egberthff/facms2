@@ -98,6 +98,24 @@ class User extends Authenticatable
         return $this->hasMany(FundTransaction::class, 'created_by');
     }
 
+    public function createdCollectionAdjustments()
+    {
+        return $this->hasMany(
+            CollectionAdjustment::class,
+            'created_by',
+            'user_id'
+        );
+    }
+    
+    public function updatedCollectionAdjustments()
+    {
+        return $this->hasMany(
+            CollectionAdjustment::class,
+            'updated_by',
+            'user_id'
+        );
+    }
+
     /**
      * Fetch all claims through the member bridging relationship.
      */

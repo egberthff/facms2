@@ -187,9 +187,9 @@
 
             <!-- Center Headings -->
             <div class="header">
-                <h1> {{ $campusName ?? "" }} </h1>
+                <h1> {{ $campus ?? "" }} </h1>
                 <h2>Faculty Association - Faculty Deductions</h2>
-                <p> {{ $deductionPeriod ?? "" }} </p>
+                <p> {{ $period ?? "" }} </p>
             </div>
 
             <!-- Master Data Matrix Grid -->
@@ -201,48 +201,19 @@
                         <th rowspan="3" style="width: 15%;">Faculty Association
                             Member</th>
                         <th>January</th>
-                        <th>January</th>
-                        <th>February</th>
-                        <th>March</th>
-                        <th>April</th>
-                        <th>May</th>
-                        <th>June</th>
-                        <th>July</th>
-                        <th>August</th>
-                        <th>September</th>
-                        <th>October</th>
-                        <th>November</th>
-                        <th>December</th>
+                        @foreach ($table_data['header_month_label'] as $label )
+                            <th>{{ ucwords($label) }}</th>
+                        @endforeach
+                         
                         <th rowspan="2" style="width: 7%;">Total</th>
                     </tr>
                     <!-- Row 2: Inner Local Purpose Metadata Subheadings -->
                     <tr>
                         <th><span class="sub-header-title">CMA Share</span></th>
+                        @for ($i = 0; $i<count($table_data['header_month_label']) - 1; $i++)
                         <th><span class="sub-header-title">Medical
-                                Assistance</span></th>
-                        <th><span class="sub-header-title">Medical
-                                Assistance</span></th>
-                        <th><span
-                                class="sub-header-title">Medical
-                                Assistance</span></th>
-                        <th><span
-                                class="sub-header-title">Medical
-                                Assistance</span></th>
-                        <th><span
-                                class="sub-header-title">Medical
-                                Assistance</span></th>
-                        <th><span
-                                class="sub-header-title">Medical
-                                Assistance</span></th>
-                        <th><span class="sub-header-title">Medical
-                                Assistance</span></th>
-                        <th><span
-                                class="sub-header-title">Medical
-                                Assistance</span></th>
-                        <th><span class="sub-header-title">Medical
-                                Assistance</span></th>
-                        <th><span class="sub-header-title">Medical
-                                Assistance</span></th>
+                            Assistance</span></th>
+                        @endfor
                         <th><span class="sub-header-title">Unpaid
                                 Deductions</span></th>
                     </tr>
@@ -269,7 +240,7 @@
                         <tr>
                             <td class="text-center">{{ $index + 1 }}</td>
                             <td>{{ ucwords($member['name']) }}</td>
-                            <td class="text-right font-bold">{{ $member['cma_share'] }}</td>
+                            <td class="text-right font-bold">{{ $member['cna_share'] }}</td>
 
                             {{-- Loop safely directly through the 12 clean months array --}}
                             @foreach ($member['months'] as $month => $amount)
@@ -328,11 +299,60 @@
                         <td class="text-right">{{ $table_data['balance_collectible']['total'] }}</td>
                     </tr>
 
+                    <!-- 4. COLLECTION ADJUSTMENT -->
+                    <tr class="font-bold">
+                        <td colspan="2" class="text-right" style="border: none !important;">
+                            {{-- COLLECTION ADJUSTMENT --}}
+                        </td>
+                        @php
+                           $cnaShare = ($table_data['collection_adjustment_details']['cna_share'] ?? 0) === 0 ? '' : $table_data['collection_adjustment_details']['cna_share'];
+                        @endphp
+                    
+                        <td class="text-right" style="border: none !important;">{{ $cnaShare }}</td>
+                    
+                        @foreach ($table_data['header_month_label'] as $month)
+                    
+                            @php
+                                $adjustments =
+                                    $table_data['collection_adjustment_details'][$month] ?? [];
+                                $cnaShare  =  $table_data['collection_adjustment_details']['cna_share'] ?? 0;
+                            @endphp
+                    
+                            <!-- Merged the custom background color logic with the border reset -->
+                            <td class="text-center"
+                                style="border: none !important; {{ count($adjustments) ? 'background-color: #f4cccc;' : '' }}">
+                    
+                                @foreach ($adjustments as $adjustment)
+                    
+                                    <div style="font-size: 10px;">
+                                        {{ ucwords(str_replace('_', ' ', $adjustment['type'])) }}
+                                    </div>
+                    
+                                    <div>
+                                        <strong>
+                                            {{ number_format($adjustment['amount'], 2) }}
+                                        </strong>
+                                    </div>
+                    
+                                @endforeach
+                    
+                            </td>
+                    
+                        @endforeach
+                    
+                        {{-- <td class="text-right" style="border: none !important;">
+                            {{ number_format(
+                                $table_data['collection_adjustments']['total'],
+                                2
+                            ) }}
+                        </td> --}}
+                    </tr>
+                    
                 </tbody>
             </table>
 
             <!-- Document Notes and Adjustments Block -->
-            <div
+            {{-- <div
                 style="margin-top: -10px; margin-bottom: 25px; padding-left: 5px; font-size: 8pt; font-family: sans-serif; line-height: 1.4;">
                 <div style="margin-bottom: 4px;">
                     <span class="bg-orange"
@@ -345,7 +365,7 @@
                     <strong>Adjust Deduction from June Overdeduction</strong>
                     (Applied to subsequent collection periods)
                 </div>
-            </div>
+            </div> --}}
 
             <!-- Layout Corporate Executive Sign-Off Matrix -->
             <div class="signatures-row">
@@ -364,7 +384,7 @@
                 <div class="sig-block">
                     <span class="sig-meta-title">Audited by:</span>
                     <div class="sig-underline-container">
-                        <div class="sig-name">GHENA L. ASUCAN</div>
+                        <div class="sig-name">{{ $signatories['campus_auditor'] ?? '' }}</div>
                     </div>
                     <span class="sig-assignment">Campus FA Auditor</span>
                     <span class="sig-date">Date: ________________________</span>
@@ -374,7 +394,7 @@
                 <div class="sig-block">
                     <span class="sig-meta-title">Approved by:</span>
                     <div class="sig-underline-container">
-                        <div class="sig-name">MARC BENIGNO C. OLAGUIR</div>
+                        <div class="sig-name">{{ $signatories['campus_president'] ?? '' }}</div>
                     </div>
                     <span class="sig-assignment">FA President</span>
                     <span class="sig-date">Date: ________________________</span>
