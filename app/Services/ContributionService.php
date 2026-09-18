@@ -12,6 +12,7 @@ use App\Models\ContributionDetail;
 use App\Models\AnnualContribution;
 use App\Models\SystemSetting;
 use App\Models\CollectionsAdjustments;
+use App\Models\CNAShare;
 use App\Services\TreasuryLedgerService;
 USE App\Enums\ContributionStatus;
 use Illuminate\Support\Facades\DB;
@@ -1341,8 +1342,91 @@ public function contributionAdjustment(array $data)
         'adjustment_type'  => $data['adjustment_type'], // Pass validation clean data
         'amount'           => $data['amount'], 
         'description'      => $data['description'] ?? null,
-        'created_by'       => Auth::user()->id,
+        'created_by'       => Auth::id(),
     ]);
 }
+
+    /**
+     * Persist the collection of CNA Share into the database engine.
+     * 
+     * @param array $data The contribution year for which the CNA Share is being set up.
+     * @return void
+     */
+    public function setupCNAShare(array $data)
+    {
+        $user = Auth::user();
+        \Log::error(print_r($user, true));
+
+        // 1. Determine cross-campus access authorization
+        $hasFullAccess = $user->can('view all campus data') || $user->hasAnyRole(['President', 'Treasurer']);
+
+        // 2. Security Guard: Prevent restricted users from injecting other campus IDs
+        if (!$hasFullAccess) {
+            $userCampusId = $user->getCachedCampusId();
+
+            if (!$userCampusId || $userCampusId != $data['campus_filter']) {
+                abort(403, 'Unauthorized action. You can only set up shares for your assigned campus.');
+            }
+        }
+
+        // 3. Prepare Member Query Builder
+        $query = Member::query();
+
+        if ($hasFullAccess) {
+            $query->withoutGlobalScope(CampusMemberScope::class);
+        }
+
+        // 4. Fetch target campus members (selecting only the ID to minimize memory usage)
+        $members = $query->whereHas('campus', function ($q) use ($data) {
+            $q->where('id', $data['campus_filter']);
+        })->select('id')->get();
+
+        // If no members are found, exit early to avoid empty database calls
+        if ($members->isEmpty()) {
+            return;
+        }
+
+        $year = $data['contribution_year'] ?? now()->year;
+        $timestamp = now();
+        $insertData = [];
+
+        // 5. Structure payload array for the bulk insert
+        foreach ($members as $member) {
+            $insertData[] = [
+                'member_id'   => $member->id,
+                'year'        => $year,
+                'due_amount'  => 100.00,
+                'paid_amount' => 0.00,
+                'is_paid'     => false,
+                'created_by'  => $user->user_id,
+                'created_at'  => $timestamp, // Bulk insert requires manual timestamps
+                'updated_at'  => $timestamp,
+            ];
+        }
+
+        // 6. Database Transaction Execution
+        DB::beginTransaction();
+
+        try {
+            // Perform mass chunked bulk insert (chunks of 500 records to prevent SQL binding limits)
+            foreach (array_chunk($insertData, 500) as $chunk) {
+                CNAShare::insert($chunk);
+            }
+
+            DB::commit();
+        } catch (Exception $e) {
+            DB::rollBack();
+
+            // Log the exact database error safely for debugging
+            \Log::error('Failed to setup CNA Shares: ' . $e->getMessage(), [
+                'campus_id' => $data['campus_filter'],
+                'year'      => $year,
+                'user_id'   => $user->id
+            ]);
+
+            // Rethrow or return a custom failure message depending on your architecture
+            throw new Exception('An error occurred while establishing CNA Shares. Please try again.');
+        }
+    }
 
 }

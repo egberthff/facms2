@@ -9,6 +9,7 @@ use App\Models\Member;
 use App\Models\ContributionBatch;
 use App\Models\SystemSetting;
 use App\Models\ClaimsCycle;
+use App\Models\Scopes\CampusMemberScope;
 use App\Services\MemberService;
 use App\Services\ContributionService;
 use App\Services\CycleService;

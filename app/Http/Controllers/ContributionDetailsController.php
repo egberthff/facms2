@@ -195,6 +195,10 @@ class ContributionDetailsController extends Controller
             ], 200);
     
         } catch (\Exception $e) {
+            \Log::error('Error saving collection adjustment configuration: ' . $e->getMessage(), [
+                'exception' => $e,
+                'validated_data' => $validated
+            ]);
             return response()->json([
                 'success' => false,
                 'message' => 'An error occurred while saving the collection adjustment configuration.'
