@@ -14,6 +14,23 @@
             background-color: #f0f2f5;
             margin: 0;
             padding: 20px;
+        } 
+        .no-print-zone {
+            max-width: 8.5in;
+            margin: 0 auto 20px auto;
+            background: #fff3cd;
+            padding: 15px;
+            border: 1px solid #ffeeba;
+            text-align: center;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
         }
         .screen-controls {
             max-width: 11in;
@@ -174,12 +191,9 @@
     <body>
 
         <!-- Web Interface Controls Container Area -->
-        <div class="screen-controls">
-            <span style="color: #666;"><strong>Ledger Sheet Rendering
-                    Target:</strong> Broad Landscape Paper Format
-                Blueprint.</span>
-            <button class="btn-print" onclick="window.print()">Print
-                Document</button>
+        <div class="no-print-zone">
+            <p><strong>Screen View:</strong> Only the document container below will be printed.</p>
+            <button onclick="window.print()">Print Report</button>
         </div>
 
         <!-- START OF MAIN LEDGER PRINT AREA -->

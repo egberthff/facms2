@@ -15,6 +15,23 @@
             margin: 0;
             padding: 20px;
         }
+        .no-print-zone {
+            max-width: 8.5in;
+            margin: 0 auto 20px auto;
+            background: #fff3cd;
+            padding: 15px;
+            border: 1px solid #ffeeba;
+            text-align: center;
+        }
+         button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+        }
         .screen-controls {
             max-width: 10.5in;
             margin: 0 auto 20px auto;
@@ -229,11 +246,9 @@
 <body>
 
     <!-- Browser Workspace Ribbon: Suppressed from rendering layout targets on print -->
-    <div class="screen-controls">
-        <span style="font-size: 14px; color: #555;">
-            <strong>Print Engine Target Layout:</strong> Landscape Mode (Letter Dimensions Recommended).
-        </span>
-        <button class="btn-print" onclick="window.print()">Execute Document Print</button>
+    <div class="no-print-zone">
+        <p><strong>Screen View:</strong> Only the document container below will be printed.</p>
+        <button onclick="window.print()">Print Report</button>
     </div>
 
     <!-- START OF EDITABLE STANDARD PRINT BLOCKS -->

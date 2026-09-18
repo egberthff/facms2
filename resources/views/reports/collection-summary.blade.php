@@ -18,7 +18,24 @@
             background-color: #f5f5f5;
             color: #000;
         }
-
+        
+        .no-print-zone {
+            max-width: 8.5in;
+            margin: 0 auto 20px auto;
+            background: #fff3cd;
+            padding: 15px;
+            border: 1px solid #ffeeba;
+            text-align: center;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+        }
         /* Printable area wrapper */
         .print {
             background-color: #fff;
@@ -220,8 +237,9 @@
 <body @if(request()->boolean('auto_print')) onload="window.print()" @endif>
 
     <!-- Print trigger button for testing -->
-    <div class="print-btn-container">
-        <button class="print-btn" onclick="window.print()">Print Report</button>
+    <div class="no-print-zone">
+        <p><strong>Screen View:</strong> Only the document container below will be printed.</p>
+        <button onclick="window.print()">Print Report</button>
     </div>
 
     <!-- Main printable document wrapper tagged with class 'print' -->
