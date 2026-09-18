@@ -10,7 +10,8 @@
         generateUrl: '{{ route('reports.generate') }}',
         payrollPrintUrl: '{{ route('reports.payroll-deduction-request') }}',
         collectionSummaryPrintUrl: '{{ route('reports.collection-summary.print') }}',
-        facultyDeductionSummaryPrintUrl: '{{ route('reports.faculty-deduction-summary') }}'
+        facultyDeductionSummaryPrintUrl: '{{ route('reports.faculty-deduction-summary') }}',
+        medicalAssistanceReportPrintUrl: '{{ route('reports.medical-assistance-report') }}'
     })"
     x-init="initialize()"
     class="max-w-7xl mx-auto px-4 py-6 space-y-6">
@@ -35,7 +36,7 @@
                 @click="printReport()"
                 :disabled="!hasGenerated"
                 class="px-4 py-2 rounded-lg border border-gray-300 bg-white text-sm hover:bg-gray-50 disabled:opacity-50">
-                Print
+                 Preview
             </button>
             <button
                 @click="exportExcel()"

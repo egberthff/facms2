@@ -29,6 +29,9 @@ Route::middleware(['auth', 'active'])
         ->name('reports.fund-transfers.approve');
     });
 
-    Route::get('faculty-deductions-summary', [ReportController::class, 'facultyDeductionsSummaryView'])
+    Route::get('reports/faculty-deductions-summary', [ReportController::class, 'facultyDeductionsSummaryView'])
         ->name('reports.faculty-deduction-summary');
+
+    Route::get('reports/medical-assistance-report', [ReportController::class, 'medicalAssistanceReportView'])
+        ->name('reports.medical-assistance-report');    
   

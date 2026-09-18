@@ -101,7 +101,6 @@ class ReportController extends Controller
      */
     public function generate(Request $request)
     {
-        \Log::error(print_r($request['campus_id'], true));
         $validated = $request->validate([
 
             'report_type' => ['required', 'string'],
@@ -146,6 +145,16 @@ class ReportController extends Controller
 
             $validated = $this->facultyDeductionsSummary($validated);
         }
+
+        if($validated['report_type'] === 'medical-assistance-report') {
+            $validated = array_merge($validated, $request->validate([
+                'cycle' => ['required', 'string'],
+                'campus_id' => ['string'],
+            ]));
+
+            $validated = $this->medicalAssistanceReport($validated);
+        }
+
 
         $report = $this->reportService->generate(
 
@@ -211,6 +220,18 @@ class ReportController extends Controller
         return $filters;
     }
 
+    private function medicalAssistanceReport(array $filters): array
+    {
+        $user = Auth::user();
+        abort_unless($user->hasRole('Federated Treasurer') || $user->can('view reports'), 403);
+
+        $filters['campus_id'] = $filters['campus_id'] ?? null;
+        $filters['cycle'] = $filters['cycle'] ?? null;
+        $filters['treasurer_campus_id'] = $filters['treasurer_campus_id'] ?? null;
+
+        return $filters;
+    }
+ 
     private function formatClaimMonth(array $filters): string
     {
         return !empty($filters['claim_month'])
@@ -271,10 +292,17 @@ class ReportController extends Controller
     //     );
     // }
 
-    public function facultyDeductionsSummaryView(Request $request){
+    public function facultyDeductionsSummaryView(Request $request) {
         $data = $request->all(); 
-        $reportData = $this->reportService->facultyDeductionSummary($data);;
+        $reportData = $this->reportService->facultyDeductionSummary($data);
 
                 return view('reports.faculty-deduction', $reportData);
+    }
+
+    public function medicalAssistanceReportView(Request $request) {
+        $data = $request->all();
+        $reportData = $this->reportService->medicalAssistanceReport($data);
+
+        return view('reports.medical-assistance-report', $reportData);
     }
 }

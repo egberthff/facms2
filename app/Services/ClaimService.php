@@ -134,16 +134,23 @@ class ClaimService
         ];
     }
 
-    public function getAllClaims( array $userRoles = [], ?string $selectedCampusId = null): Collection
+    public function getAllClaims( array $userRoles = [], ?string $selectedCampusId = null, ?array $cycle = []): Collection
     {
         $query = Claim::with(['claimType', 'paymentMethod', 'reviewer', 'documents', 'member'])
             ->withoutGlobalScope(CampusMemberScope::class);
     
+        // 1. Filter by Campus if selected
         if ($selectedCampusId) {
             $query->whereHas('member', function ($query) use ($selectedCampusId) {
                 $query->withoutGlobalScope(CampusMemberScope::class)
                     ->where('campus_id', $selectedCampusId);
             });
+        }
+
+        // 2. Filter strictly by the bounds of the active Cycle Date Range
+        if ($cycle && count($cycle) >= 2) {
+            [$startDate, $endDate] = $cycle;
+            $query->whereBetween('submitted_at', [$startDate, $endDate]);
         }
     
     //    if( !empty($userRoles)) {
@@ -168,6 +175,7 @@ class ClaimService
     //     }
     
         return $query->latest('submitted_at')->get();
+
     }
 
     public function updateStatus(Claim $claim, array $data): Claim

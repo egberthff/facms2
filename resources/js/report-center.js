@@ -26,6 +26,8 @@ window.reportCenter = function(options)
 
         facultyDeductionSummary: options.facultyDeductionSummaryPrintUrl,
 
+        medicalAssistanceReport: options.medicalAssistanceReportPrintUrl,
+
 
         /*
         |--------------------------------------------------------------------------
@@ -410,7 +412,16 @@ window.reportCenter = function(options)
                 return;
             }
 
-            window.print();
+            if (this.selectedReport === 'medical-assistance-report') {
+                this.openMedicalAssistanceReport();
+
+                return;
+            }
+
+            Swal.alert({
+                icon: 'info',
+                title: 'No Preview Available'
+            })
 
         },
 
@@ -491,7 +502,31 @@ window.reportCenter = function(options)
             }
         },
 
+        openMedicalAssistanceReport() {
+            if(!this.hasGenerated || this.selectedReport !== 'medical-assistance-report') {
+                return;
+            }  
 
+            if (!this.filters.cycle && !this.filters.campus) {
+                return;
+            }
+            const params = new URLSearchParams();
+
+            if (this.filters.cycle) {
+                params.set('cycle', this.filters.cycle);
+            }
+
+            if (this.filters.campus_id) {
+                params.set('campus_id', this.filters.campus_id);
+            }
+
+            params.set('auto_print', '1');
+            const printWindow = window.open(`${this.medicalAssistanceReport}?${params.toString()}`, '_blank');
+            if (printWindow) {
+                printWindow.focus();
+            }
+
+        },
 
         /*
         |--------------------------------------------------------------------------

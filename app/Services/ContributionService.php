@@ -525,7 +525,7 @@ class ContributionService
         while ($currentMonth->lte($dateTo)) {
     
             $monthKey = strtolower(
-                $currentMonth->format('F')
+                $currentMonth->format('F Y')
             );
     
             $months[$monthKey] = 0;
@@ -634,7 +634,7 @@ class ContributionService
         foreach ($claims as $claim) {
     
             $monthKey = strtolower(
-                Carbon::parse($claim->created_at)->format('F')
+                Carbon::parse($claim->created_at)->format('F Y')
             );
     
             if (!isset($months[$monthKey])) {
@@ -810,7 +810,7 @@ class ContributionService
         foreach ($adjustments as $adjustment) {
     
             $monthKey = strtolower(
-                Carbon::parse($adjustment->adjustment_month)->format('F')
+                Carbon::parse($adjustment->adjustment_month)->format('F Y')
             );
     
             /*
