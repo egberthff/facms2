@@ -15,7 +15,7 @@
         <span class="shrink-0 rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-500 shadow-sm ring-1 ring-slate-200">{{ optional($setting->campus)->acronym ?? 'Campus' }}</span>
     </div>
 
-    <form method="POST" action="{{ route('settings.update', $setting) }}" class="space-y-3" onsubmit="return {{ $canEdit ? 'confirm(\'Save this setting?\')' : 'false' }}">
+    <form method="POST" action="{{ route('settings.update', $setting) }}" class="setting-ajax-form space-y-3" data-can-edit="{{ $canEdit ? 'true' : 'false' }}">
         @csrf
         @method('PUT')
         <input type="hidden" name="campus_filter" value="{{ $selectedCampusId ?? '' }}">

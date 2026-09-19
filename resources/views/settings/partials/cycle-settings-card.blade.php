@@ -55,7 +55,8 @@
             <span class="shrink-0 rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-500 shadow-sm ring-1 ring-slate-200">{{ optional($cycleSetting->campus)->acronym ?? 'Campus' }}</span>
         </div>
 
-        <form method="POST" action="{{ route('settings.update', $cycleSetting) }}" class="space-y-4" onsubmit="return {{ $canEdit && !$cycleLocked ? 'confirm(\'Save this cycle configuration?\')' : 'false' }}">
+        {{-- <form method="POST" action="{{ route('settings.update', $cycleSetting) }}" class="space-y-4" onsubmit="return {{ $canEdit && !$cycleLocked ? 'confirm(\'Save this cycle configuration?\')' : 'false' }}"> --}}
+        <form method="POST" action="{{ route('settings.update', $cycleSetting) }}" class="space-y-4"  onsubmit="saveCycleConfig(event, this)"> 
             @csrf
             @method('PUT')
             <input type="hidden" name="campus_filter" value="{{ $selectedCampusId ?? '' }}">

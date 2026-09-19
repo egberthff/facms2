@@ -56,6 +56,125 @@ document.addEventListener('DOMContentLoaded', () => {
     // Datatables
     document.querySelectorAll(".dt-table:not([data-datatable-defer])").forEach(initializeDataTable);
 
+    //Submit system setting config
+     document.addEventListener('submit', async function (event) {
+        const form = event.target.closest('.setting-ajax-form');
+        if (!form) return;
+
+        // Prevent native page-reload submission
+        event.preventDefault();
+
+        // 1. Guard rails check for permissions
+        const canEdit = form.getAttribute('data-can-edit') === 'true';
+        if (!canEdit) {
+            Swal.fire({
+                title: 'Action Restrained',
+                text: 'Please select a valid campus cycle configuration before editing values.',
+                icon: 'warning',
+                confirmButtonColor: '#2563eb'
+            });
+            return;
+        }
+
+        // 2. SweetAlert2 Confirmation Dialog
+        const confirmation = await Swal.fire({
+            title: 'Save changes?',
+            text: 'Are you sure you want to update this specific setting value?',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#2563eb',
+            cancelButtonColor: '#64748b',
+            confirmButtonText: 'Yes, save it'
+        });
+
+        if (!confirmation.isConfirmed) return;
+
+        // 3. Initiate Processing State UI Loading Spinner
+        Swal.fire({
+            title: 'Updating settings...',
+            text: 'Validating and saving configuration records.',
+            allowOutsideClick: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+
+        // 4. Capture fields (Including Laravel's hidden _token and _method fields)
+        const actionUrl = form.getAttribute('action');
+        const formData = new FormData(form);
+
+        fetch(actionUrl, {
+            method: 'POST', // Laravel uses method spoofing POST with hidden input _method: 'PUT'
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
+            },
+            body: formData
+        })
+        .then(async response => {
+            let responseData;
+            try {
+                responseData = await response.json();
+            } catch (e) {
+                responseData = { message: 'Server returned an invalid configuration payload.' };
+            }
+
+            if (!response.ok) {
+                throw {
+                    status: response.status,
+                    data: responseData
+                };
+            }
+
+            return responseData;
+        })
+        .then(data => {
+            // SUCCESS STATE (HTTP 200)
+            Swal.fire({
+                title: 'Saved Successfully!',
+                text: data.message || 'The system configuration has been updated successfully.',
+                icon: 'success',
+                confirmButtonColor: '#2563eb'
+            }).then(() => {
+                // Instantly redirects to the selected campus filter or standard settings tab
+                window.location.href = data.redirect || window.location.href;
+            });
+        })
+        .catch(error => {
+            console.error('Settings Form Submission Error:', error);
+
+            if (error && error.data) {
+                // If inline error processing function exists, activate field styling highlights
+                // if (error.status === 422 && error.data.errors && typeof displayValidationErrors === 'function') {
+                //     try {
+                //         displayValidationErrors(error.data.errors);
+                //     } catch (uiError) {
+                //         console.error('Error rendering inline settings indicators:', uiError);
+                //     }
+                // }
+
+                // EXTRACT BACKEND MESSAGES Dynamically
+                const customErrorMessage = error.data.message || 'Please review input parameters and retry.';
+
+                Swal.fire({
+                    title: error.status === 422 ? 'Validation Failed' : 'Update Failed',
+                    text: customErrorMessage,
+                    icon: error.status === 403 ? 'warning' : 'error',
+                    confirmButtonColor: '#2563eb'
+                });
+                return;
+            }
+
+            // CRITICAL SYSTEM OVERFLOW FALLBACK
+            Swal.fire({
+                title: 'System Exception',
+                text: 'An unexpected application exception occurred. Please try again later.',
+                icon: 'error',
+                confirmButtonColor: '#dc2626'
+            });
+        });
+    });
+
     // Map imports
     // if (document.querySelector('#mapOne')) {
     //     import('./components/map').then(module => module.initMap());
@@ -704,6 +823,110 @@ window.markContributionAsPaid = function(id, tag) {
 
         return false;
     };
+
+window.saveCycleConfig = function (event, formElement) {
+    // 1. Properly stop the browser from reloading the page
+    event.preventDefault();
+
+    // 2. Build FormData using the passed form element context
+    const formData = new FormData(formElement);
+    const actionUrl = formElement.action;
+
+    // 3. For logging FormData, console.log(formData) often prints empty. 
+        Swal.fire({
+            title: 'Save Configuration?',
+            html: 'Are you sure you want to update the claim cycle settings for this campus?</br>Updating configs effects the cycle immediately on success',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#2563eb', // Tailwind blue-600
+            cancelButtonColor: '#4b5563',  // Tailwind gray-600
+            confirmButtonText: 'Yes, save it!',
+            cancelButtonText: 'Cancel'
+        }).then((result) => {
+            // Exit early if user cancels
+            if (!result.isConfirmed) return;
+
+            // 3. Show Loading Spinner Alert
+            Swal.fire({
+                title: 'Processing Request',
+                text: 'Updating cycle settings and running validation tests...',
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            // 4. Dispatch the Fetch AJAX Request
+            fetch(actionUrl, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                },
+                body: formData
+            })
+            .then(async response => {
+                // Read the server's response payload (handles both success and error JSON)
+                let responseData;
+                try {
+                    responseData = await response.json();
+                } catch (e) {
+                    responseData = { message: 'An unhandled server error occurred.' };
+                }
+
+                // If the server returned an error code (422, 403, 500, etc.)
+                if (!response.ok) {
+                    throw {
+                        status: response.status,
+                        data: responseData
+                    };
+                }
+
+                // If successful, pass data to the next .then block
+                return responseData;
+            })
+            .then(data => {
+                // 1. SUCCESS POPUP (Status 200)
+                Swal.fire({
+                    title: 'Success!',
+                    text: data.message || 'The claim cycle configurations have been saved successfully.',
+                    icon: 'success',
+                    confirmButtonColor: '#2563eb'
+                }).then(() => {
+                    window.location.href = data.redirect || window.location.href;
+                });
+            })
+            .catch(error => {
+                console.error('AJAX Error:', error);
+
+                // Check if we caught a structured server error response
+                if (error && error.data) {
+
+                    // 2. ERROR POPUP (Displays whatever custom message the server sent)
+                    Swal.fire({
+                        title: error.status === 422 ? 'Validation Failed' : 'Action Failed',
+                        text: error.data.message || 'Please check your inputs and try again.',
+                        icon: error.status === 403 ? 'warning' : 'error',
+                        confirmButtonColor: '#2563eb'
+                    });
+                    return;
+                }
+
+                // 3. FALLBACK POPUP (If the network dropped completely or server crashed)
+                Swal.fire({
+                    title: 'System Error',
+                    text: 'An unexpected application exception occurred. Please try again later.',
+                    icon: 'error',
+                    confirmButtonColor: '#dc2626'
+                });
+            });
+
+
+        });
+    
+};
+
 
 
         

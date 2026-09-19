@@ -127,13 +127,16 @@ class SettingController extends Controller
             // 1. Extract values from either the bulk request payload or the single-key payload
             if ($isCycleConfiguration) {
                 $startYear = (int) $request->input('cycle_start_year');
+                $startMonth = (int) $request->input('cycle_start_month');
                 $duration  = (int) $request->input('cycle_years');
             } else {
                 // If modifying a single key, fallback to database values for the missing parts
                 $startYear = $setting->setting_key === 'claim_cycle_start_year' 
                     ? (int) $request->input('setting_value') 
                     : (int) SystemSetting::where('campus_id', $setting->campus_id)->where('setting_key', 'claim_cycle_start_year')->value('setting_value');
-                    
+                $startMonth = $setting->setting_key === 'claim_cycle_start_month' 
+                    ? (int) $request->input('setting_value') 
+                    : (int) SystemSetting::where('campus_id', $setting->campus_id)->where('setting_key', 'claim_cycle_start_month')->value('setting_value');    
                 $duration = $setting->setting_key === 'claim_cycle_years' 
                     ? (int) $request->input('setting_value') 
                     : (int) SystemSetting::where('campus_id', $setting->campus_id)->where('setting_key', 'claim_cycle_years')->value('setting_value');
@@ -144,18 +147,23 @@ class SettingController extends Controller
                 $targetLabel = "{$startYear}-{$endYear}";
 
                 // 2. Map structural timestamp (October 1st) matching your generation script
+                // $targetStart = now()->setDate($startYear, $startMonth, 1)->startOfDay();
                 $targetStart = now()->setDate($startYear, 10, 1)->startOfDay();
 
                 // 3. See if this timestamp collides with any already initialized cycles
-                $timelineOverlaps = \App\Models\ClaimsCycle::where('campus_id', $setting->campus_id)
+                $timelineOverlaps = ClaimsCycle::where('campus_id', $setting->campus_id)
                     ->where('start_date', '<=', $targetStart)
                     ->where('end_date', '>=', $targetStart)
                     ->exists();
 
                 if ($timelineOverlaps) {
                     $errorField = $isCycleConfiguration ? 'cycle_start_year' : 'setting_value';
+                    $currentCycle = ClaimsCycle::where('campus_id', $setting->campus_id)
+                        ->where('start_date', '<=', $targetStart)
+                        ->where('end_date', '>=', $targetStart)
+                        ->first();
                     throw ValidationException::withMessages([
-                        $errorField => "The timeline or cycle label '{$targetLabel}' has already been initialized and cannot be overridden.",
+                        $errorField => "The selected cycle timeline '{$targetLabel}' overlaps with the existing setup for '" . ($currentCycle?->cycle_label ?? '') . "' and cannot be overridden.",
                     ]);
                 }
             }
@@ -229,6 +237,14 @@ class SettingController extends Controller
             }
 
         });
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'The claim cycle configurations have been saved successfully.',
+                'redirect' => route('settings.index', ['campus_filter' => $request->input('campus_filter')]) 
+            ]);
+        }
     
         return redirect()
             ->route('settings.index', ['campus_filter' => $request->input('campus_filter')])
