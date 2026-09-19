@@ -4,16 +4,20 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Services\ContributionService;
+use App\Services\MemberService;
 
 class CNAShareController extends Controller
 {
     private ContributionService $contributionService;
+    private MemberService $memberService;
 
     public function __construct(
-        ContributionService $contributionService
+        ContributionService $contributionService,
+        MemberService $memberService
     )
     {
         $this->contributionService = $contributionService;
+        $this->memberService = $memberService;
     }
     public function create(Request $request)
     {
@@ -25,9 +29,10 @@ class CNAShareController extends Controller
 
 
         $this->contributionService->setupCNAShare($validatedData);
+        $campus = $this->memberService->getCampus($validatedData['campus_filter']);
 
         return response()->json([
-            'message' => "CNA Share setup for {$validatedData['campus_filter']} has been generated successfully.",
+            'message' => sprintf("CNA Share setup for %s has been generated successfully.", $campus?->acronym ?? 'selected campus'),
             'year' => $validatedData['contribution_year'],
         ]);
     }
