@@ -1,8 +1,41 @@
 @php
-    $startYearSetting = $cycleSettings->firstWhere('setting_key', 'claim_cycle_start_year');
-    $startMonthSetting = $cycleSettings->firstWhere('setting_key', 'claim_cycle_start_month');
-    $yearsSetting = $cycleSettings->firstWhere('setting_key', 'claim_cycle_years');
-    $cycleLocked = $cycleSettings->contains(fn ($setting) => \App\Models\ClaimsCycle::where('campus_id', $setting->campus_id)->exists());
+    $startYearSetting = $cycleSettings->first(function ($setting) {
+        return $setting->setting_key === 'claim_cycle_start_year'
+             && $setting->cycle_label === null; 
+    });
+
+
+    $startMonthSetting = $cycleSettings->first(function ($setting) {
+        return $setting->setting_key === 'claim_cycle_start_month'
+             && $setting->cycle_label === null;
+    });
+
+    $yearsSetting = $cycleSettings->first(function ($setting) {
+        return $setting->setting_key === 'claim_cycle_years'
+             && $setting->cycle_label === null;
+    });
+
+    // 1. Map your settings into pairs of campus IDs and cycle labels
+    $pairs = $cycleSettings->map(fn($setting) => [
+        'campus_id' => $setting->campus_id,
+        'cycle_label' => $setting->cycle_label
+    ]); 
+    // ->filter(fn($pair) => !is_null($pair['cycle_label']));
+
+    \Log::error(print_r($cycleSettings, true));
+    \Log::error(print_r($pairs, true));
+    // 2. Perform a single database query to see if any of those specific pairs exist
+    $cycleLocked = \App\Models\ClaimsCycle::where(function ($query) use ($pairs) {
+        foreach ($pairs as $pair) {
+            $query->orWhere(function ($q) use ($pair) {
+                $q->where('campus_id', $pair['campus_id'])
+                  ->where('cycle_label', $pair['cycle_label']);
+            });
+        }
+    })->exists();
+
+
+    // $cycleLocked = $cycleSettings->contains(fn ($setting) => \App\Models\ClaimsCycle::where('campus_id', $setting->campus_id)->exists());
     $cycleSetting = $startYearSetting ?? $startMonthSetting ?? $yearsSetting;
     $previewStartYear = (int) old('cycle_start_year', optional($startYearSetting)->setting_value);
     $previewStartMonth = (int) old('cycle_start_month', optional($startMonthSetting)->setting_value);

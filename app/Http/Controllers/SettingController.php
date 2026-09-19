@@ -25,7 +25,7 @@ class SettingController extends Controller
      */
     public function index(Request $request)
     {
-        $isPresident = Auth::user()->can('view all campus data') || Auth::user()->hasAnyRole(['Federated President', 'Federated Treasurer']);
+        $isPresident = Auth::user()->can('view all campus data') || Auth::user()->hasAnyRole(['President', 'Treasurer']);
         $selectedCampusId = $isPresident
             ? $request->input('campus_filter')
             : Auth::user()->getCachedCampusId();
@@ -111,16 +111,56 @@ class SettingController extends Controller
         $user = Auth::user();
 
         $hasFullAccess = $user->can('view all campus data') 
-            || $user->hasAnyRole(['Federated President', 'Federated Treasurer']);
+            || $user->hasAnyRole(['President', 'Treasurer']);
         
         abort_if(!$hasFullAccess && $user->getCachedCampusId() !== $setting->campus_id, 403);
 
-        if (in_array($setting->setting_key, $cycleSettingKeys, true)
-            && ClaimsCycle::where('campus_id', $setting->campus_id)->exists()) {
-            throw ValidationException::withMessages([
-                'setting_value' => 'Claim cycle settings cannot be changed after a cycle has been initialized.',
-            ]);
+        // if (in_array($setting->setting_key, $cycleSettingKeys, true)
+        //     && ClaimsCycle::where('campus_id', $setting->campus_id)->exists()) {
+        //     throw ValidationException::withMessages([
+        //         'setting_value' => 'Claim cycle settings cannot be changed after a cycle has been initialized.',
+        //     ]);
+        // }
+
+        if (in_array($setting->setting_key, $cycleSettingKeys, true)) {
+            
+            // 1. Extract values from either the bulk request payload or the single-key payload
+            if ($isCycleConfiguration) {
+                $startYear = (int) $request->input('cycle_start_year');
+                $duration  = (int) $request->input('cycle_years');
+            } else {
+                // If modifying a single key, fallback to database values for the missing parts
+                $startYear = $setting->setting_key === 'claim_cycle_start_year' 
+                    ? (int) $request->input('setting_value') 
+                    : (int) SystemSetting::where('campus_id', $setting->campus_id)->where('setting_key', 'claim_cycle_start_year')->value('setting_value');
+                    
+                $duration = $setting->setting_key === 'claim_cycle_years' 
+                    ? (int) $request->input('setting_value') 
+                    : (int) SystemSetting::where('campus_id', $setting->campus_id)->where('setting_key', 'claim_cycle_years')->value('setting_value');
+            }
+
+            if ($startYear && $duration) {
+                $endYear = $startYear + $duration;
+                $targetLabel = "{$startYear}-{$endYear}";
+
+                // 2. Map structural timestamp (October 1st) matching your generation script
+                $targetStart = now()->setDate($startYear, 10, 1)->startOfDay();
+
+                // 3. See if this timestamp collides with any already initialized cycles
+                $timelineOverlaps = \App\Models\ClaimsCycle::where('campus_id', $setting->campus_id)
+                    ->where('start_date', '<=', $targetStart)
+                    ->where('end_date', '>=', $targetStart)
+                    ->exists();
+
+                if ($timelineOverlaps) {
+                    $errorField = $isCycleConfiguration ? 'cycle_start_year' : 'setting_value';
+                    throw ValidationException::withMessages([
+                        $errorField => "The timeline or cycle label '{$targetLabel}' has already been initialized and cannot be overridden.",
+                    ]);
+                }
+            }
         }
+
 
         DB::transaction(function () use ($request, $setting, $isCycleConfiguration) {
             if ($isCycleConfiguration) {
