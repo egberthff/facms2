@@ -150,11 +150,24 @@ class SettingController extends Controller
                 // $targetStart = now()->setDate($startYear, $startMonth, 1)->startOfDay();
                 $targetStart = now()->setDate($startYear, 10, 1)->startOfDay();
 
+                $targetEnd = (clone $targetStart)->addYears($duration)->subSecond();
                 // 3. See if this timestamp collides with any already initialized cycles
                 $timelineOverlaps = ClaimsCycle::where('campus_id', $setting->campus_id)
-                    ->where('start_date', '<=', $targetStart)
-                    ->where('end_date', '>=', $targetStart)
-                    ->exists();
+                ->where(function ($query) use ($targetStart, $targetEnd) {
+                    $query->where(function ($q) use ($targetStart) {
+                        $q->where('start_date', '<=', $targetStart)
+                          ->where('end_date', '>=', $targetStart);
+                    })
+                    ->orWhere(function ($q) use ($targetEnd) {
+                        $q->where('start_date', '<=', $targetEnd)
+                          ->where('end_date', '>=', $targetEnd);
+                    })
+                    ->orWhere(function ($q) use ($targetStart, $targetEnd) {
+                        $q->where('start_date', '>=', $targetStart)
+                          ->where('end_date', '<=', $targetEnd);
+                    });
+                })
+                ->first();
 
                 if ($timelineOverlaps) {
                     $errorField = $isCycleConfiguration ? 'cycle_start_year' : 'setting_value';
@@ -170,7 +183,7 @@ class SettingController extends Controller
         }
 
 
-        DB::transaction(function () use ($request, $setting, $isCycleConfiguration) {
+        DB::transaction(function () use ($request, $setting, $isCycleConfiguration, $startMonth) {
             if ($isCycleConfiguration) {
                 foreach ([
                     'claim_cycle_start_year' => $request->input('cycle_start_year'),
@@ -185,6 +198,37 @@ class SettingController extends Controller
                         ->firstOrFail();
 
                     $liveSetting->update(['setting_value' => $value]);
+
+                    $startYear = (int) $request->input('cycle_start_year');
+                    $startMonth = (int) $request->input('cycle_start_month');
+                    $durationYears = (int) $request->input('cycle_years');
+
+                    $startDate = \Carbon\Carbon::create($startYear, $startMonth, 1)->startOfDay();
+                    $endDate = $startDate->copy()->addYears($durationYears)->subDay()->endOfDay();
+
+                    $claimsArray =[
+                        'campus_id' => $setting->campus_id,
+                        'cycle_label' => "{$startYear}-" . ($startYear + $durationYears),
+                        'start_date' => $startDate,
+                        'end_date' => $endDate,
+                        'duration_years' => $durationYears,
+                        'start_month' => $startMonth,
+                    ];
+                    \Log::error(print_r($claimsArray, true));
+
+                   $claimsCycle = ClaimsCycle::firstOrCreate(
+                        [
+                            'campus_id' => $setting->campus_id,
+                            'cycle_label' => "{$request->input('cycle_start_year')}-" . ($request->input('cycle_start_year') + $request->input('cycle_years')),
+                        ],
+                        [
+                            'start_date' => $startDate,
+                            'end_date' => $endDate,
+                            'duration_years' => $durationYears,
+                            'start_month' => $startMonth,
+                        ]
+                    );
+
                 }
 
                 return;
