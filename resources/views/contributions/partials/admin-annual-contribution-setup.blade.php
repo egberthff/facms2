@@ -369,7 +369,19 @@
                     </div>
                     <p class="mt-1 text-xs text-gray-400">Enter a 4-digit numeric year.</p>
                 </div>
-
+                <div>
+                    <label for="contribution_amount" class="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1">
+                        CNA Share Amount
+                    </label>
+                    <div class="relative">
+                        <input 
+                            id="contribution_amount"
+                            type="number" 
+                            name="contribution_amount"
+                            step="0.01"
+                            placeholder="0.00"
+                            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 transition">        
+                </div>
                 <!-- Modal Actions Footer -->
                 <div class="flex items-center justify-end gap-x-2 pt-4 border-t border-gray-100">
                     <button 

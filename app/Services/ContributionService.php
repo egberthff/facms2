@@ -255,17 +255,36 @@ class ContributionService
             $detail = match ($tag) {
                 'claims' => ContributionDetail::findOrFail($id),
                 'annual' => AnnualContribution::findOrFail($id),
+                'cna_share' => CNAShare::findOrFail($id),
                 default  => throw new InvalidArgumentException("Invalid contribution tag: {$tag}"),
             };
 
-            $detail->update([
-                'status'  => ContributionStatus::Paid->value,
-                'paid_at' => now(),
-            ]);
+            if ($tag == 'cna_share') {
+                 $detail->update([
+                    'paid_amount'  => $detail->due_amount,
+                    'status'  => ContributionStatus::Paid->value,
+                    'paid_at' => now(),
+                ]);
+            } else {
+                $detail->update([
+                    'status'  => ContributionStatus::Paid->value,
+                    'paid_at' => now(),
+                ]);
+            }
 
-            $name = ($tag === 'claims') ? 'Claims' : 'Annual';
+            $name = match ($tag) {
+                'claims' => 'Claims',
+                'cna_share' => 'CNA Share',
+                'annual' => 'Annual',
+                default => 'Standard'
+            };
             $description = "Receipt for {$name} Contribution - Member ID: " . $detail->member_id;
-            $amount = $tag === 'annual' ? $detail->amount_paid : $detail->amount;
+            $amount = match ($tag) {
+                'annual'    => $detail->amount_paid,
+                'cna_share' => $detail->paid_amount,
+                default     => $detail->amount,
+            };
+
 
             if ($amount === null || (float) $amount < 0) {
                 throw new InvalidArgumentException('The contribution amount must be a valid non-negative value.');
@@ -420,6 +439,55 @@ class ContributionService
         });
 
         // 4. Return identical array payload signatures
+        return [
+            'isPresident'      => $hasFullAccess,
+            'selectedCampusId' => $selectedCampusId,
+            'allCampuses'      => Campus::where('is_active', true)->get(), 
+            'batches'          => $batches->values()->all(),
+        ];
+    }
+
+    public function getCNAShareContributionData(?string $selectedCampusId = null): array
+    {
+        $hasFullAccess = Auth::user()->can('view all campus data') || Auth::user()->hasAnyRole(['President', 'Treasurer']);
+
+        $batches = CNAShare::with(['member.campus'])
+            ->when($hasFullAccess && $selectedCampusId, function ($query) use ($selectedCampusId) {
+                $query->whereHas('member', function ($q) use ($selectedCampusId) {
+                    $q->where('campus_id', $selectedCampusId);
+                });
+            })
+            ->latest('created_at')
+            ->get()
+            ->map(function (CNAShare $cnaShare) {
+                $member = $cnaShare->member;
+                $status = strtolower((string) $cnaShare->status);
+
+                return [
+                    'id'                  => $cnaShare->id,
+                    'claim_id'            => $cnaShare->year, // No claim association for CNA Share
+                    'claim_number'        => $cnaShare->reference_number,
+                    'claimant'            => trim(sprintf('%s %s %s', $member?->first_name, $member?->middle_name, $member?->last_name)),
+                    'claim_type'          => 'CNA Share Contribution',
+                    'campus_acronym'      => $member?->campus?->acronym ?? 'SYS',
+                    'collectible_amount'  => (float) $cnaShare->due_amount,
+                    'collected_amount'    => ($status === 'paid') ? (float) $cnaShare->paid_amount : 0.00,
+                    'generated_at'        => $cnaShare->created_at ? Carbon::parse($cnaShare->created_at)->format('M d, Y h:i A') : '—',
+                    'total_members'       => 1,
+                    'details'             => [
+                        [
+                            'id'              => $cnaShare->id,
+                            'member_name'     => trim(sprintf('%s %s %s', $member?->first_name, $member?->middle_name, $member?->last_name)),
+                            'employee_number' => $member?->employee_number ?? 'N/A',
+                            'department'      => $member?->department ?? 'N/A',
+                            'amount'          => (float) $cnaShare->due_amount,
+                            'status'          => $status,
+                            'paid_at'         => $cnaShare->paid_at ? Carbon::parse($cnaShare->paid_at)->format('M d, Y h:i A') : '—',
+                        ],
+                    ],
+                ];
+            });   
+
         return [
             'isPresident'      => $hasFullAccess,
             'selectedCampusId' => $selectedCampusId,
@@ -1355,7 +1423,6 @@ public function contributionAdjustment(array $data)
     public function setupCNAShare(array $data)
     {
         $user = Auth::user();
-        \Log::error(print_r($user, true));
 
         // 1. Determine cross-campus access authorization
         $hasFullAccess = $user->can('view all campus data') || $user->hasAnyRole(['President', 'Treasurer']);
@@ -1387,15 +1454,19 @@ public function contributionAdjustment(array $data)
         }
 
         $year = $data['contribution_year'] ?? now()->year;
+        $amount = $data['contribution_amount'] ?? 100.00; // Default to 100.00 if not provided
         $timestamp = now();
         $insertData = [];
 
         // 5. Structure payload array for the bulk insert
         foreach ($members as $member) {
+            $shareCode = 'CNAS-' . now()->format('Ymd') . '-' . strtoupper(Str::random(6));
             $insertData[] = [
+                'id'               => (string) Str::orderedUuid(),
+                'reference_number' => $shareCode,
                 'member_id'   => $member->id,
                 'year'        => $year,
-                'due_amount'  => 100.00,
+                'due_amount'  => $amount,
                 'paid_amount' => 0.00,
                 'is_paid'     => false,
                 'created_by'  => $user->user_id,

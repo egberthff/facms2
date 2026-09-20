@@ -65,7 +65,7 @@
                                             <td class="px-4 py-3 font-medium text-slate-800" x-text="detail.member_name"></td>
                                             <td class="px-4 py-3 text-slate-600" x-text="detail.employee_number"></td>
                                             <td class="px-4 py-3 text-slate-600" x-text="detail.department"></td>
-                                            <td class="px-4 py-3 text-right font-semibold text-slate-900" x-text="formatAmount(detail.amount ?? detail.amount_paid)"></td>
+                                            <td class="px-4 py-3 text-right font-semibold text-slate-900" x-text="formatAmount(detail.amount ?? detail.amount_paid ?? paid_amount)"></td>
                                             <td class="px-4 py-3 text-center">
                                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wide"
                                                     :class="((detail.status || '').toString().toLowerCase() === 'paid') ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'"

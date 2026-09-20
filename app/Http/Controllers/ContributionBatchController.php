@@ -84,8 +84,11 @@ class ContributionBatchController extends Controller
         if ($contributionType === 'annual') {
             // Calls your upcoming annual metrics logic inside the service file
             $data = $this->contributionService->getAnnualContributionData($selectedCampusId);
-        } else {
+        } else if ($contributionType === 'cna_share') {
             // Falls back to your original presidential metrics pipeline
+            $data = $this->contributionService->getCNAShareContributionData($selectedCampusId);
+        } else {
+            //Falls back to the default claims metrics
             $data = $this->contributionService->getClaimsContributionData($selectedCampusId);
         }
         $data['contribution_type'] = $contributionType;

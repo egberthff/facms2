@@ -14,6 +14,7 @@ Route::middleware(['auth', 'active'])
 
     Route::post('contributions/annual/create', [AnnualContributionController::class, 'storeBatch'])->name('contributions.create');
     Route::post('contributions/annual-contributions/{id}/mark-paid', [AnnualContributionController::class, 'pay'])->name('contributions.annual.mark-paid');
+    Route::post('contributions/cna-share/{id}/mark-paid', [CNAShareController::class, 'pay'])->name('contributions.cna-share.mark-paid');
 
     Route::post('contributions/contribution-adjustment', [ContributionDetailsController::class, 'contributionAdjustment'])->name('contributions.contribution-adjustment');
     Route::post('contributions/cna-share-setup', [CNAShareController::class, 'create'])->name('contributions.cna-share-setup');

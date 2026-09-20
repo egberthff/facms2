@@ -214,7 +214,6 @@ class SettingController extends Controller
                         'duration_years' => $durationYears,
                         'start_month' => $startMonth,
                     ];
-                    \Log::error(print_r($claimsArray, true));
 
                    $claimsCycle = ClaimsCycle::firstOrCreate(
                         [

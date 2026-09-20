@@ -144,6 +144,9 @@ class ContributionDetailsController extends Controller
                 });
                 break;
             
+            case 'cna_share': $formattedData = collect(); 
+            break; // Placeholder for future CNA Share contributions logic
+            
             default:
                 $formattedData = collect();
         }

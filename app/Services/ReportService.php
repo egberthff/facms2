@@ -849,9 +849,9 @@ class ReportService
                 'max_claimable_amount' => $max_claimable_amount,
             ],
             'signatories' => [
-                'campusTreasurer' => $campusTreasurer->name,
-                'federatedTreasurer' => $federatedTreasurer->name,
-                'federatedPresident' => $federatedPresident->name,
+                'campusTreasurer' => $campusTreasurer?->name ?? '',
+                'federatedTreasurer' => $federatedTreasurer?->name ?? '',
+                'federatedPresident' => $federatedPresident?->name ?? '',
             ],
             'records' => $formattedRecords
         ];

@@ -22,8 +22,6 @@
     ]); 
     // ->filter(fn($pair) => !is_null($pair['cycle_label']));
 
-    \Log::error(print_r($cycleSettings, true));
-    \Log::error(print_r($pairs, true));
     // 2. Perform a single database query to see if any of those specific pairs exist
     $cycleLocked = \App\Models\ClaimsCycle::where(function ($query) use ($pairs) {
         foreach ($pairs as $pair) {

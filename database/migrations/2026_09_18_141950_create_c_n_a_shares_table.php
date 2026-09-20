@@ -9,6 +9,8 @@ return new class extends Migration
     {
         Schema::create('cna_shares', function (Blueprint $table) {
             $table->uuid('id')->primary();
+
+            $table->string('reference_number')->unique()->comment('Unique reference number for the share contribution');
             
             $table->foreignUuid('member_id')->constrained('members', 'id')->cascadeOnDelete();
             
@@ -18,7 +20,9 @@ return new class extends Migration
 
             $table->decimal('paid_amount', 10, 2)->comment('Actual amount paid'); 
 
-            $table->boolean('is_paid')->default(false); 
+            $table->string('status')->default('Unpaid'); 
+
+            $table->timestamp('paid_at')->nullable();
             
             $table->foreignUuid('created_by')->nullable()->constrained('users', 'user_id')->nullOnDelete();
 

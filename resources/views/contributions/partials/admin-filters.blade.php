@@ -13,6 +13,7 @@
                         <select name="contribution_type" onchange="this.form.submit()" class="text-sm rounded-lg bg-white dark:bg-zinc-900 border-gray-300 dark:border-zinc-700 text-gray-700 dark:text-gray-300 focus:ring-blue-500 focus:border-blue-500 min-w-[200px]">
                             <option value="claims" {{ request('contribution_type') == 'claims' ? 'selected' : '' }}>Claims</option>
                             <option value="annual" {{ request('contribution_type') == 'annual' ? 'selected' : '' }}>Annual</option>
+                            <option value="cna_share" {{ request('contribution_type') == 'cna_share' ? 'selected' : '' }}>CNA Share</option>
                         </select>
                     </div>
                 

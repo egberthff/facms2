@@ -20,10 +20,10 @@
             });
         },
         batchCollectibleAmount() {
-            return Number(this.selectedBatch?.collectible_amount ?? this.selectedBatch?.amount_paid ?? 0);
+            return Number(this.selectedBatch?.collectible_amount ?? this.selectedBatch?.amount_paid ?? this.selectedBatch.paid_amount ?? 0);
         },
         batchCollectedAmount() {
-            return Number(this.selectedBatch?.collected_amount ?? this.selectedBatch?.amount_collected ?? 0);
+            return Number(this.selectedBatch?.collected_amount ?? this.selectedBatch?.amount_collected ?? this.selectedBatch?.paid_amount ?? 0);
         },
         batchOutstandingAmount() {
             return Math.max(this.batchCollectibleAmount() - this.batchCollectedAmount(), 0);
