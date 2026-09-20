@@ -516,7 +516,7 @@ class ContributionService
         return (float) $query->sum('contribution_details.amount');
     }
 
-    public function getContributionPerMonth(Request $request, string $campusId): array
+    public function getContributionPerMonth(Request $request, ?string $campusId = null): array
     {
         $dateFrom = $request->date_from
             ? Carbon::parse($request->date_from)->startOfMonth()
@@ -587,9 +587,12 @@ class ContributionService
             'total' => 0,
         ];
     
-        $months = [];
-    
         $currentMonth = $dateFrom->copy();
+
+        $months = [];
+        $cnaShare = [
+            'total' => 0,
+        ];
     
         while ($currentMonth->lte($dateTo)) {
     
@@ -615,8 +618,6 @@ class ContributionService
              * Detailed adjustment records for this month.
              */
             $collectionAdjustmentDetails[$monthKey] = [];
-
-            $collectionAdjustmentDetails['cna_share'] = 0;
     
             $headerMonthLabel[] = $monthKey;
     
@@ -635,15 +636,64 @@ class ContributionService
          * - total_contributed = Y-axis / row total
          */
     
+        // $members = Member::query()
+        //     ->with('user')
+        //     ->where('campus_id', $campusId)
+        //     ->get();
+
         $members = Member::query()
             ->with('user')
-            ->where('campus_id', $campusId)
+            // Only apply the manual where clause if a specific campus filter was explicitly selected
+            ->when($campusId, function ($query, $campusId) {
+                // Safe bypass to avoid duplicate SQL where filters if the scope already handled it
+                $query->withoutGlobalScope(CampusMemberScope::class)
+                      ->where('campus_id', $campusId);
+            })
             ->get();
-    
+
+        $yearsList = collect(\Carbon\CarbonPeriod::create(
+            $dateFrom->copy()->startOfYear(),
+            '1 year',
+            $dateTo->copy()->startOfYear()
+        ))
+            ->map->year
+            ->unique()
+            ->values()
+            ->toArray();   
+            
+        $reportCnaShare  = [
+            'total' => 0,
+        ];
+
+        foreach ($yearsList as $year) {
+            $reportCnaShare[$year] = 0;
+        }    
+
+        $cnaShares = CnaShare::query()
+            ->whereIn('year', $yearsList)
+            ->whereIn('member_id', $members->pluck('id'))
+            ->get()
+            ->groupBy('member_id'); 
+            
         $memberData = [];
     
         foreach ($members as $member) {
-    
+            $memberCnaShares = $cnaShares->get($member->id, collect());
+
+            $cnaShare = [];
+            foreach ($yearsList as $year) {
+                $cnaShare[$year] = 0;
+            }
+
+            foreach ($memberCnaShares as $share) {
+                $amount = (float) $share->paid_amount;
+                // Member-level CNA share
+                $cnaShare[$share->year] = $amount;
+                //Report Level 
+                $reportCnaShare[$share->year] += $amount;
+                $reportCnaShare['total'] += $amount;
+            }
+
             $memberData[$member->id] = [
                 'member_id' => $member->id,
     
@@ -662,8 +712,10 @@ class ContributionService
                 /*
                  * Placeholder for future CMA share calculations.
                  */
-                'cna_share' => 0,
+                'cna_share' => $cnaShare,
+                
             ];
+
         }
     
     
@@ -933,9 +985,6 @@ class ContributionService
                ];                
         }
 
-        $collectionAdjustmentDetails['cna_share'] = 0;
-    
-    
         /*
          * ---------------------------------------------------------
          * 6. APPLY COLLECTION ADJUSTMENTS
@@ -1052,7 +1101,11 @@ class ContributionService
             'balance_collectible' =>
                 $balanceCollectible,
     
-    
+            /**
+             * CNA Shares
+             */ 
+            'cna_share' => $reportCnaShare,
+
             /*
              * Member rows.
              *
@@ -1468,7 +1521,7 @@ public function contributionAdjustment(array $data)
                 'year'        => $year,
                 'due_amount'  => $amount,
                 'paid_amount' => 0.00,
-                'is_paid'     => false,
+                'status'     =>  ContributionStatus::Unpaid->value,
                 'created_by'  => $user->user_id,
                 'created_at'  => $timestamp, // Bulk insert requires manual timestamps
                 'updated_at'  => $timestamp,

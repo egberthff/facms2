@@ -208,13 +208,15 @@
 
             <!-- Master Data Matrix Grid -->
             <table>
+                {{-- @dd($table_data); --}}
                 <thead>
                     <!-- Row 1: High Level Calendar Periods & System Categories -->
                     <tr>
                         <th rowspan="3" style="width: 3%;">No</th>
                         <th rowspan="3" style="width: 15%;">Faculty Association
                             Member</th>
-                        <th>January</th>
+                        <th colspan="{{ count($table_data['cna_share']) - 1 }}">CNA Share</th>
+                        {{-- @dd($table_data) --}}
                         @foreach ($table_data['header_month_label'] as $label )
                             <th>{{ ucwords($label) }}</th>
                         @endforeach
@@ -223,7 +225,10 @@
                     </tr>
                     <!-- Row 2: Inner Local Purpose Metadata Subheadings -->
                     <tr>
-                        <th><span class="sub-header-title">CNA Share</span></th>
+                        @foreach (collect($table_data['cna_share'])->except('total')->keys() as $year)
+                            <th><span class="sub-header-title">{{ $year }}</span></th>
+                        @endforeach
+
                         @for ($i = 0; $i<count($table_data['header_month_label']) - 1; $i++)
                         <th><span class="sub-header-title">Medical
                             Assistance</span></th>
@@ -232,14 +237,13 @@
                                 Deductions</span></th>
                     </tr>
                     <tr class="bg-yellow font-bold text-center">
-                        <td class="border p-1">500</td>
+                        @foreach (collect($table_data['cna_share'])->except('total') as $amount)
+                            <td class="border p-1">{{ $amount }}</td>
+                        @endforeach
 
                         {{-- 1. Grab both the $month key and the $amount value --}}
-                        @foreach ($table_data['header_months_amount'] as $month => $amount)
-                            {{-- 2. Skip the row if the key is 'total' --}}
-                            @if($month !== 'total')
+                        @foreach (collect($table_data['header_months_amount'])->except('total') as $amount)
                                 <td class="border p-1">{{ $amount }}</td>
-                            @endif
                         @endforeach
 
                         {{-- 3. Correctly output the grand total at the end --}}
@@ -254,7 +258,10 @@
                         <tr>
                             <td class="text-center">{{ $index + 1 }}</td>
                             <td>{{ ucwords($member['name']) }}</td>
-                            <td class="text-right font-bold">{{ $member['cna_share'] }}</td>
+
+                            @foreach ($member['cna_share'] as $cna_share)
+                                <td class="text-right font-bold">{{ $cna_share }}</td>
+                            @endforeach
 
                             {{-- Loop safely directly through the 12 clean months array --}}
                             @foreach ($member['months'] as $month => $amount)
