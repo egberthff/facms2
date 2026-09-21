@@ -78,6 +78,7 @@
 
         /* --- Comprehensive Master Ledger Matrix Grid --- */
         table {
+            table-layout: fixed; 
             width: 100%;
             border-collapse: collapse;
             font-size: 7.5pt; /* Extremely tight tracking density to match raw document mapping scale */
@@ -87,6 +88,8 @@
             border: 1px solid #000;
             padding: 3px 2px;
             vertical-align: middle;
+            text-align: center;
+            word-wrap: break-word; 
         }
         th {
             font-weight: bold;
@@ -208,7 +211,6 @@
 
             <!-- Master Data Matrix Grid -->
             <table>
-                {{-- @dd($table_data); --}}
                 <thead>
                     <!-- Row 1: High Level Calendar Periods & System Categories -->
                     <tr>
@@ -216,7 +218,7 @@
                         <th rowspan="3" style="width: 15%;">Faculty Association
                             Member</th>
                         <th colspan="{{ count($table_data['cna_share']) - 1 }}">CNA Share</th>
-                        {{-- @dd($table_data) --}}
+                        <th colspan="{{ count($table_data['annual_due']) - 1 }}">Annual Due</th>
                         @foreach ($table_data['header_month_label'] as $label )
                             <th>{{ ucwords($label) }}</th>
                         @endforeach
@@ -225,7 +227,14 @@
                     </tr>
                     <!-- Row 2: Inner Local Purpose Metadata Subheadings -->
                     <tr>
+                        {{-- @var_dump($table_data['cna_share']) --}}
+                        {{-- @dd($table_data['annual_due']) --}}
+                        {{-- @var_dump($table_data['annual_due']) --}}
                         @foreach (collect($table_data['cna_share'])->except('total')->keys() as $year)
+                            <th><span class="sub-header-title">{{ $year }}</span></th>
+                        @endforeach
+
+                        @foreach (collect($table_data['annual_due'])->except('total')->keys() as $year)
                             <th><span class="sub-header-title">{{ $year }}</span></th>
                         @endforeach
 
@@ -241,6 +250,10 @@
                             <td class="border p-1">{{ $amount }}</td>
                         @endforeach
 
+                        @foreach (collect($table_data['annual_due'])->except('total') as $amount)
+                            <td class="border p-1">{{ $amount }}</td>
+                        @endforeach
+
                         {{-- 1. Grab both the $month key and the $amount value --}}
                         @foreach (collect($table_data['header_months_amount'])->except('total') as $amount)
                                 <td class="border p-1">{{ $amount }}</td>
@@ -252,7 +265,6 @@
 
                 </thead>
                 <tbody>
-                    {{-- @dd($table_data) --}}
                     <!-- Entry row structural layout example based on first ledger item -->
                     @forelse ($table_data['members'] as $index => $member)
                         <tr>
@@ -261,6 +273,10 @@
 
                             @foreach ($member['cna_share'] as $cna_share)
                                 <td class="text-right font-bold">{{ $cna_share }}</td>
+                            @endforeach
+
+                            @foreach ($member['annual_due'] as $due)
+                                <td class="text-right font-bold">{{ $due }}</td>
                             @endforeach
 
                             {{-- Loop safely directly through the 12 clean months array --}}
@@ -281,7 +297,12 @@
                     <!-- 1. TOTAL MONTHLY COLLECTION TARGET -->
                     <tr class="font-bold" style="background-color: #fafafa;">
                         <td colspan="2" class="text-right">TOTAL MONTHLY COLLECTION TARGET</td>
-                        <td class="text-right">0</td> <!-- Placeholder for total cna share -->
+                        @foreach (collect($table_data['total_cna_share_collection_target'])->except('total') as $amount)
+                            <td class="text-right">{{ $amount['total'] ?? 0 }}</td>
+                        @endforeach
+                        @foreach (collect($table_data['total_annual_due_collection_target'])->except('total') as $amount)
+                            <td class="text-right">{{ $amount['total'] ?? 0 }}</td>
+                        @endforeach
 
                         @foreach ($table_data['total_monthly_collection_target'] as $month => $amount)
                             @if ($month !== 'total')
@@ -295,8 +316,12 @@
                     <!-- 2. ACTUAL MONTHLY COLLECTION -->
                     <tr class="font-bold">
                         <td colspan="2" class="text-right">ACTUAL MONTHLY COLLECTION</td>
-                        <td class="text-right">0</td> <!-- Placeholder for cna share -->
-
+                        @foreach (collect($table_data['actual_cna_share_collection'])->except('total') as $amount)
+                            <td class="text-right">{{ $amount['total'] ?? 0 }}</td>
+                        @endforeach
+                        @foreach (collect($table_data['actual_annual_due_collection'])->except('total') as $amount)
+                            <td class="text-right">{{ $amount['total'] ?? 0 }}</td>
+                        @endforeach
                         @foreach ($table_data['actual_monthly_collection'] as $month => $amount)
                             @if ($month !== 'total')
                                 <td class="text-right">{{ $amount }}</td>
@@ -309,15 +334,27 @@
                     <!-- 3. BALANCE COLLECTIBLE -->
                     <tr class="font-bold">
                         <td colspan="2" class="text-right">BALANCE COLLECTIBLE</td>
-                        <td class="text-right">0</td> <!-- Placeholder for cna share -->
-
-                        @foreach ($table_data['balance_collectible'] as $month => $amount)
-                            @if ($month !== 'total')
-                                <td class="text-right">{{ $amount }}</td>
-                            @endif
+                    
+                        {{-- 1. CNA Share Loop --}}
+                        @foreach (collect($table_data['balance_collectible']['cna_share'] ?? [])->except(['total']) as $year => $data)
+                            <td class="text-right">{{ $data['total'] ?? 0 }}</td>
                         @endforeach
-
-                        <td class="text-right">{{ $table_data['balance_collectible']['total'] }}</td>
+                    
+                        {{-- 2. Annual Due Loop (Fixed: Excluded 'total' key) --}}
+                        @foreach (collect($table_data['balance_collectible']['annual_due'] ?? [])->except(['total']) as $year => $data)
+                            <td class="text-right">{{ $data['total'] ?? 0 }}</td>
+                        @endforeach
+                    
+                        {{-- 3. Monthly Breakdown Loop --}}
+                        @foreach (collect($table_data['balance_collectible'] ?? [])->except(['total', 'cna_share', 'annual_due']) as $monthName => $amount)
+                            @php
+                                $displayAmount = is_array($amount) ? ($amount['total'] ?? 0) : ($amount ?? 0);
+                            @endphp
+                            <td class="border p-1 text-right">{{ $displayAmount }}</td>
+                        @endforeach
+                    
+                        {{-- 4. Final Total Column --}}
+                        <td class="text-right">{{ $table_data['balance_collectible']['total'] ?? 0 }}</td>
                     </tr>
 
                     <!-- 4. COLLECTION ADJUSTMENT -->
@@ -327,9 +364,17 @@
                         </td>
                         @php
                            $cnaShare = ($table_data['collection_adjustment_details']['cna_share'] ?? 0) === 0 ? '' : $table_data['collection_adjustment_details']['cna_share'];
+                           $annualDue = ($table_data['collection_adjustment_details']['annual_due'] ?? 0) === 0 ? '' : $table_data['collection_adjustment_details']['annual_due'];
                         @endphp
                     
-                        <td class="text-right" style="border: none !important;">{{ $cnaShare }}</td>
+                        <td 
+                            colspan="{{ count($table_data['cna_share']) - 1 }}"
+                            class="text-right" style="border: none !important;">{{ $cnaShare }}</td>
+                        
+                        <td 
+                            colspan="{{ count($table_data['annual_due']) - 1 }}"
+                            class="text-right" style="border: none !important;">{{ $annualDue }}</td>
+                         
                     
                         @foreach ($table_data['header_month_label'] as $month)
                     
@@ -342,7 +387,6 @@
                             <!-- Merged the custom background color logic with the border reset -->
                             <td class="text-center"
                                 style="border: none !important; {{ count($adjustments) ? 'background-color: #f4cccc;' : '' }}">
-                    
                                 @foreach ($adjustments as $adjustment)
                     
                                     <div style="font-size: 10px;">
