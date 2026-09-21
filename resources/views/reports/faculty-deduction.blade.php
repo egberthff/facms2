@@ -238,12 +238,12 @@
                             <th><span class="sub-header-title">{{ $year }}</span></th>
                         @endforeach
 
-                        @for ($i = 0; $i<count($table_data['header_month_label']) - 1; $i++)
+                        @for ($i = 0; $i<count($table_data['header_month_label']); $i++)
                         <th><span class="sub-header-title">Medical
                             Assistance</span></th>
                         @endfor
-                        <th><span class="sub-header-title">Unpaid
-                                Deductions</span></th>
+                        {{-- <th><span class="sub-header-title">Unpaid
+                                Deductions</span></th> --}}
                     </tr>
                     <tr class="bg-yellow font-bold text-center">
                         @foreach (collect($table_data['cna_share'])->except('total') as $amount)
