@@ -34,6 +34,8 @@ class Member extends Model
         'position',
         'employment_status',
         'membership_status',
+        'active_member_on',
+        'inactive_member_on',
         'contact_number',
         'address',
         'gcash_number',

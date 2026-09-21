@@ -32,11 +32,16 @@
             <!-- Left End: Filter Dropdown -->
             <div class="flex items-center bg-blue-100 border border-blue-300 rounded-xl">
                 <label for="member-status-filter" class="sr-only">Filter by Status</label>
-                <select id="member-status-filter" class=" text-black text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
-                    <option value="">All Members</option>
-                    <option value="Active" selected>Active Members</option>
-                    <option value="Inactive">Inactive Members</option>
-                </select>
+                <select id="member-status-filter" class="text-black text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
+                <option value="">All Members</option>
+                <?php $currentStatus = 'Active' ?>
+                @foreach(\App\Enums\MembershipStatus::cases() as $status)
+                    <option value="{{ $status->value }}" @selected($currentStatus === $status)>
+                        {{ $status->name }} Members
+                    </option>
+                @endforeach
+            </select>
+
             </div>  
 
             <!-- Right End: Add Action --> 
@@ -542,6 +547,12 @@
 
                 document.getElementById('membership_status').value =
                     btn.getAttribute('data-member-membership-status') || '';
+                 
+                document.getElementById('active_member_on').value =
+                    formatToHTMLDate(btn.getAttribute('data-member-active-member-on')) || '';
+                
+                document.getElementById('inactive_member_on').value = 
+                    formatToHTMLDate(btn.getAttribute('data-member-inactive-member-on')) || '';
                 
                 document.getElementById('contact_number').value =
                     btn.getAttribute('data-contact-number') || '';

@@ -303,9 +303,6 @@ window.markContributionAsPaid = function(id, tag) {
         
     }
 
-    console.log(`Tag: ${tag}`);
-    console.log(`Post Url: ${postUrl}`);
-
     Swal.fire({
         title: 'Mark as paid?',
         text: 'This will mark the selected contribution detail to Paid.',
