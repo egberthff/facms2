@@ -21,6 +21,7 @@ use App\Models\ClaimDocument;
 use App\Models\SystemSetting;
 use App\Services\ClaimService;
 use App\Services\TreasuryLedgerService;
+use App\Services\ReportService;
 use App\Services\EmailService;
 
 use Exception;
@@ -29,16 +30,19 @@ class ClaimController extends Controller
     private ClaimService $claimService;
     private TreasuryLedgerService $ledgerService;
     private EmailService $emailService;
+    private ReportService $reportService;
 
      public function __construct(
         ClaimService $claimService, 
         TreasuryLedgerService $ledgerService,
-        EmailService $emailService
+        EmailService $emailService,
+        ReportService $reportService
         )
     {
         $this->claimService = $claimService;
         $this->ledgerService = $ledgerService;
         $this->emailService = $emailService;
+        $this->reportService = $reportService;
     }
     /**
      * Display a listing of the resource.
@@ -55,6 +59,7 @@ class ClaimController extends Controller
         $userRoles = array_values(array_filter($roles, fn($role) => $user->hasRole($role)));
         $data['userRole'] = $userRoles[0] ?? null;
         $data['claims'] = $this->claimService->getAllClaims($userRoles, $selectedCampusId);
+        $data['cycle'] = $this->reportService->getAllowanceCycles();
 
         if ($data['isPresident']) {
             $data['allCampuses'] = Campus::where('is_active', true)->get();

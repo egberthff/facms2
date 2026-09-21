@@ -30,6 +30,70 @@ window.Chart = Chart;
 import './report-center';
 import { all } from 'axios';
 
+document.addEventListener('alpine:init', () => {
+    Alpine.data('claimsFilters', () => ({
+        currentStatus: 'all',
+        selectedCycle: 'current', // Matches default backend value
+
+        init() {
+            // Hook your Alpine state variables directly into DataTables custom row filtering engine
+            DataTable.ext.search.push((settings, data, dataIndex) => {
+                // 1. Handle Status filtering logic
+                if (this.currentStatus !== 'all') {
+                    // Replace 'statusColumnIndex' with the position of your status column (e.g., 4)
+                    const statusColumnIndex = 4; 
+                    const rowStatus = data[statusColumnIndex]?.toLowerCase().trim();
+                    if (rowStatus !== this.currentStatus.toLowerCase().trim()) {
+                        return false;
+                    }
+                }
+
+                // 2. Handle Cycle Date-Range filtering logic
+                if (this.selectedCycle && this.selectedCycle !== 'current') {
+                    // Parse start and end years out of string formatting "2025-2027"
+                    const [startYear, endYear] = this.selectedCycle.split('-').map(Number);
+                    
+                    // Replace 'submittedAtColumnIndex' with your column offset (e.g., 3)
+                    const submittedAtColumnIndex = 3; 
+                    const rawDateText = data[submittedAtColumnIndex]; // Returns raw text inside <td>
+
+                    // Extract the 4-digit calendar year out of strings formatted like "Sep 21, 2026"
+                    const yearMatch = rawDateText.match(/\b\d{4}\b/);
+                    if (!yearMatch) return false;
+                    
+                    const claimYear = parseInt(yearMatch[0], 10);
+
+                    // Drop rows falling outside the boundaries of the selected cycle
+                    if (claimYear < startYear || claimYear > endYear) {
+                        return false;
+                    }
+                }
+
+                return true; // Keep row if it clears both conditional checkpoints
+            });
+        },
+
+        // Trigger redrawing actions across both user selection models
+        filterClaims(status) {
+            this.currentStatus = status;
+            this.redrawTable();
+        },
+
+        filterClaimsByCycle() {
+            this.redrawTable();
+        },
+
+        redrawTable() {
+            const table = document.querySelector('.dt-table');
+            const dataTable = table?.dataTableInstance;
+            if (dataTable) {
+                dataTable.draw(); // Automatically executes the pushing evaluations listed above
+            }
+        }
+    }));
+});
+
+
 // Initialize components on DOM ready
 document.addEventListener('DOMContentLoaded', () => {
 
