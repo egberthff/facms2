@@ -47,6 +47,8 @@ class Member extends Model
     {
         return [
             'birth_date' => 'date',
+            'active_member_on' => 'date',   
+            'inactive_member_on' => 'date',
         ];
     }
 
@@ -81,6 +83,7 @@ class Member extends Model
         // return $this->hasMany(Claim::class);
         return $this->hasMany(Claim::class, 'member_id', 'id');
     }
+
 
     public function contributions()
     {
