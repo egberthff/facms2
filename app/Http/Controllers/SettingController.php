@@ -121,7 +121,7 @@ class SettingController extends Controller
         //         'setting_value' => 'Claim cycle settings cannot be changed after a cycle has been initialized.',
         //     ]);
         // }
-
+        $startMonth = $startMonth ?? null; 
         if (in_array($setting->setting_key, $cycleSettingKeys, true)) {
             
             // 1. Extract values from either the bulk request payload or the single-key payload
