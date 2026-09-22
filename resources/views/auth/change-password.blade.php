@@ -18,6 +18,8 @@
     <form method="POST" action="{{ route('password.update') }}" class="space-y-5" id="passwordChangeForm">
         @csrf
         @method('put')
+        <!-- Inside your password change form, right under @csrf -->
+        <input type="hidden" name="redirect_to" value="{{ old('redirect_to', url()->previous()) }}">
 
         <!-- Current Password -->
         <div>
