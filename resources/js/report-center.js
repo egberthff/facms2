@@ -259,7 +259,9 @@ window.reportCenter = function(options)
 
                 claim_month: '',
 
-                payroll_month: ''
+                payroll_month: '',
+
+                reporting_year: '',
 
             };
 

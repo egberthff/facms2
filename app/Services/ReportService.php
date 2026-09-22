@@ -9,6 +9,7 @@ use App\Models\Member;
 use App\Models\ContributionBatch;
 use App\Models\SystemSetting;
 use App\Models\ClaimsCycle;
+use App\Models\ClaimType;
 use App\Models\Scopes\CampusMemberScope;
 use App\Services\MemberService;
 use App\Services\ContributionService;
@@ -273,7 +274,15 @@ class ReportService
                 })
                 ->when(!empty($filters['status']), function ($query) use ($filters) {
                     return $query->where('status', $filters['status']);
+                })
+               ->when(!empty($filters['cycle']), function ($query) use ($filters, $campus) {
+                    $resolvedCycle = $this->cycleService->resolve($filters['cycle'],$campus->id);
+                    return $query->whereBetween('submitted_at', [
+                        $resolvedCycle[0], // Start date
+                        $resolvedCycle[1]  // End date
+                    ]);
                 });
+
 
             // Get count and sum values from the query
             $claimsCount = (clone $claimsQuery)->count();
@@ -938,57 +947,326 @@ class ReportService
         string $description,
         array $filters
     ): array {
-        // 1. Resolve readable names for IDs
+        // 1. Resolve Campus Name
         $campusName = 'All Campuses';
-        if (!empty($filters['campus_id'])) {
-            $campus = Campus::find($filters['campus_id']);
-            $campusName = $campus ? $campus->acronym : 'All Campuses';
+        if (filled($campusId = $filters['campus_id'] ?? null)) {
+            $campusName = Campus::find($campusId)?->acronym ?? 'All Campuses';
         }
 
-        // 2. Format a clean date range string based on dates or reporting year
+        // 2. Resolve Date Range
         $dateRange = 'All Dates';
-
-        if (!empty($filters['claim_month'])) {
-            $dateRange = 'Claims submitted in ' . Carbon::parse($filters['claim_month'] . '-01')->format('F Y');
-        } elseif (!empty($filters['date_from']) || !empty($filters['date_to'])) {
-            // User explicitly picked specific date boundaries
-            $from = !empty($filters['date_from']) ? Carbon::parse($filters['date_from'])->format('M d, Y') : 'Beginning';
-            $to = !empty($filters['date_to']) ? Carbon::parse($filters['date_to'])->format('M d, Y') : 'Present';
+        if (filled($claimMonthFilter = $filters['claim_month'] ?? null)) {
+            $dateRange = 'Claims submitted in ' . Carbon::parse("{$claimMonthFilter}-01")->format('F Y');
+        } elseif (filled($filters['date_from'] ?? null) || filled($filters['date_to'] ?? null)) {
+            $from = filled($filters['date_from'] ?? null) ? Carbon::parse($filters['date_from'])->format('M d, Y') : 'Beginning';
+            $to = filled($filters['date_to'] ?? null) ? Carbon::parse($filters['date_to'])->format('M d, Y') : 'Present';
             $dateRange = "{$from} to {$to}";
-        } elseif (!empty($filters['reporting_year'])) {
-            // No custom dates picked, fall back to the selected reporting year scope
-            $year = $filters['reporting_year'];
-            $dateRange = "January {$year} to December {$year}";
+        } elseif (filled($reportingYear = $filters['reporting_year'] ?? null)) {
+            $dateRange = "January {$reportingYear} to December {$reportingYear}";
         }
 
+        // 3. Resolve Status
+        $status = filled($statusFilter = $filters['status'] ?? null) 
+            ? ucwords($statusFilter) 
+            : 'All Statuses';
+
+        // 4. Resolve Claim Month Text
+        $claimMonth = filled($claimMonthFilter) 
+            ? Carbon::parse($claimMonthFilter)->format('F Y') 
+            : '';
+
+        // 5. Resolve Claim Type
+        $claimType = 'All Types';
+        if (filled($claimTypeId = $filters['claim_type'] ?? null)) {
+            $claimType = ucwords(ClaimType::find($claimTypeId)?->name ?? 'All Types');
+        }
+
+        // 6. Resolve Cycle
+        $cycle = $filters['cycle'] ?? '';
+
+        // 7. Resolve Member Name
+        $member = 'All Members';
+        if (filled($memberId = $filters['member_id'] ?? null)) {
+            $memberRecord = Member::with('user')->find($memberId);
+            $member = $memberRecord?->user?->name ?? 'All Members';
+        }
+
+        // 8. Map specific report filter lists
+        $reportType = $filters['report_type'] ?? '';
+        $specificFilters = match ($reportType) {
+            'monthly-summary' => [
+                ['label' => 'Reporting Year', 'value' => $filters['reporting_year'] ?? 'All Years'],
+                // ['label' => 'Campus', 'value' => $campusName],
+                ['label' => 'Status', 'value' => $status],
+                ['label' => 'Claim Type', 'value' => $claimType],
+            ],
+            'campus-summary' => [
+                ['label' => 'Date Range', 'value' => $dateRange],
+                // ['label' => 'Campus', 'value' => $campusName],
+                ['label' => 'Status', 'value' => $status],
+            ],
+            'disbursement-summary', 'faculty-deduction-summary' => [
+                // ['label' => 'Campus', 'value' => $campusName],
+                ['label' => 'Date Range', 'value' => $dateRange],
+            ],
+            'collection-summary' => [
+                // ['label' => 'Campus', 'value' => $campusName],
+                ['label' => 'Date Range', 'value' => $dateRange],
+            ],
+            'payroll-deduction-request' => [
+                ['label' => 'Claims Submitted', 'value' => $claimMonth],
+                ['label' => 'Status', 'value' => $status],
+                ['label' => 'Claim Type', 'value' => $claimType],
+            ],
+            'medical-assistance-report' => [
+                ['label' => 'Cycle', 'value' => $cycle],
+                // ['label' => 'Campus', 'value' => $campusName],
+            ],
+            'allowance-utilization' => [
+                // ['label' => 'Campus', 'value' => $campusName],
+                ['label' => 'Cycle', 'value' => $cycle],
+                ['label' => 'Member', 'value' => $member],
+            ],
+            'allowance-forfeiture' => [
+                // ['label' => 'Campus', 'value' => $campusName],
+                ['label' => 'Cycle', 'value' => $cycle],
+            ],
+            default => [],
+        };
+
+        // Note: The base array logic matches your original output architecture. 
+        // If "Reporting Year" and "Campus" are being doubled in your UI for monthly-summary,
+        // you may safely change this array to just return $specificFilters.
         return [
             'title' => $title,
             'description' => $description,
             'generated_at' => Carbon::now()->format('F d, Y h:i A'),
-            'filters' => [
-                [
-                    'label' => 'Reporting Year',
-                    'value' => $filters['reporting_year'] ?? 'All Years',
-                ],
-                [
-                    'label' => 'Campus',
-                    'value' => $campusName,
-                ],
-                // [
-                //     'label' => 'Cycle',
-                //     'value' => !empty($filters['cycle']) ? ucfirst($filters['cycle']) : 'Current Cycle',
-                // ],
-                [
-                    'label' => 'Date Range',
-                    'value' => $dateRange,
-                ],
-                ...(!empty($filters['payroll_month']) ? [[
-                    'label' => 'Payroll Month',
-                    'value' => Carbon::parse($filters['payroll_month'] . '-01')->format('F Y'),
-                ]] : []),
-            ],
+            'filters' => array_merge([
+                ['label' => 'Reporting Year', 'value' => $filters['reporting_year'] ?? 'All Years'],
+                ['label' => 'Campus', 'value' => $campusName],
+            ], $specificFilters),
         ];
     }
+
+
+    // protected function buildContext(
+    //     string $title,
+    //     string $description,
+    //     array $filters
+    // ): array {
+    //     // 1. Resolve readable names for IDs
+    //     $campusName = 'All Campuses';
+    //     if (!empty($filters['campus_id'])) {
+    //         $campus = Campus::find($filters['campus_id']);
+    //         $campusName = $campus ? $campus->acronym : 'All Campuses';
+    //     }
+
+    //     // 2. Format a clean date range string based on dates or reporting year
+    //     $dateRange = 'All Dates';
+
+    //     if (!empty($filters['claim_month'])) {
+    //         $dateRange = 'Claims submitted in ' . Carbon::parse($filters['claim_month'] . '-01')->format('F Y');
+    //     } elseif (!empty($filters['date_from']) || !empty($filters['date_to'])) {
+    //         // User explicitly picked specific date boundaries
+    //         $from = !empty($filters['date_from']) ? Carbon::parse($filters['date_from'])->format('M d, Y') : 'Beginning';
+    //         $to = !empty($filters['date_to']) ? Carbon::parse($filters['date_to'])->format('M d, Y') : 'Present';
+    //         $dateRange = "{$from} to {$to}";
+    //     } elseif (!empty($filters['reporting_year'])) {
+    //         // No custom dates picked, fall back to the selected reporting year scope
+    //         $year = $filters['reporting_year'];
+    //         $dateRange = "January {$year} to December {$year}";
+    //     } 
+
+    //     $status = 'All Statuses';
+    //     if (!empty($filters['status'])) {
+    //         $status = ucwords($filters['status']);
+    //     }
+
+    //     $claimMonth = '';
+    //     if (!empty($filters['claim_month'])) {
+    //         $claimMonth = Carbon::parse($filters['claim_month'])->format('F Y');
+    //     }
+
+    //     $claimType = 'All Types';
+    //     if(filled($id = $filters['claim_type'])) {
+    //         $name = ClaimType::find($id)?->name;
+    //         $claimType = ucwords($name ?? 'All Types');
+    //     }
+
+    //     $cycle = '';
+    //     if(!empty($filters['cycle'])) {
+    //         $cycle = $filters['cycle'];
+    //     }
+        
+    //     $member = 'All Members';
+    //     if(!empty($filters['member_id'])) {
+    //         $name = Member::with('user')->where('id', $filters['member_id'])->get();
+    //         $member = $name?->user?->name;
+    //     }
+        
+    //     $filtersArray = [];
+    //     switch ($filters['report_type']) {
+    //         case 'monthly-summary' : {
+    //             $filtersArray = [ 
+    //                 [
+    //                     'label' => 'Reporting Year',
+    //                     'value' => $filters['reporting_year'] ?? 'All Years',
+    //                 ],
+    //                 [
+    //                     'label' => 'Campus',
+    //                     'value' => $campusName,
+    //                 ],
+    //                 [
+    //                     'label' => 'Status',
+    //                     'value' => $status,
+    //                 ],
+    //                 [
+    //                     'label' => 'Claim Type',
+    //                     'value' => $claimType,
+    //                 ]
+    //             ];
+    //             break;
+    //         }    
+    //         case 'campus-summary' : {
+
+    //             $filtersArray = [
+    //                 [
+    //                     'label' => 'Date Range',
+    //                     'value' => $dateRange,
+    //                 ],
+    //                 [
+    //                     'label' => 'Campus',
+    //                     'value' => $campusName,
+    //                 ],
+    //                 [
+    //                     'label' => 'Status',
+    //                     'value' => $status,
+    //                 ]
+    //             ];
+    //             break;
+    //         } 
+    //         case 'disbursement-summary' : {
+    //             $filtersArray = [
+    //                 [
+    //                     'label' => 'Date Range',
+    //                     'value' => $dateRange,
+    //                 ],
+    //                 [
+    //                     'label' => 'Campus',
+    //                     'value' => $campusName,
+    //                 ],
+    //             ];
+    //             break;
+    //         }
+    //         case 'collection-summary' : {
+    //             $filtersArray = [
+    //                 [
+    //                     'label' => 'Campus',
+    //                     'value' => $campusName,
+    //                 ],
+    //                 [
+    //                     'label' => 'Date Range',
+    //                     'value' => $dateRange,
+    //                 ]
+    //             ];
+    //             break;
+    //         }
+    //         case 'payroll-deduction-request' : {
+    //             $filtersArray = [
+    //                 [
+    //                     'label' => 'Claims Submitted',
+    //                     'value' => $claimMonth,
+    //                 ],
+    //                 [
+    //                     'label' => 'Status',
+    //                     'value' => $status,
+    //                 ],
+    //                 [
+    //                     'label' => 'Claim Type',
+    //                     'value' => $claimType,
+    //                 ]
+    //             ];
+    //             break;
+    //         }
+    //         case 'faculty-deduction-summary' : {
+    //             $filtersArray = [
+    //                 [
+    //                     'label' => 'Campus',
+    //                     'value' => $campusName,
+    //                 ],
+    //                 [
+    //                     'label' => 'Date Range',
+    //                     'value' => $dateRange,
+    //                 ]
+    //             ];
+    //             break;
+    //         }
+    //         case 'medical-assistance-report' : {
+    //             $filtersArray = [
+    //                 [
+    //                     'label' => 'Cycle',
+    //                     'value' => $cycle,
+    //                 ],
+    //                 [
+    //                     'label' => 'Campus',
+    //                     'value' => $campusName,
+    //                 ]
+    //             ];
+    //             break;
+    //         }
+    //         case 'allowance-utilization' : {
+    //             $filtersArray = [
+    //                 [
+    //                     'label' => 'Campus',
+    //                     'value' => $campusName,
+    //                 ],
+    //                 [
+    //                     'label' => 'Cycle',
+    //                     'value' => $cycle,
+    //                 ],
+    //                 [
+    //                     'label' => 'Member',
+    //                     'value' => $member,
+    //                 ]
+    //             ];
+    //             break;
+    //         }
+    //         case 'allowance-forfeiture' : {
+    //             $filtersArray = [
+    //                 [
+    //                     'label' => 'Campus',
+    //                     'value' => $campusName,
+    //                 ],
+    //                 [
+    //                     'label' => 'Cycle',
+    //                     'value' => $cycle,
+    //                 ]
+    //             ];
+    //             break;
+    //         }
+    //         default : {
+    //             $filtersArray = [];
+    //             break;
+    //         }
+    //     }
+
+    //     return [
+    //         'title' => $title,
+    //         'description' => $description,
+    //         'generated_at' => Carbon::now()->format('F d, Y h:i A'),
+    //         'filters' => [
+    //             [
+    //                 'label' => 'Reporting Year',
+    //                 'value' => $filters['reporting_year'] ?? 'All Years',
+    //             ],
+    //             [
+    //                 'label' => 'Campus',
+    //                 'value' => $campusName,
+    //             ],
+    //             ...$filtersArray,
+    //         ],
+    //     ];
+    // }
 
 
     public function getMembers(): array
