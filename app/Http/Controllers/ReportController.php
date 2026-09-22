@@ -312,13 +312,13 @@ class ReportController extends Controller
         $data = $request->all();
         $reportData = $this->reportService->monthlyClaimsSummary($data);
 
-        return view('reports.monthly-claims-summary', $reportData);
+        return view('reports.unified-report-summary-template', $reportData);
     }
 
     public function unifiedReportView(Request $request) {
         $data = $request->all();
         $reportData = $this->reportService->unifiedReportAggregator($data);
-
-        return view('reports.monthly-claims-summary', $reportData);
+        \Log::error(print_r($reportData, true));
+        return view('reports.unified-report-summary-template', $reportData);
     }
 }

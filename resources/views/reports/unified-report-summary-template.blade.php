@@ -214,7 +214,7 @@
             </thead>
             <tbody>
                 @foreach($rows as $row)
-                    <tr class="{{ $row['claims'] > 0 ? 'highlight-row' : '' }}">
+                <tr class="{{ ($row['claims'] ?? 0) > 0 ? 'highlight-row' : '' }}">
                         @foreach($columns as $column)
                             <td class="{{ $column['type'] === 'number' ? 'text-center' : 'text-left' }}">
                                 {{ $row[$column['key']] }}
@@ -232,7 +232,7 @@
                             $cardMatch = collect($cards)->firstWhere('key', $column['key']);
                         @endphp
                         <td class="text-center">
-                            {{ $cardMatch ? $cardMatch['value'] : collect($rows)->sum($column['key']) }}
+                            {{ $cardMatch ? $cardMatch['value'] : collect($rows)->sum(fn($row) => (float) ($row[$column['key']] ?? 0)) }}
                         </td>
                     @endforeach
                 </tr>
