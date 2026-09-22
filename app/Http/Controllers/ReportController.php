@@ -127,6 +127,7 @@ class ReportController extends Controller
 
         ]);
 
+
         if ($validated['report_type'] === 'payroll-deduction-request') {
             $validated = array_merge($validated, $request->validate([
                 'claim_month' => ['required', 'date_format:Y-m'],
@@ -304,5 +305,20 @@ class ReportController extends Controller
         $reportData = $this->reportService->medicalAssistanceReport($data);
 
         return view('reports.medical-assistance-report', $reportData);
+    }
+
+
+    public function monthlyClaimsSummaryReportView(Request $request) {
+        $data = $request->all();
+        $reportData = $this->reportService->monthlyClaimsSummary($data);
+
+        return view('reports.monthly-claims-summary', $reportData);
+    }
+
+    public function unifiedReportView(Request $request) {
+        $data = $request->all();
+        $reportData = $this->reportService->unifiedReportAggregator($data);
+
+        return view('reports.monthly-claims-summary', $reportData);
     }
 }

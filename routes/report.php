@@ -35,3 +35,8 @@ Route::middleware(['auth', 'active'])
     Route::get('reports/medical-assistance-report', [ReportController::class, 'medicalAssistanceReportView'])
         ->name('reports.medical-assistance-report');    
   
+    Route::get('reports/monthly-claims-summary', [ReportController::class, 'monthlyClaimsSummaryReportView'])
+        ->name('reports.monthly-claims-summary');
+
+    Route::get('reports/generate-report', [ReportController::class, 'unifiedReportView'])
+        ->name('reports.unified-report-url');

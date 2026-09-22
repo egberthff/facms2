@@ -28,6 +28,9 @@ window.reportCenter = function(options)
 
         medicalAssistanceReport: options.medicalAssistanceReportPrintUrl,
 
+        monthlyClaimsSummaryReport: options.monthlyClaimsSummary,
+
+        unifiedReportLinkAggregator: options.unifiedReportUrl,
 
         /*
         |--------------------------------------------------------------------------
@@ -103,7 +106,11 @@ window.reportCenter = function(options)
 
             claim_month: '',
 
-            payroll_month: ''
+            payroll_month: '',
+
+            report_month: '',
+            
+            reporting_year: '',
 
         },
 
@@ -391,7 +398,6 @@ window.reportCenter = function(options)
             if (!this.hasGenerated) {
 
                 return;
-
             }
 
             if (this.selectedReport === 'payroll-deduction-request') {
@@ -418,10 +424,17 @@ window.reportCenter = function(options)
                 return;
             }
 
-            Swal.alert({
-                icon: 'info',
-                title: 'No Preview Available'
-            })
+            if (this.selectedReport === 'monthly-summary') {
+                this.openMonthlyClaimsSummaryReport();
+
+                return;
+            }
+
+           return this.openUnifiedReportAggregator();
+            // Swal.alert({
+            //     icon: 'info',
+            //     title: 'No Preview Available'
+            // })
 
         },
 
@@ -523,6 +536,54 @@ window.reportCenter = function(options)
             params.set('auto_print', '1');
             const printWindow = window.open(`${this.medicalAssistanceReport}?${params.toString()}`, '_blank');
             if (printWindow) {
+                printWindow.focus();
+            }
+
+        },
+
+        openMonthlyClaimsSummaryReport() {
+            if(!this.hasGenerated || this.selectedReport !== 'monthly-summary') {
+                return;
+            }
+
+            const params = new URLSearchParams();
+            params.set('campus_id', this.filters.campus_id);
+            params.set('claim_type', this.filters.claim_type);
+            params.set('cycle', this.filters.cycle);
+            params.set('reporting_year', this.filters.reporting_year);
+            params.set('status', this.filters.status);
+
+            params.set('auto_print', '1');
+            const printWindow = window.open(`${this.monthlyClaimsSummaryReport}?${params.toString()}`, '_blank');
+            if (printWindow) {
+                printWindow.focus();
+            }
+        },
+
+        openUnifiedReportAggregator() {
+            if(!this.hasGenerated) {
+                return;
+            }
+            const params = new URLSearchParams();
+            console.log(JSON.parse(JSON.stringify(this.filters)));
+
+            params.set('date_from', this.filters?.date_from ?? '');
+            params.set('date_to', this.filters?.date_to ?? '');
+            params.set('claim_month', this.filters?.claim_month ?? '');
+            params.set('payroll_month', this.filters?.payroll_month ?? '');
+            params.set('reporting_year', this.filters?.reporting_year ?? '');
+            params.set('cycle', this.filters?.cycle ?? '');
+            params.set('status', this.filters?.status ?? '');
+            params.set('claim_type', this.filters?.claim_type ?? '');
+
+            params.set('report_month', this.filters?.report_month ?? '');
+            params.set('campus_id', this.filters?.campus_id ?? '');
+            params.set('member_id', this.filters?.member_id ?? '');
+            params.set('report_type', this.selectedReport ?? '');
+
+            params.set('auto_print', '1');
+            const printWindow = window.open(`${this.unifiedReportLinkAggregator}?${params.toString()}`, '_blank');
+            if(printWindow) {
                 printWindow.focus();
             }
 

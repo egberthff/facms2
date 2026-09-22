@@ -857,6 +857,24 @@ class ReportService
         ];
     }
 
+    public function monthlyClaimsSummary(array $data): array
+    {
+        return $this->monthlySummary($data);
+    }
+
+    public function unifiedReportAggregator(array $data): array
+    {
+        \Log::error(print_r($data, true));
+        switch ($data['report_type']) {
+            case 'campus-summary' : return $this->campusSummary($data); break;
+            case 'disbursement-summary' : return $this->disbursementSummary($data); break;
+            case 'collection-summary' : return $this->collectionSummary($data); break;
+            case 'allowance-utilization' : return $this->allowanceUtilization($data); break;
+            case 'allowance-forfeiture' : return $this->allowanceForfeiture($data); break;
+            default : return [];
+        }
+    } 
+
 
     private function formatPayrollCoverage(?Claim $claim): string
     {
