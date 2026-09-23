@@ -56,6 +56,7 @@ class MemberController extends Controller
         $data['isTreasurer'] = $user->hasAnyRole(['Treasurer', 'Federated Treasurer']);
         $data['allCampuses'] = Campus::where('is_active', true)->get();
         $data['selectedCampusId'] = $data['isPresident'] ? $request->input('campus_filter') : null;
+        $data['currentStatus'] = $request->status;
 
         $data['campuses'] = $this->memberService->getCampus();
         $data['members'] = $this->memberService->getMembers($request, $data['selectedCampusId']);

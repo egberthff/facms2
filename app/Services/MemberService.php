@@ -27,6 +27,9 @@ class MemberService
             ->when($selectedCampusId, function ($query) use ($selectedCampusId) {
                 $query->where('campus_id', $selectedCampusId);
             })
+            ->when($request->status, function ($query) use ($request) {
+                $query->where('membership_status', $request->status);
+            })
             ->when($search, function ($query) use ($search) {
                 $query->where(function ($query) use ($search) {
                     $query->where('employee_number', 'like', "%{$search}%")
@@ -180,7 +183,6 @@ class MemberService
                     'name' => $fullName,
                 ]);
             }
-            \Log::error(print_r($data, true));
             $member->update($data);
 
             return $member->load('user');

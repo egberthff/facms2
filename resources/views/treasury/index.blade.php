@@ -1,5 +1,5 @@
 <x-app-layout>
-    <div class="container mx-auto p-4 md:p-6 space-y-6 bg-white dark:bg-zinc-900 text-gray-900 dark:text-white min-h-screen">
+    <div class="mx-auto p-4 md:p-6 space-y-6 bg-white dark:bg-zinc-900 text-gray-900 dark:text-white min-h-screen">
         
         <!-- Presidential Administrative Campus Filter Panel -->
         {{-- @if($isPresident) --}}
@@ -13,15 +13,15 @@
                     
                     <!-- Filtering Form Context Trigger -->
                     <form method="GET" action="{{ url()->current() }}" class="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center">
-                        <select name="campus_filter" onchange="this.form.submit()" class="text-sm rounded-lg bg-white dark:bg-zinc-900 border-gray-300 dark:border-zinc-700 text-gray-700 dark:text-gray-300 focus:ring-blue-500 focus:border-blue-500 min-w-50">
+                        <select name="campus_filter" onchange="this.form.submit()" class="block w-full px-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand shadow-xs placeholder:text-body">
                             <option value="">All Campuses (Global View)</option>
                             @foreach($allCampuses as $campus)
                                 <option value="{{ $campus['id'] }}" {{ $selectedCampusId == $campus['id'] ? 'selected' : '' }}>
                                     {{ $campus['acronym'] }} — (₱{{ number_format($campus['latest_balance'], 2) }})
                                 </option>
                             @endforeach
-                        </select>
-                        <select name="cycle" onchange="this.form.submit()" @disabled(!$selectedCampusId) class="text-sm rounded-lg bg-white dark:bg-zinc-900 border-gray-300 dark:border-zinc-700 text-gray-700 dark:text-gray-300 focus:ring-blue-500 focus:border-blue-500 min-w-50 disabled:cursor-not-allowed disabled:bg-gray-100">
+                        </select>                                                                                
+                        <select name="cycle" onchange="this.form.submit()" @disabled(!$selectedCampusId) class="block w-full px-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand shadow-xs placeholder:text-body disabled:cursor-not-allowed disabled:bg-gray-100">
                             <option value="">All ledger dates</option>
                             @foreach($cycleOptions as $cycleOption)
                                 <option value="{{ $cycleOption['label'] }}" {{ $selectedCycle === $cycleOption['label'] ? 'selected' : '' }}>
@@ -41,7 +41,7 @@
                         </div>
                     @endforeach --}}
                      @foreach($filteredCampuses as $campus)
-                        <div class="shrink-0 bg-white dark:bg-zinc-900 px-3 py-1.5 rounded-lg border {{ $selectedCampusId == $campus->id ? 'border-blue-500 bg-blue-50/10' : 'border-gray-200 dark:border-zinc-800' }} text-xs">
+                        <div class="shrink-12 bg-white dark:bg-zinc-900 px-3 py-1.5 rounded-lg border {{ $selectedCampusId == $campus->id ? 'border-blue-500 bg-blue-50/10' : 'border-gray-200 dark:border-zinc-800' }} text-xs">
                             <span class="font-bold text-gray-500 dark:text-gray-400">{{ $campus->acronym }}:</span>
                             <span class="font-mono font-semibold ml-1 text-gray-900 dark:text-white">₱{{ number_format($campus->latest_balance, 2) }}</span>
                         </div>
@@ -50,14 +50,14 @@
             </div>
         @endif
 
-        @if(!$isPresident)
+        {{-- @if(!$isPresident) --}}
             <div class="rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-zinc-800 dark:bg-zinc-800/40">
                 <form method="GET" action="{{ url()->current() }}" class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                         <h4 class="text-sm font-bold text-gray-700 dark:text-gray-300">Claims cycle</h4>
                         <p class="text-xs text-gray-500 dark:text-gray-400">Filter ledger activity and totals by your campus cycle.</p>
                     </div>
-                    <select name="cycle" onchange="this.form.submit()" class="text-sm rounded-lg bg-white dark:bg-zinc-900 border-gray-300 dark:border-zinc-700 text-gray-700 dark:text-gray-300 focus:ring-blue-500 focus:border-blue-500 sm:min-w-65">
+                    <select name="cycle" onchange="this.form.submit()" class="block w-autos px-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand shadow-xs placeholder:text-body">
                         <option value="">All ledger dates</option>
                         @foreach($cycleOptions as $cycleOption)
                             <option value="{{ $cycleOption['label'] }}" {{ $selectedCycle === $cycleOption['label'] ? 'selected' : '' }}>
@@ -67,7 +67,7 @@
                     </select>
                 </form>
             </div>
-        @endif
+        {{-- @endif --}}
 
         <!-- Top Dashboard Metrics Section -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">

@@ -59,7 +59,8 @@ class ClaimController extends Controller
         $userRoles = array_values(array_filter($roles, fn($role) => $user->hasRole($role)));
         $data['userRole'] = $userRoles[0] ?? null;
         $data['claims'] = $this->claimService->getAllClaims($userRoles, $selectedCampusId);
-        $data['cycle'] = $this->reportService->getAllowanceCycles();
+        $data['cycles'] = $this->reportService->getAllowanceCycles() ?? [];
+        $data['isMemberMenu'] = false;
 
         if ($data['isPresident']) {
             $data['allCampuses'] = Campus::where('is_active', true)->get();
@@ -182,6 +183,7 @@ class ClaimController extends Controller
             $data['selectedCampusId'] = null;
         }
         $data['isMemberMenu'] = true;
+        $data['cycles'] = $this->reportService->getAllowanceCycles() ?? [];
 
         return view('claims.claims-list', $data);
     }

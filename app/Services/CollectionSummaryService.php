@@ -64,6 +64,7 @@ class CollectionSummaryService
         }
 
         $collections = (clone $query)
+            ->with('sourceCampus')
             ->where('type', 'campus_remittance')
             ->when($campusId, fn ($query) => $query->where('source_campus_id', $campusId))
             ->oldest('created_at')
@@ -73,9 +74,11 @@ class CollectionSummaryService
                 'amount' => $transfer->amount,
                 'date' => $transfer->created_at,
                 'reference_number' => $transfer->reference_number,
+                'campus' => $transfer->source_campus_id,
             ]);
 
         $disbursements = (clone $query)
+            ->with('destinationCampus')
             ->where('type', 'ffa_disbursement')
             ->when($campusId, fn ($query) => $query->where('destination_campus_id', $campusId))
             ->oldest('created_at')
@@ -85,6 +88,7 @@ class CollectionSummaryService
                 'amount' => $transfer->amount,
                 'date' => $transfer->created_at,
                 'reference_number' => $transfer->reference_number,
+                'campus' => $transfer->destination_campus_id,
             ]);
 
         $campusTreasuer  = $this->memberService->getTreasurer($campusId);

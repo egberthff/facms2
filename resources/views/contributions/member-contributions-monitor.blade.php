@@ -1,5 +1,5 @@
 <x-app-layout>
-<div class="max-w-7xl mx-auto p-4" 
+<div class="mx-auto p-4" 
     x-data="{ 
             currentStatus: 'all', 
             statuses: ['all', ...{{ json_encode(array_column(App\Enums\ContributionStatus::cases(), 'value')) }}], 
@@ -31,7 +31,7 @@
     <!-- ========================================= -->
     <!-- CLAIMS LIST CARD -->
     <!-- ========================================= -->
-    <div class="bg-white border border-blue-700 rounded-2xl shadow-sm">
+    <div class="bg-white rounded-2xl shadow-xm">
         <!-- Header filter -->
         @include('contributions.partials.member.filter') 
         
@@ -40,9 +40,13 @@
             @if($contribution_type === 'annual')
                 <!-- ANNUAL CONTRIBUTION TABLE -->
                 @include('contributions.partials.member.annual-table')
-            @else
+            @elseif($contribution_type === 'claims')
                 <!-- CLAIMS TABLE (Original Layout) -->
                 @include('contributions.partials.member.claims-table')
+            @elseif($contribution_type === 'cna share')
+                <!-- CLAIMS TABLE (Original Layout) -->
+                {{-- @include('contributions.partials.member.cna-share-table') --}}
+                @include('contributions.partials.member.annual-table')
             @endif
         </div>
     </div>

@@ -1,4 +1,4 @@
-    @if(Auth::user()->can('view all campus data'))
+    @if(Auth::user()->can('view all campus data') && !$isMemberMenu)
         <div class="w-full mb-4">
             <div class="p-6 bg-gray-50 dark:bg-zinc-800/40 rounded-xl border border-gray-200 dark:border-zinc-800/80">
                 <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -7,7 +7,7 @@
                         <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Filter claim records by campus for leadership review.</p>
                     </div>
                     <form method="GET" action="{{ url()->current() }}" class="flex items-center gap-2">
-                        <select name="campus_filter" onchange="this.form.submit()" class="text-sm rounded-lg bg-white dark:bg-zinc-900 border-gray-300 dark:border-zinc-700 text-gray-700 dark:text-gray-300 focus:ring-blue-500 focus:border-blue-500 min-w-[200px]">
+                        <select name="campus_filter" onchange="this.form.submit()" class="block w-full px-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand shadow-xs placeholder:text-body">
                             <option value="">All Campuses (Global View)</option>
                             @foreach($allCampuses as $campus)
                                 <option value="{{ $campus->id }}" {{ ($selectedCampusId ?? '') == $campus->id ? 'selected' : '' }}>{{ $campus->acronym }}</option>

@@ -6,6 +6,8 @@ use Illuminate\Http\Request;
 use App\Services\ContributionService;
 use App\Services\MemberService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Auth;
 use Exception;
 
 class CNAShareController extends Controller
@@ -23,16 +25,23 @@ class CNAShareController extends Controller
     }
     public function create(Request $request)
     {
+        $user = Auth::user();
         // Validate the request data
-        $validatedData = $request->validate([
+       $validatedData = $request->validate([
             'contribution_year' => 'required|integer|min:2000|max:' . (date('Y') + 1),
             'contribution_amount' => 'required|numeric|min:0',
-            'campus_filter' => 'nullable|string',
+            'campus_filter' => [
+                'string',
+                Rule::requiredIf(fn () => $user->hasAnyRole(['Federated President', 'Federated Treasurer'])),
+            ],
         ]);
 
+        if($user->hasAnyRole(['President', 'Treasurer'])) {
+          $validatedData['campus_filter']  = $user->getCachedCampusId();
+        }
 
         $this->contributionService->setupCNAShare($validatedData);
-        $campus = $this->memberService->getCampus($validatedData['campus_filter']);
+        $campus = $this->memberService->getCampus($validatedData['campus_filter'] );
 
         return response()->json([
             'message' => sprintf("CNA Share setup for %s has been generated successfully.", $campus?->acronym ?? 'selected campus'),
@@ -52,7 +61,6 @@ class CNAShareController extends Controller
                 'data'    => $updatedDetail
             ]);
         } catch (Exception $e) {
-            \Log::error(print_r($e, true));
             return response()->json([
                 'success' => false,
                 'message' => 'Unable to record payment line item assignment.'

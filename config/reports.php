@@ -115,6 +115,8 @@ return [
 
             'filters' => [
 
+                'date_range',
+
                 'campus',
 
                 'status',
@@ -298,7 +300,7 @@ return [
             'handler' => ReportService::class,
 
             'filters' => [
-                // 'date_range',
+                //'date_range',
 
                 'campus',
 

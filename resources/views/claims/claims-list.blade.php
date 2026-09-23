@@ -9,8 +9,8 @@
 <div class="max-w-auto mx-auto p-2" 
     x-data="{ 
             currentStatus: 'all', 
-            cycles: @js($cycle),
             selectedCycle: 'current',
+            cycles: @js($cycles),
             totalClaims: {{ $claims->count() }},
             statusCounts: @js($claimStatusCounts),
             openModal: false,
@@ -102,14 +102,18 @@ redrawTable() {
     <!-- ===================================================== -->
     <div class="px-6 py-5 border-b border-slate-200">
         <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-            <div>
-                <h2 class="text-xl font-semibold text-slate-900">
-                    Claims @if(Auth::user()->hasRole("Member") === false)Management @else History @endif
-                </h2>
-                <p class="mt-1 text-sm text-slate-500">
-                    @if(Auth::user()->hasRole("Member") === false)Review, approve, reject, and monitor submitted claims.@endif
-                </p>
-            </div>
+          <div>
+    <h2 class="text-xl font-semibold text-slate-900">
+        Claims {{ ($isMemberMenu || Auth::user()->hasRole('Member')) ? 'History' : 'Management' }}
+    </h2>
+    
+    @if(!$isMemberMenu && !Auth::user()->hasRole('Member'))
+        <p class="mt-1 text-sm text-slate-500">
+            Review, approve, reject, and monitor submitted claims.
+        </p>
+    @endif
+</div>
+
             <div class="flex items-center gap-3">
                 <div class="text-right">
                     <div class="text-2xl font-bold text-slate-900">
@@ -147,8 +151,9 @@ redrawTable() {
         {{-- Dropdown and Utility Controls --}}
         <div class="flex-1 flex gap-2 justify-end">
             {{-- <select 
-                @change="selectedCycle = $event.target.value; filterClaimsByCycle()"
-                class="px-4 py-2 text-sm rounded-lg border border-slate-200 bg-white text-slate-600 font-medium transition focus:border-blue-600 focus:outline-none">               
+                x-model="selectedCycle"
+                @change="filterClaimsByCycle()"
+                class="px-4 py-2 text-sm rounded-lg border border-slate-200 bg-white text-slate-600 font-medium transition focus:border-blue-600 focus:outline-none">                       
 
                 <template x-for="cycle in cycles" :key="cycle.value">
                     <option :value="cycle.value" x-text="cycle.label"></option>

@@ -10,6 +10,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class FundTransfer extends Model
 {
     use HasUuids;
+    public $incrementing = false;
+
+    protected $keyType = 'string';
 
     protected $fillable = [
         'fund_account_id',
@@ -42,12 +45,14 @@ class FundTransfer extends Model
 
     public function sourceCampus(): BelongsTo
     {
-        return $this->belongsTo(Campus::class, 'source_campus_id');
+        // return $this->belongsTo(Campus::class, 'source_campus_id');
+        return $this->belongsTo(Campus::class, 'source_campus_id', 'id');
     }
 
     public function destinationCampus(): BelongsTo
     {
-        return $this->belongsTo(Campus::class, 'destination_campus_id');
+        // return $this->belongsTo(Campus::class, 'destination_campus_id');
+        return $this->belongsTo(Campus::class, 'destination_campus_id', 'id');
     }
 
     public function creator(): BelongsTo

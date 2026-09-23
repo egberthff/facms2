@@ -1,7 +1,7 @@
 <x-app-layout>
    
-    @if(($isPresident ?? false) || ($isTreasurer ?? false))
-    {{-- @if(Auth::user()->hasAnyRole(['Federated President', 'Federated Treasurer']) || Auth::user()->can('view all campus data')) --}}
+    {{-- @if(($isPresident ?? false) || ($isTreasurer ?? false)) --}}
+    @if(Auth::user()->hasAnyRole(['Federated President', 'Federated Treasurer']) || Auth::user()->can('view all campus data'))
         <div class="p-6 bg-gray-50 dark:bg-zinc-800/40 rounded-xl border border-gray-200 dark:border-zinc-800/80 mb-6">
             <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
@@ -30,17 +30,19 @@
     <div class="p-4 bg-white border border-blue-200 rounded-xl shadow-sm ">
         <div class="flex justify-between items-center mb-4 w-full p-2">
             <!-- Left End: Filter Dropdown -->
-            <div class="flex items-center bg-blue-100 border border-blue-300 rounded-xl">
+            <div class="flex items-center bg-blue-100 rounded-xl">
                 <label for="member-status-filter" class="sr-only">Filter by Status</label>
-                <select id="member-status-filter" class="text-black text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
-                <option value="">All Members</option>
-                <?php $currentStatus = 'Active' ?>
-                @foreach(\App\Enums\MembershipStatus::cases() as $status)
-                    <option value="{{ $status->value }}" @selected($currentStatus === $status)>
-                        {{ $status->name }} Members
-                    </option>
-                @endforeach
-            </select>
+                <form action="{{ route('members.index') }}"  method="GET">
+                   <select id="member-status-filter" name="status" onchange="this.form.submit()" class="block w-full px-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand shadow-xs placeholder:text-body">
+                        <option value="">All Members</option>                   
+
+                        @foreach(\App\Enums\MembershipStatus::cases() as $status)
+                            <option value="{{ $status->value }}" @selected($currentStatus === $status->value)>
+                                {{ $status->name }} Members
+                            </option>
+                        @endforeach
+                    </select>
+                </form>
 
             </div>  
 
