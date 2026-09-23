@@ -746,34 +746,459 @@ class ReportService
         ];
     }
 
-    public function facultyDeductionSummary(array $filters): array 
+    public function facultyDeductionSummary(array $filters): array
     {
-         
         $request = new Request($filters);
-        $campusId = $request['campus_id'] ?? null;
-
-        $dateFrom = isset($filters['date_from']) ? Carbon::parse($filters['date_from'])->format('F Y') : '';
-        $dateTo = isset($filters['date_to']) ? Carbon::parse($filters['date_to'])->format('F Y') : '';
-        $period = ($dateFrom && $dateTo) ? "{$dateFrom} to {$dateTo}" : '';
-
-        // 2. Fetch required services data
+        $campusId = $filters['campus_id'] ?? null;
+    
+        $dateFrom = isset($filters['date_from'])
+            ? Carbon::parse($filters['date_from'])->format('F Y')
+            : '';
+    
+        $dateTo = isset($filters['date_to'])
+            ? Carbon::parse($filters['date_to'])->format('F Y')
+            : '';
+    
+        $period = ($dateFrom && $dateTo)
+            ? "{$dateFrom} to {$dateTo}"
+            : '';
+    
+        /*
+         * -------------------------------------------------------------
+         * Fetch report data.
+         *
+         * getContributionPerMonth() remains the source of truth for
+         * all contribution calculations.
+         * -------------------------------------------------------------
+         */
         $campus = $this->memberService->getCampus($campusId);
-        $campusTreasurer = $this->memberService->getTreasurer($filters, $campusId);
-        $campusPresident = $this->memberService->getPresident($filters, $campusId);
-        $members = $this->memberService->getMembers($request, $campusId);
-        $contributionPerMonth = $this->contributionService->getContributionPerMonth($request, $campusId);
+    
+        $campusTreasurer = $this->memberService->getTreasurer(
+            $filters,
+            $campusId
+        );
+    
+        $campusPresident = $this->memberService->getPresident(
+            $filters,
+            $campusId
+        );
+    
+        $members = $this->memberService->getMembers(
+            $request,
+            $campusId
+        );
+    
+        $contributionPerMonth = $this->contributionService
+            ->getContributionPerMonth($request, $campusId);
+    
+        /*
+         * -------------------------------------------------------------
+         * SOURCE DATA
+         * -------------------------------------------------------------
+         *
+         * Keep the original structure untouched.
+         */
+        $memberData = $contributionPerMonth['members'] ?? [];
+    
+        /*
+         * -------------------------------------------------------------
+         * DYNAMIC MONTH COLUMNS
+         * -------------------------------------------------------------
+         *
+         * header_months_amount is already ordered by
+         * getContributionPerMonth().
+         *
+         * Do not include "total" as a month column.
+         */
+        $monthColumns = [];
+    
+        foreach (
+            ($contributionPerMonth['header_months_amount'] ?? []) as $month => $amount
+        ) {
+            if ($month === 'total') {
+                continue;
+            }
+    
+            $monthColumns[] = [
+                'key' => $month,
+                'label' => ucwords($month),
+                'type' => 'currency',
+            ];
+        }
+    
+        /*
+         * -------------------------------------------------------------
+         * CNA SHARE YEAR COLUMNS
+         * -------------------------------------------------------------
+         *
+         * The years are derived from the actual member data.
+         *
+         * Example:
+         *
+         * cna_share:
+         * [
+         *     2026 => 500
+         * ]
+         *
+         * becomes:
+         *
+         * cna_share_2026
+         */
+        $cnaShareYears = [];
+    
+        foreach ($memberData as $member) {
+            foreach (($member['cna_share'] ?? []) as $year => $amount) {
+                $cnaShareYears[(string) $year] = true;
+            }
+        }
+    
+        $cnaShareYears = array_keys($cnaShareYears);
+    
+        sort($cnaShareYears, SORT_NUMERIC);
+    
+        $cnaShareColumns = [];
+    
+        foreach ($cnaShareYears as $year) {
+            $cnaShareColumns[] = [
+                'key' => "cna_share_{$year}",
+                'label' => "CNA Share {$year}",
+                'type' => 'currency',
+            ];
+        }
+    
+        /*
+         * -------------------------------------------------------------
+         * ANNUAL DUE YEAR COLUMNS
+         * -------------------------------------------------------------
+         */
+        $annualDueYears = [];
+    
+        foreach ($memberData as $member) {
+            foreach (($member['annual_due'] ?? []) as $year => $amount) {
+                $annualDueYears[(string) $year] = true;
+            }
+        }
+    
+        $annualDueYears = array_keys($annualDueYears);
+    
+        sort($annualDueYears, SORT_NUMERIC);
+    
+        $annualDueColumns = [];
+    
+        foreach ($annualDueYears as $year) {
+            $annualDueColumns[] = [
+                'key' => "annual_due_{$year}",
+                'label' => "Annual Due {$year}",
+                'type' => 'currency',
+            ];
+        }
+    
+        /*
+         * -------------------------------------------------------------
+         * STANDARDIZED ROWS
+         * -------------------------------------------------------------
+         *
+         * Flatten the nested member structure ONLY for the new
+         * standardized "rows" property.
+         *
+         * The original nested structure remains available under
+         * "table_data".
+         */
+        $rows = [];
+    
+        foreach ($memberData as $member) {
+            $row = [
+                'member_id' => $member['member_id'] ?? null,
+                'member' => $member['name'] ?? 'Unknown Member',
+            ];
 
+            /*
+            * CNA Share.
+            */
+           foreach (($member['cna_share'] ?? []) as $year => $amount) {
+               $row["cna_share_{$year}"] = (float) $amount;
+           }
+   
+           /*
+            * Annual Due.
+            */
+           foreach (($member['annual_due'] ?? []) as $year => $amount) {
+               $row["annual_due_{$year}"] = (float) $amount;
+           }
+    
+            /*
+             * Monthly contributions.
+             */
+            foreach (($member['months'] ?? []) as $month => $amount) {
+                $row[$month] = (float) $amount;
+            }
+    
+            /*
+             * Total contribution.
+             */
+            $row['total_contributed'] = (float) (
+                $member['total_contributed'] ?? 0
+            );
+    
+            $rows[] = $row;
+        }
+    
+        /*
+         * -------------------------------------------------------------
+         * SUMMARY TOTALS
+         * -------------------------------------------------------------
+         *
+         * These values already exist in the contribution service.
+         *
+         * Do not sum the entire arrays because some structures contain
+         * nested arrays.
+         */
+    
+        $totalMonthlyCollectionTarget = (float) (
+            $contributionPerMonth['total_monthly_collection_target']['total'] ?? 0
+        );
+    
+        $actualMonthlyCollection = (float) (
+            $contributionPerMonth['actual_monthly_collection']['total'] ?? 0
+        );
+    
+        $balanceCollectible = (float) (
+            $contributionPerMonth['balance_collectible']['total'] ?? 0
+        );
+    
+        /*
+         * -------------------------------------------------------------
+         * OTHER SUMMARY TOTALS
+         * -------------------------------------------------------------
+         *
+         * These are exposed as separate report-level values so the
+         * standardized report can display them without touching the
+         * original table_data.
+         */
+    
+        $totalCnaShareCollectionTarget = 0;
+    
+        foreach (
+            ($contributionPerMonth['total_cna_share_collection_target'] ?? [])
+            as $yearData
+        ) {
+            if (is_array($yearData)) {
+                $totalCnaShareCollectionTarget += (float) (
+                    $yearData['total'] ?? 0
+                );
+            }
+        }
+    
+        $actualCnaShareCollection = 0;
+    
+        foreach (
+            ($contributionPerMonth['actual_cna_share_collection'] ?? [])
+            as $yearData
+        ) {
+            if (is_array($yearData)) {
+                $actualCnaShareCollection += (float) (
+                    $yearData['total'] ?? 0
+                );
+            }
+        }
+    
+        $totalAnnualDueCollectionTarget = 0;
+    
+        foreach (
+            ($contributionPerMonth['total_annual_due_collection_target'] ?? [])
+            as $yearData
+        ) {
+            if (is_array($yearData)) {
+                $totalAnnualDueCollectionTarget += (float) (
+                    $yearData['total'] ?? 0
+                );
+            }
+        }
+    
+        $actualAnnualDueCollection = 0;
+    
+        foreach (
+            ($contributionPerMonth['actual_annual_due_collection'] ?? [])
+            as $yearData
+        ) {
+            if (is_array($yearData)) {
+                $actualAnnualDueCollection += (float) (
+                    $yearData['total'] ?? 0
+                );
+            }
+        }
+    
+        /*
+         * -------------------------------------------------------------
+         * STANDARDIZED COLUMNS
+         * -------------------------------------------------------------
+         *
+         * Order:
+         *
+         * Member
+         * Monthly contributions
+         * CNA Share
+         * Annual Due
+         * Total Contributed
+         */
+        $columns = array_merge(
+            [
+                [
+                    'key' => 'member',
+                    'label' => 'Member',
+                    'type' => 'text',
+                ],
+            ],
+            $cnaShareColumns,
+            $annualDueColumns,
+            $monthColumns,
+            [
+                [
+                    'key' => 'total_contributed',
+                    'label' => 'Total Contributed',
+                    'type' => 'currency',
+                ],
+            ]
+        );
+    
+        /*
+         * -------------------------------------------------------------
+         * RETURN STANDARDIZED REPORT STRUCTURE
+         * -------------------------------------------------------------
+         */
         return [
+            'context' => $this->buildContext(
+                'Faculty Deduction Summary',
+                'Faculty contribution deductions for members within the selected period.',
+                $filters
+            ),
+    
+            'cards' => [
+                [
+                    'key' => 'members',
+                    'label' => 'Members',
+                    'value' => count($memberData),
+                ],
+    
+                [
+                    'key' => 'target',
+                    'label' => 'Monthly Collection Target',
+                    'value' => $totalMonthlyCollectionTarget,
+                ],
+    
+                [
+                    'key' => 'actual',
+                    'label' => 'Actual Monthly Collection',
+                    'value' => $actualMonthlyCollection,
+                ],
+    
+                [
+                    'key' => 'balance',
+                    'label' => 'Balance Collectible',
+                    'value' => $balanceCollectible,
+                ],
+    
+                [
+                    'key' => 'cna_share_target',
+                    'label' => 'CNA Share Collection Target',
+                    'value' => $totalCnaShareCollectionTarget,
+                ],
+    
+                [
+                    'key' => 'cna_share_actual',
+                    'label' => 'Actual CNA Share Collection',
+                    'value' => $actualCnaShareCollection,
+                ],
+    
+                [
+                    'key' => 'annual_due_target',
+                    'label' => 'Annual Due Collection Target',
+                    'value' => $totalAnnualDueCollectionTarget,
+                ],
+    
+                [
+                    'key' => 'annual_due_actual',
+                    'label' => 'Actual Annual Due Collection',
+                    'value' => $actualAnnualDueCollection,
+                ],
+            ],
+    
+            'columns' => $columns,
+    
+            'rows' => $rows,
+    
+            /*
+             * Report-level scalar values.
+             */
+            'total_collection_target' => $totalMonthlyCollectionTarget,
+    
+            'actual_collection' => $actualMonthlyCollection,
+    
+            'balance_collectible' => $balanceCollectible,
+    
+            'total_cna_share_collection_target' =>
+                $totalCnaShareCollectionTarget,
+    
+            'actual_cna_share_collection' =>
+                $actualCnaShareCollection,
+    
+            'total_annual_due_collection_target' =>
+                $totalAnnualDueCollectionTarget,
+    
+            'actual_annual_due_collection' =>
+                $actualAnnualDueCollection,
+    
+            /*
+             * ---------------------------------------------------------
+             * BACKWARD COMPATIBILITY
+             * ---------------------------------------------------------
+             *
+             * Existing frontend code continues to receive the complete
+             * original contributionPerMonth structure.
+             */
             'campus' => $campus?->campus_name ?? '',
+    
             'period' => $period,
+    
             'table_data' => $contributionPerMonth,
+    
             'signatories' => [
                 'campus_treasurer' => $campusTreasurer?->name,
                 'campus_president' => $campusPresident?->name,
-                'campus_auditor'   => '',
+                'campus_auditor' => '',
             ],
         ];
     }
+ 
+
+    // public function facultyDeductionSummary(array $filters): array 
+    // {
+         
+    //     $request = new Request($filters);
+    //     $campusId = $request['campus_id'] ?? null;
+
+    //     $dateFrom = isset($filters['date_from']) ? Carbon::parse($filters['date_from'])->format('F Y') : '';
+    //     $dateTo = isset($filters['date_to']) ? Carbon::parse($filters['date_to'])->format('F Y') : '';
+    //     $period = ($dateFrom && $dateTo) ? "{$dateFrom} to {$dateTo}" : '';
+
+    //     // 2. Fetch required services data
+    //     $campus = $this->memberService->getCampus($campusId);
+    //     $campusTreasurer = $this->memberService->getTreasurer($filters, $campusId);
+    //     $campusPresident = $this->memberService->getPresident($filters, $campusId);
+    //     $members = $this->memberService->getMembers($request, $campusId);
+    //     $contributionPerMonth = $this->contributionService->getContributionPerMonth($request, $campusId);
+
+    //     return [
+    //         'campus' => $campus?->campus_name ?? '',
+    //         'period' => $period,
+    //         'table_data' => $contributionPerMonth,
+    //         'signatories' => [
+    //             'campus_treasurer' => $campusTreasurer?->name,
+    //             'campus_president' => $campusPresident?->name,
+    //             'campus_auditor'   => '',
+    //         ],
+    //     ];
+    // }
 
     public function medicalAssistanceReport(array $filters): array
     {
@@ -883,7 +1308,6 @@ class ReportService
 
     public function unifiedReportAggregator(array $data): array
     {
-        \Log::error(print_r($data, true));
         switch ($data['report_type']) {
             case 'campus-summary' : return $this->campusSummary($data); break;
             case 'disbursement-summary' : return $this->disbursementSummary($data); break;
