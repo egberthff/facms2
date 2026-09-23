@@ -40,9 +40,13 @@
             @if($contribution_type === 'annual')
                 <!-- ANNUAL CONTRIBUTION TABLE -->
                 @include('contributions.partials.member.annual-table')
-            @else
+            @elseif($contribution_type === 'claims')
                 <!-- CLAIMS TABLE (Original Layout) -->
                 @include('contributions.partials.member.claims-table')
+            @elseif($contribution_type === 'cna share')
+                <!-- CLAIMS TABLE (Original Layout) -->
+                {{-- @include('contributions.partials.member.cna-share-table') --}}
+                @include('contributions.partials.member.annual-table')
             @endif
         </div>
     </div>

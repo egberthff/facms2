@@ -82,7 +82,8 @@ class ContributionDetailsController extends Controller
     {
         $user = Auth::user();
         $status = null;
-        $contribution_type = $request->input('contribution_type', 'claims');
+        $contribution_type = strtolower(trim($request->input('contribution_type', 'claims')));
+        \Log::error(print_r($contribution_type, true));
     
         switch ($contribution_type) {
             case 'claims':
@@ -120,7 +121,7 @@ class ContributionDetailsController extends Controller
                 });
                 break;
             
-            case 'annual':
+            case 'annual': 
                 $contributions = $this->contributionService->getUserOwedContributionsAnnual($user, $status);
                 
                 // Format data specifically for your newly added Annual Table layout
@@ -144,8 +145,29 @@ class ContributionDetailsController extends Controller
                 });
                 break;
             
-            case 'cna_share': $formattedData = collect(); 
+            case 'cna share': 
+                $contributions = $this->contributionService->getMemberCNAShareContributions($user, $status);
+                $formattedData = $contributions->map(function ($contribution) {
+                    return [
+                        'id'                        => $contribution->id,
+                        'reference_number'          => $contribution->reference_number ?? 'N/A',
+                        'contribution_year'         => $contribution->year,
+                        'amount_paid'               => (float) $contribution->paid_amount,
+                        'status'                    => $contribution->status,
+                        'remarks'                   => $contribution->remarks,
+                        'paid_at'                   => $contribution->paid_at,
+                        'payment_reference_number'  => $contribution->payment_reference_number ?? 'N/A',
+                        // Eager loaded relationship arrays mapping to Blade components
+                        'payment_method' => $contribution->paymentMethod ? [
+                            'id'   => $contribution->paymentMethod->id ?? 'N/A',
+                            'name' => $contribution->paymentMethod->name ?? 'N/A',
+                        ] : null,
+                    ];
+                });
             break; // Placeholder for future CNA Share contributions logic
+
+            case 'annual_due': $formattedData = collect();
+            break;
             
             default:
                 $formattedData = collect();

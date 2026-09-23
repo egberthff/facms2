@@ -447,6 +447,7 @@ class ContributionService
         ];
     }
 
+    //Admin monitoring
     public function getCNAShareContributionData(?string $selectedCampusId = null): array
     {
         $hasFullAccess = Auth::user()->can('view all campus data') || Auth::user()->hasAnyRole(['President', 'Treasurer']);
@@ -494,6 +495,19 @@ class ContributionService
             'allCampuses'      => Campus::where('is_active', true)->get(), 
             'batches'          => $batches->values()->all(),
         ];
+    }
+
+    /**
+     * Get members CNA shares contribution
+     */
+    public function getMemberCNAShareContributions(User $user, string $status = null): Collection
+    {
+        $member = $user->member;
+        
+        if (!$member) {
+            return new Collection();
+        }
+        return CNAShare::with('member.user')->where('member_id', $member->id)->get();
     }
 
      /**

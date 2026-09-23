@@ -9,8 +9,8 @@
 <div class="max-w-auto mx-auto p-2" 
     x-data="{ 
             currentStatus: 'all', 
-            cycles: @js($cycle),
             selectedCycle: 'current',
+            cycles: @js($cycles),
             totalClaims: {{ $claims->count() }},
             statusCounts: @js($claimStatusCounts),
             openModal: false,
@@ -147,8 +147,9 @@ redrawTable() {
         {{-- Dropdown and Utility Controls --}}
         <div class="flex-1 flex gap-2 justify-end">
             {{-- <select 
-                @change="selectedCycle = $event.target.value; filterClaimsByCycle()"
-                class="px-4 py-2 text-sm rounded-lg border border-slate-200 bg-white text-slate-600 font-medium transition focus:border-blue-600 focus:outline-none">               
+                x-model="selectedCycle"
+                @change="filterClaimsByCycle()"
+                class="px-4 py-2 text-sm rounded-lg border border-slate-200 bg-white text-slate-600 font-medium transition focus:border-blue-600 focus:outline-none">                       
 
                 <template x-for="cycle in cycles" :key="cycle.value">
                     <option :value="cycle.value" x-text="cycle.label"></option>
