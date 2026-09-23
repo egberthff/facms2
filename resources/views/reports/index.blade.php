@@ -40,7 +40,7 @@
                 class="px-4 py-2 rounded-lg border border-gray-300 bg-white text-sm hover:bg-gray-50 disabled:opacity-50">
                  Preview
             </button>
-            <button
+            {{-- <button
                 @click="exportExcel()"
                 :disabled="!hasGenerated"
                 class="px-4 py-2 rounded-lg border border-gray-300 bg-white text-sm hover:bg-gray-50 disabled:opacity-50">
@@ -51,7 +51,7 @@
                 :disabled="!hasGenerated"
                 class="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm hover:bg-blue-700 disabled:bg-gray-300">
                 Export PDF
-            </button>
+            </button> --}}
         </div>
     </div>
 

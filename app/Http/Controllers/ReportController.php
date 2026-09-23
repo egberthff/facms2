@@ -310,15 +310,19 @@ class ReportController extends Controller
 
     public function monthlyClaimsSummaryReportView(Request $request) {
         $data = $request->all();
+        $user = Auth::user();
         $reportData = $this->reportService->monthlyClaimsSummary($data);
-
+        $reportData['preparedByName'] = $this->memberService->getTreasurer($user?->member?->campus_id)['name'];
+        $reportData['approvedByName'] = $this->memberService->getPresident($user?->member?->member_id)['name'];
         return view('reports.unified-report-summary-template', $reportData);
     }
 
     public function unifiedReportView(Request $request) {
+        $user = Auth::user();
         $data = $request->all();
         $reportData = $this->reportService->unifiedReportAggregator($data);
-        \Log::error(print_r($reportData, true));
+        $reportData['preparedByName'] = $this->memberService->getTreasurer($user?->member?->campus_id)['name'];
+        $reportData['approvedByName'] = $this->memberService->getPresident($user?->member?->member_id)['name'];
         return view('reports.unified-report-summary-template', $reportData);
     }
 }
