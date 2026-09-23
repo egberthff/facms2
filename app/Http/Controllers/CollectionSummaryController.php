@@ -45,6 +45,9 @@ class CollectionSummaryController extends Controller
             'collection_total' => $data['collection_total'],
             'disbursement_total' => $data['disbursement_total'],
             'periodLabel' => $data['period_label'],
+            'campusTreasurer' => $data['campus_treasurer'],
+            'campusAuditor' => $data['campus_auditor'],
+            'campusPresident' => $data['campus_president'],
             'generatedDate' => now()->format('F d, Y'),
         ]);
     }

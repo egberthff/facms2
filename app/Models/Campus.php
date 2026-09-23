@@ -47,6 +47,14 @@ class Campus extends Model
         return $this->hasMany(SystemSetting::class);
     }
 
+    public function collectionAdjustments()
+    {
+        return $this->hasMany(
+            CollectionAdjustment::class,
+            'campus_id'
+        );
+    }
+
     protected static function booted(): void
     {
         static::addGlobalScope(new CampusMemberScope);

@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 use App\Models\User;
-
+use Carbon\Carbon;
 class ReportController extends Controller
 {
     /**
@@ -43,9 +43,9 @@ class ReportController extends Controller
     {
         $reportConfiguration = config('reports');
 
-        if (!Auth::user()->hasRole('Federated Treasurer')) {
-            unset($reportConfiguration['types']['payroll-deduction-request']);
-        }
+        // if (!Auth::user()->hasRole('Federated Treasurer')) {
+        //     unset($reportConfiguration['types']['payroll-deduction-request']);
+        // }
 
         return view('reports.index', [
 
@@ -105,9 +105,9 @@ class ReportController extends Controller
 
             'report_type' => ['required', 'string'],
 
-            'campus_id' => ['nullable'],
+            'campus_id' => ['nullable', 'string'],
 
-            'member_id' => ['nullable'],
+            'member_id' => ['nullable', 'string'],
 
             'claim_type' => ['nullable', 'string'],
 
@@ -135,6 +135,26 @@ class ReportController extends Controller
 
             $validated = $this->payrollFilters($validated);
         }
+
+        if($validated['report_type'] === 'faculty-deduction-summary') {
+            $validated = array_merge($validated, $request->validate([
+                'date_from' => ['required', 'date'],
+                'date_to' => ['required', 'date', 'after_or_equal:date_from'],
+                'campus_id' => ['string'],
+            ]));
+
+            $validated = $this->facultyDeductionsSummary($validated);
+        }
+
+        if($validated['report_type'] === 'medical-assistance-report') {
+            $validated = array_merge($validated, $request->validate([
+                'cycle' => ['required', 'string'],
+                'campus_id' => ['string'],
+            ]));
+
+            $validated = $this->medicalAssistanceReport($validated);
+        }
+
 
         $report = $this->reportService->generate(
 
@@ -178,7 +198,8 @@ class ReportController extends Controller
 
     private function payrollFilters(array $filters): array
     {
-        abort_unless(Auth::user()->hasRole('Federated Treasurer'), 403);
+        $user = Auth::user();
+        // abort_unless($user->hasRole('Federated Treasurer') || $user->can('view reports'), 403);
 
         $filters['campus_id'] = null;
         $filters['treasurer_campus_id'] = null;
@@ -186,6 +207,31 @@ class ReportController extends Controller
         return $filters;
     }
 
+    private function facultyDeductionsSummary(array $filters): array
+    {
+        $user = Auth::user();
+        abort_unless($user->hasRole('Federated Treasurer') || $user->can('view reports'), 403);
+
+        $filters['campus_id'] = $filters['campus_id'] ?? null;
+        $filters['date_from'] = $filters['date_from'] ?? null;
+        $filters['date_to'] = $filters['date_to'] ?? null;
+        $filters['treasurer_campus_id'] = $filters['treasurer_campus_id'] ?? null;
+
+        return $filters;
+    }
+
+    private function medicalAssistanceReport(array $filters): array
+    {
+        $user = Auth::user();
+        abort_unless($user->hasRole('Federated Treasurer') || $user->can('view reports'), 403);
+
+        $filters['campus_id'] = $filters['campus_id'] ?? null;
+        $filters['cycle'] = $filters['cycle'] ?? null;
+        $filters['treasurer_campus_id'] = $filters['treasurer_campus_id'] ?? null;
+
+        return $filters;
+    }
+ 
     private function formatClaimMonth(array $filters): string
     {
         return !empty($filters['claim_month'])
@@ -245,4 +291,18 @@ class ReportController extends Controller
 
     //     );
     // }
+
+    public function facultyDeductionsSummaryView(Request $request) {
+        $data = $request->all(); 
+        $reportData = $this->reportService->facultyDeductionSummary($data);
+
+                return view('reports.faculty-deduction', $reportData);
+    }
+
+    public function medicalAssistanceReportView(Request $request) {
+        $data = $request->all();
+        $reportData = $this->reportService->medicalAssistanceReport($data);
+
+        return view('reports.medical-assistance-report', $reportData);
+    }
 }

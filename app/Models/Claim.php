@@ -101,6 +101,11 @@ class Claim extends Model
         return $this->hasMany(ContributionDetail::class);
     }
 
+    public function contributionBatches()
+    {
+        return $this->hasMany(ContributionBatch::class, 'claim_id');
+    }
+
     public function ledgerEntries()
     {
         return $this->morphMany(TreasuryLedger::class, 'sourceable');

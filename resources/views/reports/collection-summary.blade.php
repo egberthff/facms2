@@ -18,7 +18,24 @@
             background-color: #f5f5f5;
             color: #000;
         }
-
+        
+        .no-print-zone {
+            max-width: 8.5in;
+            margin: 0 auto 20px auto;
+            background: #fff3cd;
+            padding: 15px;
+            border: 1px solid #ffeeba;
+            text-align: center;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+        }
         /* Printable area wrapper */
         .print {
             background-color: #fff;
@@ -38,7 +55,6 @@
         }
 
         .header-logo-left, .header-logo-right {
-            width: 80px;
             height: 80px;
             border: 1px dashed #ccc; /* Placeholder box border */
             display: flex;
@@ -47,6 +63,14 @@
             font-size: 11px;
             color: #777;
             text-align: center;
+        }
+
+        .header-logo-left {
+            width: 80px
+        }
+
+        .header-logo-right {
+            width: 200px
         }
 
         .header-text {
@@ -213,36 +237,21 @@
 <body @if(request()->boolean('auto_print')) onload="window.print()" @endif>
 
     <!-- Print trigger button for testing -->
-    <div class="print-btn-container">
-        <button class="print-btn" onclick="window.print()">Print Report</button>
+    <div class="no-print-zone">
+        <p><strong>Screen View:</strong> Only the document container below will be printed.</p>
+        <button onclick="window.print()">Print Report</button>
     </div>
 
     <!-- Main printable document wrapper tagged with class 'print' -->
     <div class="print">
         
         <!-- Header -->
-        <header class="report-header">
-            <div class="header-logo-left">
-                <!-- Replace with <img src="logo1.png" alt="Logo"> -->
-                Logo Left
-            </div>
-            <div class="header-text">
-                <p>Republic of the Philippines</p>
-                <h2>Bohol Island State University</h2>
-                <p>Magsija, Balilihan 6342, Bohol, Philippines</p>
-                    <p>Faculty Association - {{ $campus?->campus_name ?? 'Selected Campus' }}</p>
-                <p class="motto">Balance | Integrity | Stewardship | Uprightness</p>
-            </div>
-            <div class="header-logo-right">
-                <!-- Replace with <img src="logo2.png" alt="Logo"> -->
-                Logo Right
-            </div>
-        </header>
+        <x-bisu-header :campusName="$campus?->campus_name ?? ''" :address="$campus?->address ?? ''" />
 
         <!-- Document Sub-Title -->
         <div class="report-title">
-            <h3>BISU {{ strtoupper($campus?->campus_name ?? 'FACULTY ASSOCIATION') }}</h3>
-            <p>{{ strtoupper($periodLabel ?? 'ALL APPROVED TRANSFERS') }}</p>
+            <h3> {{ strtoupper($campus?->campus_name ?? 'FACULTY ASSOCIATION') }}</h3>
+            {{-- <p>{{ strtoupper($periodLabel ?? 'ALL APPROVED TRANSFERS') }}</p> --}}
         </div>
 
         <!-- Financial Statement Table -->
@@ -308,13 +317,13 @@
                 <div class="sig-block">
                     <p>Prepared by:</p>
                     <div class="sig-line"></div>
-                    <div class="sig-name">ESTRELLA MARIE V. BUNGABONG</div>
+                    <div class="sig-name">{{ $campusTreasurer }}</div>
                     <div class="sig-title">Campus FA Treasurer</div>
                 </div>
                 <div class="sig-block">
                     <p>Checked by:</p>
                     <div class="sig-line"></div>
-                    <div class="sig-name">GHENA ASUCAN</div>
+                    <div class="sig-name">{{ $campusAuditor }}</div>
                     <div class="sig-title">Campus FA Auditor</div>
                 </div>
             </div>
@@ -323,7 +332,7 @@
                 <div class="sig-block">
                     <p>Approved by:</p>
                     <div class="sig-line"></div>
-                    <div class="sig-name">MARC BENIGNO C. OLAGUIR</div>
+                    <div class="sig-name">{{ $campusPresident }}</div>
                     <div class="sig-title">FA President</div>
                 </div>
             </div>

@@ -14,6 +14,23 @@
             background-color: #f0f2f5;
             margin: 0;
             padding: 20px;
+        } 
+        .no-print-zone {
+            max-width: 8.5in;
+            margin: 0 auto 20px auto;
+            background: #fff3cd;
+            padding: 15px;
+            border: 1px solid #ffeeba;
+            text-align: center;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
         }
         .screen-controls {
             max-width: 11in;
@@ -174,12 +191,9 @@
     <body>
 
         <!-- Web Interface Controls Container Area -->
-        <div class="screen-controls">
-            <span style="color: #666;"><strong>Ledger Sheet Rendering
-                    Target:</strong> Broad Landscape Paper Format
-                Blueprint.</span>
-            <button class="btn-print" onclick="window.print()">Print
-                Document</button>
+        <div class="no-print-zone">
+            <p><strong>Screen View:</strong> Only the document container below will be printed.</p>
+            <button onclick="window.print()">Print Report</button>
         </div>
 
         <!-- START OF MAIN LEDGER PRINT AREA -->
@@ -187,9 +201,9 @@
 
             <!-- Center Headings -->
             <div class="header">
-                <h1>Bohol Island State University Balilihan Campus</h1>
+                <h1> {{ $campus ?? "" }} </h1>
                 <h2>Faculty Association - Faculty Deductions</h2>
-                <p>October 2024 to November 2025</p>
+                <p> {{ $period ?? "" }} </p>
             </div>
 
             <!-- Master Data Matrix Grid -->
@@ -197,335 +211,162 @@
                 <thead>
                     <!-- Row 1: High Level Calendar Periods & System Categories -->
                     <tr>
-                        <th rowspan="2" style="width: 3%;">No</th>
-                        <th rowspan="2" style="width: 15%;">Faculty Association
+                        <th rowspan="3" style="width: 3%;">No</th>
+                        <th rowspan="3" style="width: 15%;">Faculty Association
                             Member</th>
                         <th>January</th>
-                        <th>January</th>
-                        <th>February</th>
-                        <th class="bg-yellow">March</th>
-                        <th class="bg-yellow">April</th>
-                        <th class="bg-yellow">May</th>
-                        <th class="bg-yellow">June</th>
-                        <th>July</th>
-                        <th class="bg-yellow">August</th>
-                        <th>September</th>
-                        <th>October</th>
-                        <th>November</th>
+                        @foreach ($table_data['header_month_label'] as $label )
+                            <th>{{ ucwords($label) }}</th>
+                        @endforeach
+                         
                         <th rowspan="2" style="width: 7%;">Total</th>
                     </tr>
                     <!-- Row 2: Inner Local Purpose Metadata Subheadings -->
                     <tr>
-                        <th><span class="sub-header-title">CMA Share</span></th>
+                        <th><span class="sub-header-title">CNA Share</span></th>
+                        @for ($i = 0; $i<count($table_data['header_month_label']) - 1; $i++)
                         <th><span class="sub-header-title">Medical
-                                Assistance</span></th>
-                        <th><span class="sub-header-title">Medical
-                                Assistance</span></th>
-                        <th class="bg-yellow"><span
-                                class="sub-header-title">Medical
-                                Assistance</span></th>
-                        <th class="bg-yellow"><span
-                                class="sub-header-title">Medical
-                                Assistance</span></th>
-                        <th class="bg-yellow"><span
-                                class="sub-header-title">Medical
-                                Assistance</span></th>
-                        <th class="bg-yellow"><span
-                                class="sub-header-title">Medical
-                                Assistance</span></th>
-                        <th><span class="sub-header-title">Medical
-                                Assistance</span></th>
-                        <th class="bg-yellow"><span
-                                class="sub-header-title">Medical
-                                Assistance</span></th>
-                        <th><span class="sub-header-title">Medical
-                                Assistance</span></th>
-                        <th><span class="sub-header-title">Medical
-                                Assistance</span></th>
+                            Assistance</span></th>
+                        @endfor
                         <th><span class="sub-header-title">Unpaid
                                 Deductions</span></th>
                     </tr>
+                    <tr class="bg-yellow font-bold text-center">
+                        <td class="border p-1">500</td>
+
+                        {{-- 1. Grab both the $month key and the $amount value --}}
+                        @foreach ($table_data['header_months_amount'] as $month => $amount)
+                            {{-- 2. Skip the row if the key is 'total' --}}
+                            @if($month !== 'total')
+                                <td class="border p-1">{{ $amount }}</td>
+                            @endif
+                        @endforeach
+
+                        {{-- 3. Correctly output the grand total at the end --}}
+                        <td class="border p-1">{{ $table_data['header_months_amount']['total'] }}</td>
+                    </tr>
+
                 </thead>
                 <tbody>
+                    {{-- @dd($table_data) --}}
                     <!-- Entry row structural layout example based on first ledger item -->
-                    <tr>
-                        <td class="text-center">1</td>
-                        <td>Ale, Marry Joyce</td>
-                        <td class="text-right">500</td>
-                        <td class="text-right">200</td>
-                        <td class="text-right">250</td>
-                        <td class="text-right bg-yellow">350</td>
-                        <td class="text-right bg-yellow">650</td>
-                        <td class="text-right bg-yellow">300</td>
-                        <td class="text-right bg-yellow">550</td>
-                        <td class="text-right">300</td>
-                        <td class="text-right bg-yellow">400</td>
-                        <td class="text-right">450</td>
-                        <td class="text-right">500</td>
-                        <td class="text-right">0</td>
-                        <td class="text-right font-bold">4450</td>
-                    </tr>
-                    <tr>
-                        <td class="text-center">2</td>
-                        <td>Asucan, Ernesto Jr.</td>
-                        <td class="text-right">500</td>
-                        <td class="text-right">200</td>
-                        <td class="text-right">250</td>
-                        <td class="text-right bg-yellow">350</td>
-                        <td class="text-right bg-yellow">650</td>
-                        <td class="text-right bg-yellow">300</td>
-                        <td class="text-right bg-yellow">650</td>
-                        <td class="text-right">300</td>
-                        <td class="text-right bg-yellow">400</td>
-                        <td class="text-right">350</td>
-                        <td class="text-right">500</td>
-                        <td class="text-right">0</td>
-                        <td class="text-right font-bold">4450</td>
-                    </tr>
-                    <tr>
-                        <td class="text-center">3</td>
-                        <td>Asucan, Ivy Jane</td>
-                        <td class="text-right">500</td>
-                        <td class="text-right">200</td>
-                        <td class="text-right">250</td>
-                        <td class="text-right bg-yellow">350</td>
-                        <td class="text-right bg-yellow">650</td>
-                        <td class="text-right bg-yellow">300</td>
-                        <td class="text-right bg-yellow">650</td>
-                        <td class="text-right">300</td>
-                        <td class="text-right bg-yellow">400</td>
-                        <td class="text-right">350</td>
-                        <td class="text-right">500</td>
-                        <td class="text-right">1900</td>
-                        <td class="text-right font-bold">4450</td>
-                    </tr>
-                    <tr>
-                        <td class="text-center">4</td>
-                        <td>Asucan, Ghena</td>
-                        <td class="text-right">500</td>
-                        <td class="text-right">200</td>
-                        <td class="text-right">250</td>
-                        <td class="text-right bg-yellow">350</td>
-                        <td class="text-right bg-yellow">650</td>
-                        <td class="text-right bg-yellow">300</td>
-                        <td class="text-right bg-yellow">650</td>
-                        <td class="text-right">300</td>
-                        <td class="text-right bg-yellow">400</td>
-                        <td class="text-right">350</td>
-                        <td class="text-right">500</td>
-                        <td class="text-right">0</td>
-                        <td class="text-right font-bold">4450</td>
-                    </tr>
-                    <tr>
-                        <td class="text-center">5</td>
-                        <td>Asvergonzado, Jhonmar</td>
-                        <td class="text-right">500</td>
-                        <td class="text-right">200</td>
-                        <td class="text-right">250</td>
-                        <td class="text-right bg-yellow">350</td>
-                        <td class="text-right bg-yellow">650</td>
-                        <td class="text-right bg-yellow">300</td>
-                        <td class="text-right bg-yellow">650</td>
-                        <td class="text-right">300</td>
-                        <td class="text-right bg-yellow">400</td>
-                        <td class="text-right">350</td>
-                        <td class="text-right">500</td>
-                        <td class="text-right">0</td>
-                        <td class="text-right font-bold">4450</td>
-                    </tr>
-                    <tr>
-                        <td class="text-center">6</td>
-                        <td>Banal, Dessymae</td>
-                        <td class="text-right">500</td>
-                        <td class="text-right">200</td>
-                        <td class="text-right">250</td>
-                        <td class="text-right bg-yellow">350</td>
-                        <td class="text-right bg-yellow">650</td>
-                        <td class="text-right bg-yellow">300</td>
-                        <td class="text-right bg-yellow">650</td>
-                        <td class="text-right">300</td>
-                        <td class="text-right bg-yellow">400</td>
-                        <td class="text-right">350</td>
-                        <td class="text-right">500</td>
-                        <td class="text-right">0</td>
-                        <td class="text-right font-bold">4450</td>
-                    </tr>
-                    <tr>
-                        <td class="text-center">7</td>
-                        <td>Biasco, Julie</td>
-                        <td class="text-right">500</td>
-                        <td class="text-right">200</td>
-                        <td class="text-right">250</td>
-                        <td class="text-right bg-yellow">360</td>
-                        <td class="text-right bg-yellow">650</td>
-                        <td class="text-right bg-yellow">300</td>
-                        <td class="text-right bg-yellow">650</td>
-                        <td class="text-right">300</td>
-                        <td class="text-right bg-yellow">400</td>
-                        <td class="text-right">350</td>
-                        <td class="text-right">500</td>
-                        <td class="text-right">0</td>
-                        <td class="text-right font-bold">4450</td>
-                    </tr>
-                    <tr>
-                        <td class="text-center">8</td>
-                        <td>Bungabong, Randall Lyn</td>
-                        <td class="text-right">500</td>
-                        <td class="text-right">200</td>
-                        <td class="text-right">250</td>
-                        <td class="text-right bg-yellow">350</td>
-                        <td class="text-right bg-yellow">650</td>
-                        <td class="text-right bg-yellow">300</td>
-                        <td class="text-right bg-yellow">650</td>
-                        <td class="text-right">300</td>
-                        <td class="text-right bg-yellow">400</td>
-                        <td class="text-right">350</td>
-                        <td class="text-right">500</td>
-                        <td class="text-right">0</td>
-                        <td class="text-right font-bold">4450</td>
-                    </tr>
-                    <tr>
-                        <td class="text-center">9</td>
-                        <td>Bungabong, Estrella Marie</td>
-                        <td class="text-right">500</td>
-                        <td class="text-right">200</td>
-                        <td class="text-right">250</td>
-                        <td class="text-right bg-yellow">350</td>
-                        <td class="text-right bg-yellow">650</td>
-                        <td class="text-right bg-yellow">300</td>
-                        <td class="text-right bg-yellow">650</td>
-                        <td class="text-right">300</td>
-                        <td class="text-right bg-yellow">400</td>
-                        <td class="text-right">350</td>
-                        <td class="text-right">500</td>
-                        <td class="text-right">0</td>
-                        <td class="text-right font-bold">4450</td>
-                    </tr>
-                    <tr>
-                        <td class="text-center">10</td>
-                        <td>Carpio, Eduardo Jr.</td>
-                        <td class="text-right">500</td>
-                        <td class="text-right">200</td>
-                        <td class="text-right">250</td>
-                        <td class="text-right bg-yellow">350</td>
-                        <td class="text-right bg-yellow">650</td>
-                        <td class="text-right bg-yellow">300</td>
-                        <td class="text-right bg-yellow">650</td>
-                        <td class="text-right">300</td>
-                        <td class="text-right bg-yellow">400</td>
-                        <td class="text-right">350</td>
-                        <td class="text-right">500</td>
-                        <td class="text-right">0</td>
-                        <td class="text-right font-bold">4450</td>
-                    </tr>
-                    <tr>
-                        <td class="text-center">11</td>
-                        <td>Dumapias, Ervin</td>
-                        <td class="text-right">500</td>
-                        <td class="text-right">200</td>
-                        <td class="text-right">250</td>
-                        <td class="text-right bg-yellow">350</td>
-                        <td class="text-right bg-yellow">650</td>
-                        <td class="text-right bg-yellow">300</td>
-                        <td class="text-right bg-yellow">650</td>
-                        <td class="text-right">300</td>
-                        <td class="text-right bg-yellow">400</td>
-                        <td class="text-right">350</td>
-                        <td class="text-right">500</td>
-                        <td class="text-right">0</td>
-                        <td class="text-right font-bold">4450</td>
-                    </tr>
-                    <tr>
-                        <td class="text-center">12</td>
-                        <td>Gabo, Catherine Leah G.</td>
-                        <td class="text-right">500</td>
-                        <td class="text-right">200</td>
-                        <td class="text-right">250</td>
-                        <td class="text-right bg-yellow">350</td>
-                        <td class="text-right bg-yellow">650</td>
-                        <td class="text-right bg-yellow">300</td>
-                        <td class="text-right bg-yellow">650</td>
-                        <td class="text-right">300</td>
-                        <td class="text-right bg-yellow">400</td>
-                        <td class="text-right">350</td>
-                        <td class="text-right">500</td>
-                        <td class="text-right">0</td>
-                        <td class="text-right font-bold">4450</td>
-                    </tr>
-                    <tr>
-                        <td class="text-center">13</td>
-                        <td>Lemosbog, Maricel</td>
-                        <td class="text-right">500</td>
-                        <td class="text-right">200</td>
-                        <td class="text-right">250</td>
-                        <td class="text-right bg-yellow">350</td>
-                        <td class="text-right bg-yellow">650</td>
-                        <td class="text-right bg-yellow">300</td>
-                        <td class="text-right bg-yellow">650</td>
-                        <td class="text-right">300</td>
-                        <td class="text-right bg-yellow">400</td>
-                        <td class="text-right">350</td>
-                        <td class="text-right">500</td>
-                        <td class="text-right">0</td>
-                        <td class="text-right font-bold">4450</td>
-                    </tr>
+                    @forelse ($table_data['members'] as $index => $member)
+                        <tr>
+                            <td class="text-center">{{ $index + 1 }}</td>
+                            <td>{{ ucwords($member['name']) }}</td>
+                            <td class="text-right font-bold">{{ $member['cna_share'] }}</td>
+
+                            {{-- Loop safely directly through the 12 clean months array --}}
+                            @foreach ($member['months'] as $month => $amount)
+                                <td class="text-right">{{ $amount }}</td>
+                            @endforeach
+
+                            <td class="text-right font-bold">{{ $member['total_contributed'] }}</td>
+                        </tr>
+                    @empty
+                        <tr>
+                            {{-- Fixed the closing tag here --}}
+                            <td colspan="16" class="text-center text-gray-500 py-4">No records found!</td>
+                        </tr>
+                    @endforelse
+
                     <!-- Calculation Matrix Summary Footers -->
+                    <!-- 1. TOTAL MONTHLY COLLECTION TARGET -->
                     <tr class="font-bold" style="background-color: #fafafa;">
-                        <td colspan="2" class="text-right">TOTAL MONTHLY
-                            COLLECTION TARGET</td>
-                        <td class="text-right">12500</td>
-                        <td class="text-right">5000</td>
-                        <td class="text-right">6250</td>
-                        <td class="text-right bg-yellow">8750</td>
-                        <td class="text-right bg-yellow">16250</td>
-                        <td class="text-right bg-yellow">7500</td>
-                        <td class="text-right bg-yellow">13750</td>
-                        <td class="text-right">7500</td>
-                        <td class="text-right bg-yellow">10000</td>
-                        <td class="text-right">11250</td>
-                        <td class="text-right">12500</td>
-                        <td class="text-right">0</td>
-                        <td class="text-right">111250</td>
+                        <td colspan="2" class="text-right">TOTAL MONTHLY COLLECTION TARGET</td>
+                        <td class="text-right">0</td> <!-- Placeholder for total cna share -->
+
+                        @foreach ($table_data['total_monthly_collection_target'] as $month => $amount)
+                            @if ($month !== 'total')
+                                <td class="text-right">{{ $amount }}</td>
+                            @endif
+                        @endforeach
+
+                        <td class="text-right">{{ $table_data['total_monthly_collection_target']['total'] }}</td>
                     </tr>
+
+                    <!-- 2. ACTUAL MONTHLY COLLECTION -->
                     <tr class="font-bold">
-                        <td colspan="2" class="text-right">ACTUAL MONTHLY
-                            COLLECTION</td>
-                        <td class="text-right">12500</td>
-                        <td class="text-right">5000</td>
-                        <td class="text-right">6250</td>
-                        <td class="text-right bg-yellow">8750</td>
-                        <td class="text-right bg-yellow">16250</td>
-                        <td class="text-right bg-yellow">7500</td>
-                        <td class="text-right bg-yellow">14950</td>
-                        <td class="text-right">7200</td>
-                        <td class="text-right bg-yellow">9200</td>
-                        <td class="text-right">8050</td>
-                        <td class="text-right">11500</td>
-                        <td class="text-right">2200</td>
-                        <td class="text-right">111250</td>
+                        <td colspan="2" class="text-right">ACTUAL MONTHLY COLLECTION</td>
+                        <td class="text-right">0</td> <!-- Placeholder for cna share -->
+
+                        @foreach ($table_data['actual_monthly_collection'] as $month => $amount)
+                            @if ($month !== 'total')
+                                <td class="text-right">{{ $amount }}</td>
+                            @endif
+                        @endforeach
+
+                        <td class="text-right">{{ $table_data['actual_monthly_collection']['total'] }}</td>
                     </tr>
+
+                    <!-- 3. BALANCE COLLECTIBLE -->
                     <tr class="font-bold">
-                        <td colspan="2" class="text-right">BALANCE
-                            COLLECTIBLE</td>
-                        <td class="text-right">0</td>
-                        <td class="text-right">0</td>
-                        <td class="text-right">0</td>
-                        <td class="text-right bg-yellow">0</td>
-                        <td class="text-right bg-yellow">0</td>
-                        <td class="text-right bg-yellow">0</td>
-                        <td class="text-right bg-orange">-1200</td>
-                        <td class="text-right">300</td>
-                        <td class="text-right bg-yellow">800</td>
-                        <td class="text-right">3200</td>
-                        <td class="text-right">1000</td>
-                        <td class="text-right">4100</td>
-                        <td class="text-right">111250</td>
+                        <td colspan="2" class="text-right">BALANCE COLLECTIBLE</td>
+                        <td class="text-right">0</td> <!-- Placeholder for cna share -->
+
+                        @foreach ($table_data['balance_collectible'] as $month => $amount)
+                            @if ($month !== 'total')
+                                <td class="text-right">{{ $amount }}</td>
+                            @endif
+                        @endforeach
+
+                        <td class="text-right">{{ $table_data['balance_collectible']['total'] }}</td>
                     </tr>
+
+                    <!-- 4. COLLECTION ADJUSTMENT -->
+                    <tr class="font-bold">
+                        <td colspan="2" class="text-right" style="border: none !important;">
+                            {{-- COLLECTION ADJUSTMENT --}}
+                        </td>
+                        @php
+                           $cnaShare = ($table_data['collection_adjustment_details']['cna_share'] ?? 0) === 0 ? '' : $table_data['collection_adjustment_details']['cna_share'];
+                        @endphp
+                    
+                        <td class="text-right" style="border: none !important;">{{ $cnaShare }}</td>
+                    
+                        @foreach ($table_data['header_month_label'] as $month)
+                    
+                            @php
+                                $adjustments =
+                                    $table_data['collection_adjustment_details'][$month] ?? [];
+                                $cnaShare  =  $table_data['collection_adjustment_details']['cna_share'] ?? 0;
+                            @endphp
+                    
+                            <!-- Merged the custom background color logic with the border reset -->
+                            <td class="text-center"
+                                style="border: none !important; {{ count($adjustments) ? 'background-color: #f4cccc;' : '' }}">
+                    
+                                @foreach ($adjustments as $adjustment)
+                    
+                                    <div style="font-size: 10px;">
+                                        {{ ucwords(str_replace('_', ' ', $adjustment['type'])) }}
+                                    </div>
+                    
+                                    <div>
+                                        <strong>
+                                            {{ number_format($adjustment['amount'], 2) }}
+                                        </strong>
+                                    </div>
+                    
+                                @endforeach
+                    
+                            </td>
+                    
+                        @endforeach
+                    
+                        {{-- <td class="text-right" style="border: none !important;">
+                            {{ number_format(
+                                $table_data['collection_adjustments']['total'],
+                                2
+                            ) }}
+                        </td> --}}
+                    </tr>
+                    
                 </tbody>
             </table>
 
             <!-- Document Notes and Adjustments Block -->
-            <div
+            {{-- <div
                 style="margin-top: -10px; margin-bottom: 25px; padding-left: 5px; font-size: 8pt; font-family: sans-serif; line-height: 1.4;">
                 <div style="margin-bottom: 4px;">
                     <span class="bg-orange"
@@ -538,7 +379,7 @@
                     <strong>Adjust Deduction from June Overdeduction</strong>
                     (Applied to subsequent collection periods)
                 </div>
-            </div>
+            </div> --}}
 
             <!-- Layout Corporate Executive Sign-Off Matrix -->
             <div class="signatures-row">
@@ -547,7 +388,7 @@
                 <div class="sig-block">
                     <span class="sig-meta-title">Prepared by:</span>
                     <div class="sig-underline-container">
-                        <div class="sig-name">ESTRELLA MARIE DUNGABONG</div>
+                        <div class="sig-name"> {{ $signatories['campusTreasurer'] ?? '' }}</div>
                     </div>
                     <span class="sig-assignment">Campus FA Treasurer</span>
                     <span class="sig-date">Date: ________________________</span>
@@ -557,7 +398,7 @@
                 <div class="sig-block">
                     <span class="sig-meta-title">Audited by:</span>
                     <div class="sig-underline-container">
-                        <div class="sig-name">GHENA L. ASUCAN</div>
+                        <div class="sig-name">{{ $signatories['campus_auditor'] ?? '' }}</div>
                     </div>
                     <span class="sig-assignment">Campus FA Auditor</span>
                     <span class="sig-date">Date: ________________________</span>
@@ -567,7 +408,7 @@
                 <div class="sig-block">
                     <span class="sig-meta-title">Approved by:</span>
                     <div class="sig-underline-container">
-                        <div class="sig-name">MARC BENIGNO C. OLAGUIR</div>
+                        <div class="sig-name">{{ $signatories['campus_president'] ?? '' }}</div>
                     </div>
                     <span class="sig-assignment">FA President</span>
                     <span class="sig-date">Date: ________________________</span>

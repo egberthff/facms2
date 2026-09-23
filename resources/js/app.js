@@ -458,6 +458,113 @@ window.markContributionAsPaid = function(id, tag) {
 
         return false;
     };
+
+    /**
+     * Intercepts the form submission, transforms the numeric amount based 
+     * on the chosen dynamic impact modifier (Credit vs Debit), and posts to Laravel via jQuery AJAX.
+     * 
+     * @param {Event} event - The submission event context.
+     * @param {HTMLFormElement} formElement - The current form element block.
+     */
+    window.sendContributionAdjustment = function(event, formElement) {
+        event.preventDefault();
+    
+        // 1. Instantiating form values
+        const formData = new FormData(formElement);
+        
+        // Retrieve absolute values from input nodes
+        const rawAmount = parseFloat(formData.get('amount'));
+        const modifier = parseInt(formData.get('amount_modifier') || '1'); // Fallback to 1 if missing
+    
+        // 2. Client Side Defensive Check
+        if (isNaN(rawAmount) || rawAmount <= 0) {
+            alert('Please provide a valid, positive amount value.');
+            return false;
+        }
+    
+        // 3. Compute final signed value relative to selected toggle structure
+        // Positive representation = Debit; Negative representation = Credit
+        const finalSignedAmount = Math.abs(rawAmount) * modifier;
+        
+        // Replace the default standard absolute entry with your signed value
+        formData.set('amount', finalSignedAmount.toFixed(2));
+    
+        // Cache the jQuery elements for UI state manipulation
+        const $form = $(formElement);
+        const $submitButton = $form.find('button[type="submit"]');
+        const originalButtonText = $submitButton.html();
+    
+        // 4. Dispatch async payload data via jQuery AJAX
+        $.ajax({
+            url: $form.attr('action'),
+            method: 'POST',
+            data: formData,
+            processData: false, // Required when passing a FormData instance
+            contentType: false, // Required when passing a FormData instance
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest' // Helps Laravel recognize it as an AJAX request
+            },
+            beforeSend: function() {
+                // Disable button to prevent double submission
+                $submitButton.prop('disabled', true).html('Processing...');
+            },
+            success: function(response) {
+                // Check your API response contract structure standard
+                if (response.success) {
+                      
+                    // Safely update parent Alpine.js state parameters to clear the view
+                    if (window.Alpine) {
+                        const alpineContainer = $form.closest('[x-data]')[0];
+                        if (alpineContainer && alpineContainer.__x) {
+                            const alpineState = alpineContainer.__x.$data;
+                            alpineState.openContributionAdjustmentModal = false;
+                            alpineState.contributionAmount = ''; // Resets real-time text calculator
+                        }
+                    }
+                    
+                    formElement.reset(); // Native reset clears all form fields
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Success!',
+                        text: 'Adjustment applied successfully!',
+                        showConfirmButton: true
+                      }).then((result) => {
+                            if(result.isConfirmed) {
+                                window.location.reload();       
+                            }
+                      });
+                     
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Oops...',
+                        text: response.message || 'Something went wrong while managing adjustment records.'
+                      });
+                      
+                }
+            },
+            error: function(xhr) {
+                console.error('Adjustment error dispatching logs:', xhr);
+                
+                // Extract standard Laravel form request input errors (HTTP 422) if present
+                if (xhr.status === 422 && xhr.responseJSON && xhr.responseJSON.errors) {
+                    const errors = xhr.responseJSON.errors;
+                    const processMessage = Object.values(errors).flat().join('\n');
+                    alert('Validation Errors:\n' + processMessage);
+                } else {
+                    const customMessage = xhr.responseJSON ? xhr.responseJSON.message : null;
+                    alert(customMessage || 'An internal server exception occurred. Please try again later.');
+                }
+            },
+            complete: function() {
+                // Restore form submittal interactivity parameters
+                $submitButton.prop('disabled', false).html(originalButtonText);
+            }
+        });
+    
+        return false;
+    }
+        
     
         
     

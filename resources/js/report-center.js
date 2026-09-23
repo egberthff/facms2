@@ -24,6 +24,10 @@ window.reportCenter = function(options)
 
         collectionSummaryPrintUrl: options.collectionSummaryPrintUrl,
 
+        facultyDeductionSummary: options.facultyDeductionSummaryPrintUrl,
+
+        medicalAssistanceReport: options.medicalAssistanceReportPrintUrl,
+
 
         /*
         |--------------------------------------------------------------------------
@@ -402,7 +406,22 @@ window.reportCenter = function(options)
                 return;
             }
 
-            window.print();
+            if (this.selectedReport === 'faculty-deduction-summary') {
+                this.openFacultyDeductionSummary();
+
+                return;
+            }
+
+            if (this.selectedReport === 'medical-assistance-report') {
+                this.openMedicalAssistanceReport();
+
+                return;
+            }
+
+            Swal.alert({
+                icon: 'info',
+                title: 'No Preview Available'
+            })
 
         },
 
@@ -445,17 +464,69 @@ window.reportCenter = function(options)
             }
 
             params.set('auto_print', '1');
-            console.log('Opening print window with URL:', `${this.collectionSummaryPrintUrl}?${params.toString()}`);
 
             const printWindow = window.open(`${this.collectionSummaryPrintUrl}?${params.toString()}`, '_blank');
-            console.log('Print window opened:', printWindow);
             if (printWindow) {
                 printWindow.focus();
             }
 
         },
 
+        openFacultyDeductionSummary()  {
+            if(!this.hasGenerated || this.selectedReport !== 'faculty-deduction-summary') {
+                return;
+            }    
 
+            if (this.filters.date_from && this.filters.date_to && !this.filters.campus_id) {
+                return;
+            }
+
+            const params = new URLSearchParams();
+
+            if (this.filters.date_from) {
+                params.set('date_from', this.filters.date_from);
+            }
+
+            if (this.filters.date_to) {
+                params.set('date_to', this.filters.date_to);
+            }
+
+            if (this.filters.campus_id) {
+                params.set('campus_id', this.filters.campus_id);
+            }
+
+            params.set('auto_print', '1');
+            const printWindow = window.open(`${this.facultyDeductionSummary}?${params.toString()}`, '_blank');
+            if (printWindow) {
+                printWindow.focus();
+            }
+        },
+
+        openMedicalAssistanceReport() {
+            if(!this.hasGenerated || this.selectedReport !== 'medical-assistance-report') {
+                return;
+            }  
+
+            if (!this.filters.cycle && !this.filters.campus) {
+                return;
+            }
+            const params = new URLSearchParams();
+
+            if (this.filters.cycle) {
+                params.set('cycle', this.filters.cycle);
+            }
+
+            if (this.filters.campus_id) {
+                params.set('campus_id', this.filters.campus_id);
+            }
+
+            params.set('auto_print', '1');
+            const printWindow = window.open(`${this.medicalAssistanceReport}?${params.toString()}`, '_blank');
+            if (printWindow) {
+                printWindow.focus();
+            }
+
+        },
 
         /*
         |--------------------------------------------------------------------------

@@ -15,6 +15,23 @@
             margin: 0;
             padding: 20px;
         }
+        .no-print-zone {
+            max-width: 8.5in;
+            margin: 0 auto 20px auto;
+            background: #fff3cd;
+            padding: 15px;
+            border: 1px solid #ffeeba;
+            text-align: center;
+        }
+         button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+        }
         .screen-controls {
             max-width: 10.5in;
             margin: 0 auto 20px auto;
@@ -229,11 +246,9 @@
 <body>
 
     <!-- Browser Workspace Ribbon: Suppressed from rendering layout targets on print -->
-    <div class="screen-controls">
-        <span style="font-size: 14px; color: #555;">
-            <strong>Print Engine Target Layout:</strong> Landscape Mode (Letter Dimensions Recommended).
-        </span>
-        <button class="btn-print" onclick="window.print()">Execute Document Print</button>
+    <div class="no-print-zone">
+        <p><strong>Screen View:</strong> Only the document container below will be printed.</p>
+        <button onclick="window.print()">Print Report</button>
     </div>
 
     <!-- START OF EDITABLE STANDARD PRINT BLOCKS -->
@@ -242,14 +257,14 @@
         <!-- Document Institutional Header Section -->
         <div class="header">
             <h1>CVSCAFT FACULTY ASSOCIATION</h1>
-            <h2>BOHOL ISLAND STATE UNIVERSITY Balilihan Campus</h2>
+            <h2>BOHOL ISLAND STATE UNIVERSITY {{ ucwords(str_replace('BISU-', ''," " .  $metadata['campus_filter'])) }} Campus</h2>
             <h3>Medical Assistance Report</h3>
-            <p>October 2024 - October 2025</p>
+            <p>{{ $metadata['cycle_label'] }}</p>
         </div>
 
         <!-- Date Context Node -->
         <div class="date-marker">
-            November 2024
+            {{ $metadata['contextual_date'] }}
         </div>
 
         <!-- Primary Matrix Ledger Representation -->
@@ -265,43 +280,37 @@
                     <th style="width: 10%;">Approved Amount for Reimbursement (AC)</th>
                     <th style="width: 11%;">Received From Previous Claim/Actual Amount Received</th>
                     <th style="width: 8%;">Month & Year</th>
-                    <th style="width: 8%;">Balance (TC (23k)-AC)</th>
+                    <th style="width: 8%;">Balance (TC ({{ $metadata['max_claimable_amount'] >= 1000 ? number_format($metadata['max_claimable_amount'] / 1000, 0) . 'K' : $metadata['max_claimable_amount'] }})-AC)</th>
                     <th style="width: 14%;">Remarks</th>
                 </tr>
             </thead>
             <tbody>
                 <!-- Row Element Instance: Active Prior Claim Structure Block -->
-                <tr class="row-highlight">
-                    <td class="text-center">1</td>
-                    <td class="text-center">2024</td>
-                    <td class="text-center">November</td>
-                    <td class="text-center">Balilihan</td>
-                    <td class="text-indicator-blue">Marry Joyce Gudmalin-Ale</td>
-                    <td>Medical Assistance</td>
-                    <td class="text-right">₱ 17,400.00</td>
-                    <td class="text-right">₱ 5,600.00</td>
-                    <td class="text-center">October 2024</td>
-                    <td class="text-right">₱ 17,400.00</td>
-                    <td>Can claim by Oct 2026</td>
-                </tr>
+                <?php $counter = 0; ?>
+                @forelse ($records as $record)
+
+                    <tr class="@if($record['is_blue_indicator']) row-highlight @endif">
+                        <td class="text-center">{{ ++$counter }}</td>
+                        <td class="text-center">{{ $record['year'] }}</td>
+                        <td class="text-center">{{ $record['month'] }}</td>
+                        <td class="text-center">{{ $record['campus'] }}</td>
+                        <td class="text-indicator-blue">{{ $record['name_of_claimant'] }}</td>
+                        <td>Medical Assistance</td>
+                        <td class="text-right"> @money($record['approved_amount_ac']) </td>
+                        <td class="text-right"> @money($record['received_previous_claims']) </td>
+                        <td class="text-center">{{ $record['month_year_previous'] }}</td>
+                        <td class="text-right"> @money($record['balance']) </td>
+                        <td>{{ $record['remarks'] }}</td>
+                    </tr>
+                    
+                @empty
+                    
+                @endforelse
                 
-                <!-- Blank Document Matrix Structural Spacer Blocks -->
-                <tr>
-                    <td class="text-center">&nbsp;</td>
-                    <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
-                </tr>
-                <tr>
-                    <td class="text-center">&nbsp;</td>
-                    <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
-                </tr>
-                <tr>
-                    <td class="text-center">&nbsp;</td>
-                    <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
-                </tr>
                 <!-- Total Row Block -->
                 <tr class="font-bold">
                     <td colspan="6" class="text-right">TOTAL</td>
-                    <td class="text-right">₱ 17,400.00</td>
+                    <td class="text-right">@money($metadata['total_approved_amount'])</td>
                     <td colspan="4" style="font-size: 8.5pt; font-weight: normal; font-style: italic; padding-left: 8px;">
                         This amount is intended for the medical assistance of the claimants listed above.
                     </td>
@@ -311,10 +320,10 @@
 
         <!-- Acknowledgment Receipt Bounding Box -->
         <div class="receipt-bounding-box">
-            The amount of <strong>₱ 17,400.00</strong> was received by 
-            <span class="fill-blank">ESTRELLA MARIE DUNGABONG</span>, 
-            FA Treasurer of BISU Balilihan Campus from Dr. Siricia O. Perenio, dated 
-            <span class="fill-blank">01/29/25</span>.
+            The amount of <strong>@money($metadata['total_approved_amount'])</strong> was received by 
+            <span class="fill-blank">{{ $signatories['campusTreasurer'] }}</span>, 
+            FA Treasurer of {{ ucwords(str_replace('-', ' ', $metadata['campus_filter'])) }} Campus from {{ $signatories['federatedTreasurer'] }}, dated 
+            <span class="fill-blank">{{ $metadata['generation_date'] }}</span>.
         </div>
 
         <!-- Footnote Section -->
@@ -328,14 +337,14 @@
             <!-- Treasurer Signature Block -->
             <div class="sig-block">
                 <p class="sig-label">Reported by:</p>
-                <div class="sig-name">SIRICIA O. PERENIO, PhD</div>
+                <div class="sig-name">{{ $signatories['federatedTreasurer'] }}</div>
                 <div class="sig-title">Treasurer, FFA</div>
             </div>
             
             <!-- President Signature Block -->
             <div class="sig-block">
                 <p class="sig-label">Noted by:</p>
-                <div class="sig-name">MARC BENIGNO C. OLAGUIR, PhD</div>
+                <div class="sig-name">{{ $signatories['federatedPresident'] }}</div>
                 <div class="sig-title">President, FFA</div>
             </div>
 

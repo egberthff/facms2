@@ -9,12 +9,29 @@ use App\Models\Member;
 use App\Models\ContributionBatch;
 use App\Models\SystemSetting;
 use App\Models\ClaimsCycle;
+use App\Services\MemberService;
+use App\Services\ContributionService;
+use App\Services\CycleService;
+use App\Services\ClaimService;
+use Illuminate\Http\Request;
 use InvalidArgumentException;
 
 class ReportService
 {
-    public function __construct(private CycleService $cycleService)
+    private CycleService $cycleService;
+    private MemberService $memberService;
+    private ContributionService $contributionService;
+    private ClaimService $claimService;
+    public function __construct(
+        CycleService $cycleService, 
+        MemberService $memberService, 
+        ContributionService $contributionService,
+        ClaimService $claimService)
     {
+        $this->cycleService = $cycleService;
+        $this->memberService = $memberService;
+        $this->contributionService = $contributionService;
+        $this->claimService = $claimService;
     }
 
     /**
@@ -44,6 +61,12 @@ class ReportService
 
             'payroll-deduction-request'
                 => $this->payrollDeductionRequest($filters),
+
+            'faculty-deduction-summary'
+                => $this->facultyDeductionSummary($filters),
+
+            'medical-assistance-report'
+                => $this->medicalAssistanceReport($filters),
 
             default => throw new InvalidArgumentException(
                 "Unknown report type [{$reportType}]"
@@ -201,7 +224,6 @@ class ReportService
             // Always display month and total claims columns alongside the targeted status column
             $columnsOutput = [$allColumns['month'], $allColumns['claims'], $allColumns[$statusKey]];
         }
-        \Log::error($filters['campus_id']);
         return [
             'context' => $this->buildContext(
                 'Monthly Claims Summary',
@@ -703,6 +725,137 @@ class ReportService
             'total_deduction' => $totalDeduction,
         ];
     }
+
+    public function facultyDeductionSummary(array $filters): array 
+    {
+         
+        $request = new Request($filters);
+        $campusId = $request['campus_id'] ?? null;
+
+        $dateFrom = isset($filters['date_from']) ? Carbon::parse($filters['date_from'])->format('F Y') : '';
+        $dateTo = isset($filters['date_to']) ? Carbon::parse($filters['date_to'])->format('F Y') : '';
+        $period = ($dateFrom && $dateTo) ? "{$dateFrom} to {$dateTo}" : '';
+
+        // 2. Fetch required services data
+        $campus = $this->memberService->getCampus($campusId);
+        $campusTreasurer = $this->memberService->getTreasurer($filters, $campusId);
+        $campusPresident = $this->memberService->getPresident($filters, $campusId);
+        $members = $this->memberService->getMembers($request, $campusId);
+        $contributionPerMonth = $this->contributionService->getContributionPerMonth($request, $campusId);
+
+        return [
+            'campus' => $campus?->campus_name ?? '',
+            'period' => $period,
+            'table_data' => $contributionPerMonth,
+            'signatories' => [
+                'campus_treasurer' => $campusTreasurer?->name,
+                'campus_president' => $campusPresident?->name,
+                'campus_auditor'   => '',
+            ],
+        ];
+    }
+
+    public function medicalAssistanceReport(array $filters): array
+    {
+        $request = new Request($filters);
+        $campusId = $request->input('campus_id') ?? null;
+        $cycleParam = $request->input('cycle') ?? null;
+    
+        // 1. Resolve cycle array context bounds using your helper class method
+        // Returns array structure: [0 => start_date, 1 => end_date, 2 => cycle_label]
+        $resolvedCycle = $this->cycleService->resolve($cycleParam, $campusId);
+
+        $startDate = $resolvedCycle[0];
+        $endDate = $resolvedCycle[1];
+        // $cycleLabel = $resolvedCycle[2];
+        $cycleLabel = $resolvedCycle[0]->format('F Y') . ' - ' . $resolvedCycle[1]->format('F Y');
+
+        // 2. Query structural dataset inside this cycle boundary
+        $claims = $this->claimService->getAllClaims([], $campusId, [$startDate, $endDate]);
+    
+        // 3. Transform and group dataset to build out tabular matrix per member
+        $formattedRecords = $claims->groupBy('member_id')
+            ->filter(function ($memberClaims) {
+                return $memberClaims->contains('status', 'Approved');
+            })
+            ->map(function ($memberClaims, $memberId) use ($startDate, $endDate) {
+
+            $firstClaim = $memberClaims->first();
+            $member = $firstClaim->member->user->name;
+            
+            // Assemble Full Name matching the image format
+            // $middleInitial = $member->middle_name ? ' ' . substr($member->middle_name, 0, 1) . '.' : '';
+            // $fullName = trim("{$member->first_name}{$middleInitial} {$member->last_name} {$member->suffix}");
+            $fullName = trim($member);
+    
+            // Filter and evaluate aggregate sums
+            // A: Total approved amount up for action/disbursement right now in this cycle window
+            $approvedAmountForReimbursement = $memberClaims->where('status', 'Approved')->sum('approved_amount');
+            $previouslyDisbursedAmount = $memberClaims->where('status', 'Disbursed')->sum('approved_amount'); 
+            // B: Historically received funds (Disbursed status) within this same cycle window
+            $receivedFromPreviousClaims = Claim::withoutGlobalScope(CampusMemberScope::class)
+                ->where('member_id', $memberId)
+                ->where('status', 'Disbursed')
+                ->whereBetween('submitted_at', [$startDate, $endDate])
+                ->sum('approved_amount');
+    
+            // Dynamic visual layout balance check (TC (23k) - AC)
+            $maxAnnualLimit = $firstClaim->annual_limit ?? 23000.00; 
+            $remainingBalance = $maxAnnualLimit - $previouslyDisbursedAmount;
+    
+            // Custom business logic matching your document's footnote rule indicator:
+            // Set indicator if a historic balance distribution already exists
+            $hasExistingPriorClaim = $receivedFromPreviousClaims > 0;
+            $remarks = (float)$remainingBalance === 0.00 ? 'Can claim by ' . $endDate->copy()->addMonth()->format('F Y') : '';
+            return [
+                'year' => Carbon::parse($firstClaim->submitted_at)->format('Y'),
+                'month' => Carbon::parse($firstClaim->submitted_at)->format('F'),
+                'campus' => $member->campus->acronym ?? $member->campus->campus_name ?? 'N/A',
+                'name_of_claimant' => $fullName,
+                'type_of_claim' => $memberClaims->pluck('claimType.name')->unique()->implode(', '),
+                'approved_amount_ac' => (float)$approvedAmountForReimbursement,
+                'received_previous_claims' => (float)$receivedFromPreviousClaims,
+                'month_year_previous' => $hasExistingPriorClaim ? Carbon::parse($startDate)->format('F Y') : 'N/A',
+                'balance' => (float)$remainingBalance,
+                // 'remarks' => $firstClaim->remarks ?? '',
+                'remarks' => $remarks,
+                'is_blue_indicator' => $hasExistingPriorClaim
+            ];
+        })->values()->toArray();
+    
+        // 4. Calculate table aggregates for the footer summary blocks
+        $totalApprovedAmt = collect($formattedRecords)->sum('approved_amount_ac');
+        $campusFilter = $this->memberService->getCampus($campusId);
+        
+        $campusTreasurer = $this->memberService->getTreasurer($filters, $campusId);
+        $federatedTreasurer = $this->memberService->getTreasurer($filters);
+        $federatedPresident = $this->memberService->getPresident($filters);
+        $max_claimable_amount = SystemSetting::getGlobalLimit($campusId);
+        // Return production payload structured cleanly for JSON serialization or rendering pipelines
+        return [
+            'metadata' => [
+                'association' => 'CVSCAFT FACULTY ASSOCIATION',
+                'report_title' => 'Medical Assistance Report',
+                'campus_filter' => $campusFilter?->acronym ?? '',
+                'cycle_label' => $cycleLabel,
+                'date_range' => [
+                    'start' => $startDate,
+                    'end' => $endDate
+                ],
+                'generation_date' => now()->format('m/d/y'),
+                'contextual_date' => now()->format('F Y'),
+                'total_approved_amount' => $totalApprovedAmt,
+                'max_claimable_amount' => $max_claimable_amount,
+            ],
+            'signatories' => [
+                'campusTreasurer' => $campusTreasurer->name,
+                'federatedTreasurer' => $federatedTreasurer->name,
+                'federatedPresident' => $federatedPresident->name,
+            ],
+            'records' => $formattedRecords
+        ];
+    }
+
 
     private function formatPayrollCoverage(?Claim $claim): string
     {

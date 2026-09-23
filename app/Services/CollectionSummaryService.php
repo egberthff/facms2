@@ -6,11 +6,18 @@ use App\Models\Campus;
 use App\Models\FundAccount;
 use App\Models\FundTransfer;
 use App\Models\User;
+use App\Services\MemberService;
 use Carbon\Carbon;
 use Illuminate\Validation\ValidationException;
 
 class CollectionSummaryService
 {
+    private MemberService $memberService;
+
+    public function __construct(MemberService $memberService)
+    {
+        $this->memberService = $memberService;
+    }
     public function createTransfer(array $data, User $user): FundTransfer
     {
         $account = FundAccount::query()->where('code', 'FFA')->where('is_active', true)->first();
@@ -80,11 +87,20 @@ class CollectionSummaryService
                 'reference_number' => $transfer->reference_number,
             ]);
 
+        $campusTreasuer  = $this->memberService->getTreasurer($campusId);
+        // $campusAuditor   = $this->memberService->getAuditor($campusId);
+        $campusAuditor   = '';
+        $campusPresident = $this->memberService->getPresident($campusId);
+
         return [
             'collections' => $collections,
             'disbursements' => $disbursements,
             'collection_total' => (float) $collections->sum('amount'),
             'disbursement_total' => (float) $disbursements->sum('amount'),
+            'campus_treasurer' => $campusTreasuer?->name ?? '',
+            // 'campus_auditor' => $campusAuditor?->name ?? '',
+            'campus_auditor' =>  '',
+            'campus_president' => $campusPresident?->name ?? '',
         ];
     }
 

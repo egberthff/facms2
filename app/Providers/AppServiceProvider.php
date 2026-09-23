@@ -36,6 +36,10 @@ class AppServiceProvider extends ServiceProvider
           Blade::anonymousComponentPath(resource_path('views/layouts'), 'layouts');
           Blade::anonymousComponentPath(resource_path('views/claims'), 'claims');
 
+          Blade::directive('money', function ($expression) {
+              return "<?php echo (new NumberFormatter('en_PH', NumberFormatter::CURRENCY))->formatCurrency($expression, 'PHP'); ?>";
+          });
+
          $policies = [
             // Registers the Dashboard Policy manually
             'dashboard' => \App\Policies\DashboardPolicy::class,

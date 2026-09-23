@@ -178,6 +178,11 @@ return [
 
         ],
 
+        /*
+        |--------------------------------------------------------------------------
+        | Association Collection/Disbursement Summary
+        |--------------------------------------------------------------------------
+        */
         'collection-summary' => [
 
             'title' => 'Collection Summary',
@@ -206,6 +211,12 @@ return [
 
         ],
 
+
+        /*
+        |--------------------------------------------------------------------------
+        | Member Deduction Request
+        |--------------------------------------------------------------------------
+        */
         'payroll-deduction-request' => [
 
             'title' => 'Payroll Deduction Request',
@@ -222,7 +233,7 @@ return [
 
                 'payroll_month',
 
-                'member',
+                // 'member',
 
                 'claim_type',
 
@@ -240,6 +251,68 @@ return [
 
             'table' => 'payroll_deduction',
 
+        ],
+
+        /*
+        |--------------------------------------------------------------------------
+        | Member Deduction Summary
+        |--------------------------------------------------------------------------
+        */
+        'faculty-deduction-summary' => [
+            'title' => 'Faculty Deductions Summary',
+
+            'description' => 'Printable faculty deductions summary for the year',
+
+            'category' => 'financial',
+
+            'handler' => ReportService::class,
+
+            'filters' => [
+
+                'date_range',
+
+                'campus',
+ 
+            ],
+            'cards' => [
+                'members',
+
+                'amount',
+            ],
+
+            'table' => 'deductions',
+        ],
+
+        /*
+        |--------------------------------------------------------------------------
+        | Member Midical Assistance Report
+        |--------------------------------------------------------------------------
+        */
+        'medical-assistance-report' => [
+            'title' => 'Medical Assistance Report',
+
+            'description' => 'Printable medical assistance report ledger',
+
+            'category' => 'financial',
+
+            'handler' => ReportService::class,
+
+            'filters' => [
+                // 'date_range',
+
+                'campus',
+
+                'cycle',
+
+                // 'claim_month',
+            ],
+
+            'cards' => [
+
+                'members',
+
+                'amount',
+            ]
         ],
 
         /*
