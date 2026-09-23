@@ -83,7 +83,6 @@ class ContributionDetailsController extends Controller
         $user = Auth::user();
         $status = null;
         $contribution_type = strtolower(trim($request->input('contribution_type', 'claims')));
-        \Log::error(print_r($contribution_type, true));
     
         switch ($contribution_type) {
             case 'claims':

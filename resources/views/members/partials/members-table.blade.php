@@ -81,7 +81,7 @@
                                         data-member-campus-id="{{ $member->campus_id }}"
                                         data-member-email="{{ $member->user->email }}"
                                     >
-                                        Edit
+                                        View
                                     </x-button>
                                 </td>
                                 @endif

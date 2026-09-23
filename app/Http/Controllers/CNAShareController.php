@@ -61,7 +61,6 @@ class CNAShareController extends Controller
                 'data'    => $updatedDetail
             ]);
         } catch (Exception $e) {
-            \Log::error(print_r($e, true));
             return response()->json([
                 'success' => false,
                 'message' => 'Unable to record payment line item assignment.'
