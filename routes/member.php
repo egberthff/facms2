@@ -12,4 +12,5 @@ Route::middleware(['auth', 'active'])
         // Route::get('members/my-contributions/{user}', [ContributionDetailsController::class, 'myOwedContributions'])->middleware('can:view own contribution, member')->name('member.my-contributions');
         Route::get('members/my-contributions/{user}', [ContributionDetailsController::class, 'myOwedContributions'])->middleware('can:view own contribution')->name('member.my-contributions');
         Route::get('members/{member}/{type}', [MemberController::class, 'getHistory'])->name('members.history');
-    });
+        Route::get('profile', [MemberController::class, 'getProfilePage'])->name('members.profile');
+        });

@@ -249,4 +249,13 @@ class MemberController extends Controller
         ]);
     }
 
+    public function getProfilePage() {
+        
+        $member = Member::with(['user', 'campus', 'claims', 'contributions'])
+            ->where('user_id', Auth::id())
+            ->firstOrFail();
+
+        return view('profile.index', compact('member')); 
+    }
+
 }

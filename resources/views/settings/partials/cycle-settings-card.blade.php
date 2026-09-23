@@ -1,8 +1,39 @@
 @php
-    $startYearSetting = $cycleSettings->firstWhere('setting_key', 'claim_cycle_start_year');
-    $startMonthSetting = $cycleSettings->firstWhere('setting_key', 'claim_cycle_start_month');
-    $yearsSetting = $cycleSettings->firstWhere('setting_key', 'claim_cycle_years');
-    $cycleLocked = $cycleSettings->contains(fn ($setting) => \App\Models\ClaimsCycle::where('campus_id', $setting->campus_id)->exists());
+    $startYearSetting = $cycleSettings->first(function ($setting) {
+        return $setting->setting_key === 'claim_cycle_start_year'
+             && $setting->cycle_label === null; 
+    });
+
+
+    $startMonthSetting = $cycleSettings->first(function ($setting) {
+        return $setting->setting_key === 'claim_cycle_start_month'
+             && $setting->cycle_label === null;
+    });
+
+    $yearsSetting = $cycleSettings->first(function ($setting) {
+        return $setting->setting_key === 'claim_cycle_years'
+             && $setting->cycle_label === null;
+    });
+
+    // 1. Map your settings into pairs of campus IDs and cycle labels
+    $pairs = $cycleSettings->map(fn($setting) => [
+        'campus_id' => $setting->campus_id,
+        'cycle_label' => $setting->cycle_label
+    ]); 
+    // ->filter(fn($pair) => !is_null($pair['cycle_label']));
+
+    // 2. Perform a single database query to see if any of those specific pairs exist
+    $cycleLocked = \App\Models\ClaimsCycle::where(function ($query) use ($pairs) {
+        foreach ($pairs as $pair) {
+            $query->orWhere(function ($q) use ($pair) {
+                $q->where('campus_id', $pair['campus_id'])
+                  ->where('cycle_label', $pair['cycle_label']);
+            });
+        }
+    })->exists();
+
+
+    // $cycleLocked = $cycleSettings->contains(fn ($setting) => \App\Models\ClaimsCycle::where('campus_id', $setting->campus_id)->exists());
     $cycleSetting = $startYearSetting ?? $startMonthSetting ?? $yearsSetting;
     $previewStartYear = (int) old('cycle_start_year', optional($startYearSetting)->setting_value);
     $previewStartMonth = (int) old('cycle_start_month', optional($startMonthSetting)->setting_value);
@@ -22,7 +53,8 @@
             <span class="shrink-0 rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-500 shadow-sm ring-1 ring-slate-200">{{ optional($cycleSetting->campus)->acronym ?? 'Campus' }}</span>
         </div>
 
-        <form method="POST" action="{{ route('settings.update', $cycleSetting) }}" class="space-y-4" onsubmit="return {{ $canEdit && !$cycleLocked ? 'confirm(\'Save this cycle configuration?\')' : 'false' }}">
+        {{-- <form method="POST" action="{{ route('settings.update', $cycleSetting) }}" class="space-y-4" onsubmit="return {{ $canEdit && !$cycleLocked ? 'confirm(\'Save this cycle configuration?\')' : 'false' }}"> --}}
+        <form method="POST" action="{{ route('settings.update', $cycleSetting) }}" class="space-y-4"  onsubmit="saveCycleConfig(event, this)"> 
             @csrf
             @method('PUT')
             <input type="hidden" name="campus_filter" value="{{ $selectedCampusId ?? '' }}">

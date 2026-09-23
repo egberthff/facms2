@@ -12,6 +12,7 @@ use App\Models\ContributionDetail;
 use App\Models\AnnualContribution;
 use App\Models\SystemSetting;
 use App\Models\CollectionsAdjustments;
+use App\Models\CNAShare;
 use App\Services\TreasuryLedgerService;
 USE App\Enums\ContributionStatus;
 use Illuminate\Support\Facades\DB;
@@ -254,17 +255,36 @@ class ContributionService
             $detail = match ($tag) {
                 'claims' => ContributionDetail::findOrFail($id),
                 'annual' => AnnualContribution::findOrFail($id),
+                'cna_share' => CNAShare::findOrFail($id),
                 default  => throw new InvalidArgumentException("Invalid contribution tag: {$tag}"),
             };
 
-            $detail->update([
-                'status'  => ContributionStatus::Paid->value,
-                'paid_at' => now(),
-            ]);
+            if ($tag == 'cna_share') {
+                 $detail->update([
+                    'paid_amount'  => $detail->due_amount,
+                    'status'  => ContributionStatus::Paid->value,
+                    'paid_at' => now(),
+                ]);
+            } else {
+                $detail->update([
+                    'status'  => ContributionStatus::Paid->value,
+                    'paid_at' => now(),
+                ]);
+            }
 
-            $name = ($tag === 'claims') ? 'Claims' : 'Annual';
+            $name = match ($tag) {
+                'claims' => 'Claims',
+                'cna_share' => 'CNA Share',
+                'annual' => 'Annual',
+                default => 'Standard'
+            };
             $description = "Receipt for {$name} Contribution - Member ID: " . $detail->member_id;
-            $amount = $tag === 'annual' ? $detail->amount_paid : $detail->amount;
+            $amount = match ($tag) {
+                'annual'    => $detail->amount_paid,
+                'cna_share' => $detail->paid_amount,
+                default     => $detail->amount,
+            };
+
 
             if ($amount === null || (float) $amount < 0) {
                 throw new InvalidArgumentException('The contribution amount must be a valid non-negative value.');
@@ -427,6 +447,55 @@ class ContributionService
         ];
     }
 
+    public function getCNAShareContributionData(?string $selectedCampusId = null): array
+    {
+        $hasFullAccess = Auth::user()->can('view all campus data') || Auth::user()->hasAnyRole(['President', 'Treasurer']);
+
+        $batches = CNAShare::with(['member.campus'])
+            ->when($hasFullAccess && $selectedCampusId, function ($query) use ($selectedCampusId) {
+                $query->whereHas('member', function ($q) use ($selectedCampusId) {
+                    $q->where('campus_id', $selectedCampusId);
+                });
+            })
+            ->latest('created_at')
+            ->get()
+            ->map(function (CNAShare $cnaShare) {
+                $member = $cnaShare->member;
+                $status = strtolower((string) $cnaShare->status);
+
+                return [
+                    'id'                  => $cnaShare->id,
+                    'claim_id'            => $cnaShare->year, // No claim association for CNA Share
+                    'claim_number'        => $cnaShare->reference_number,
+                    'claimant'            => trim(sprintf('%s %s %s', $member?->first_name, $member?->middle_name, $member?->last_name)),
+                    'claim_type'          => 'CNA Share Contribution',
+                    'campus_acronym'      => $member?->campus?->acronym ?? 'SYS',
+                    'collectible_amount'  => (float) $cnaShare->due_amount,
+                    'collected_amount'    => ($status === 'paid') ? (float) $cnaShare->paid_amount : 0.00,
+                    'generated_at'        => $cnaShare->created_at ? Carbon::parse($cnaShare->created_at)->format('M d, Y h:i A') : '—',
+                    'total_members'       => 1,
+                    'details'             => [
+                        [
+                            'id'              => $cnaShare->id,
+                            'member_name'     => trim(sprintf('%s %s %s', $member?->first_name, $member?->middle_name, $member?->last_name)),
+                            'employee_number' => $member?->employee_number ?? 'N/A',
+                            'department'      => $member?->department ?? 'N/A',
+                            'amount'          => (float) $cnaShare->due_amount,
+                            'status'          => $status,
+                            'paid_at'         => $cnaShare->paid_at ? Carbon::parse($cnaShare->paid_at)->format('M d, Y h:i A') : '—',
+                        ],
+                    ],
+                ];
+            });   
+
+        return [
+            'isPresident'      => $hasFullAccess,
+            'selectedCampusId' => $selectedCampusId,
+            'allCampuses'      => Campus::where('is_active', true)->get(), 
+            'batches'          => $batches->values()->all(),
+        ];
+    }
+
      /**
      * Get the total paid contributions sum, filtered by optional campus.
      */
@@ -447,7 +516,7 @@ class ContributionService
         return (float) $query->sum('contribution_details.amount');
     }
 
-    public function getContributionPerMonth(Request $request, string $campusId): array
+    public function getContributionPerMonth(Request $request, ?string $campusId = null): array
     {
         $dateFrom = $request->date_from
             ? Carbon::parse($request->date_from)->startOfMonth()
@@ -483,6 +552,14 @@ class ContributionService
         ];
     
         $headerMonthLabel = [];
+
+        // $totalAnnualDueCollectionTarget = [
+        //     'total' => 0,
+        // ];
+
+        // $actualAnnualDueCollectionTarget = [
+        //     'total' => 0,
+        // ];
     
         $totalMonthlyCollectionTarget = [
             'total' => 0,
@@ -515,12 +592,21 @@ class ContributionService
         ];
     
         $balanceCollectible = [
+            'cna_share' => [],
+            'annual_due' => [],
             'total' => 0,
         ];
     
-        $months = [];
-    
         $currentMonth = $dateFrom->copy();
+
+        $months = [];
+
+        $cnaShare = [
+            'total' => 0,
+        ];
+        $anualDues = [
+            'total' => 0,
+        ];
     
         while ($currentMonth->lte($dateTo)) {
     
@@ -546,14 +632,11 @@ class ContributionService
              * Detailed adjustment records for this month.
              */
             $collectionAdjustmentDetails[$monthKey] = [];
-
-            $collectionAdjustmentDetails['cna_share'] = 0;
     
             $headerMonthLabel[] = $monthKey;
     
             $currentMonth->addMonth();
         }
-    
     
         /*
          * ---------------------------------------------------------
@@ -565,16 +648,118 @@ class ContributionService
          * - monthly contribution values
          * - total_contributed = Y-axis / row total
          */
-    
+
         $members = Member::query()
             ->with('user')
-            ->where('campus_id', $campusId)
+            // Only apply the manual where clause if a specific campus filter was explicitly selected
+            ->when($campusId, function ($query, $campusId) {
+                // Safe bypass to avoid duplicate SQL where filters if the scope already handled it
+                $query->withoutGlobalScope(CampusMemberScope::class)
+                      ->where('campus_id', $campusId);
+            })
             ->get();
-    
+
+        $yearsList = collect(\Carbon\CarbonPeriod::create(
+            $dateFrom->copy()->startOfYear(),
+            '1 year',
+            $dateTo->copy()->startOfYear()
+        ))
+            ->map->year
+            ->unique()
+            ->values()
+            ->toArray();   
+            
+        $reportCnaShare  = [
+            'total' => 0,
+        ];
+
+        $reportAnnualDues = [
+            'total' => 0,
+        ];
+
+        foreach ($yearsList as $year) {
+            $reportCnaShare[$year] = 0;
+            $totalCNAShareCollectionTarget[$year]['total'] = 0;
+            $actualCNAShareCollectionTarget[$year]['total'] = 0;
+            $balanceCollectible['cna_share'][$year]['total'] = 0;
+
+            $reportAnnualDues[$year] = 0;
+            $totalAnnualDueCollectionTarget[$year]['total'] = 0;
+            $actualAnnualDueCollectionTarget[$year]['total'] = 0;
+            $balanceCollectible['annual_due'][$year]['total'] = 0;
+
+        }    
+
+        $cnaShares = CnaShare::query()
+            ->whereIn('year', $yearsList)
+            ->whereIn('member_id', $members->pluck('id'))
+            ->get()
+            ->groupBy('member_id'); 
+
+        $annualDues = AnnualContribution::query()
+            ->whereIn('contribution_year', $yearsList)
+            ->whereIn('member_id', $members->pluck('id'))
+            ->get()
+            ->groupBy('member_id');
+            
         $memberData = [];
     
         foreach ($members as $member) {
-    
+            $memberCnaShares = $cnaShares->get($member->id, collect());
+            $memberAnnualDues = $annualDues->get($member->id, collect());
+            $annualDue = [];
+            $cnaShare = [];
+
+            foreach ($yearsList as $year) {
+                $cnaShare[$year] = 0;
+                $annualDue[$year] = 0;
+            }
+
+            foreach ($memberCnaShares as $share) {
+                $amount = (float) $share->paid_amount;
+                $cnaShare[$share->year] = $amount;
+
+                $reportCnaShare[$share->year] = $share->due_amount;
+                $reportCnaShare['total'] += $share->due_amount;
+
+                $totalCNAShareCollectionTarget[$share->year]['total'] += $share->due_amount;
+                $actualCNAShareCollectionTarget[$share->year]['total'] += $amount; 
+                
+            }
+
+            foreach ($totalCNAShareCollectionTarget as $year => $targetData) {
+                $target = $targetData['total'];
+                $actual = $actualCNAShareCollectionTarget[$year]['total'] ?? 0;
+                
+                $balanceCollectible['cna_share'][$year]['total'] = (float) ($target - $actual);
+            }
+             
+            foreach ($memberAnnualDues as $due) {
+                $amount = (float) $due->amount_paid;
+                $annualDue[$due->contribution_year] = $amount;
+                $reportAnnualDues[$due->contribution_year] = $amount;
+                $reportAnnualDues['total'] += $amount;
+                $totalAnnualDueCollectionTarget[$due->contribution_year]['total'] += $amount;
+                
+                if ($due->status === ContributionStatus::Paid->value) {
+                    $actualAnnualDueCollectionTarget[$due->contribution_year]['total'] += $amount;
+                }
+            }
+
+            foreach ($totalAnnualDueCollectionTarget as $year => $targetData) {
+                
+                $target = (is_array($targetData) && isset($targetData['total'])) 
+                          ? $targetData['total'] 
+                          : (float) $targetData;
+            
+                $actualData = $actualAnnualDueCollectionTarget[$year] ?? 0;
+                $actual = (is_array($actualData) && isset($actualData['total'])) 
+                          ? $actualData['total'] 
+                          : (float) $actualData;
+                
+                $balanceCollectible['annual_due'][$year]['total'] = (float) ($target - $actual);
+            }
+            
             $memberData[$member->id] = [
                 'member_id' => $member->id,
     
@@ -588,16 +773,19 @@ class ContributionService
                 /*
                  * Y-axis / row total.
                  */
-                'total_contributed' => 0,
+                'total_contributed' => array_sum([...$annualDue, ...$cnaShare]),
     
-                /*
-                 * Placeholder for future CMA share calculations.
-                 */
-                'cna_share' => 0,
+                'cna_share' => $cnaShare,
+
+                'annual_due' => $annualDue,
+                
             ];
+
         }
-    
-    
+
+        $headerMonthsAmount['total'] = array_sum([...array_diff_key($reportAnnualDues, ['total' => '']), ...array_diff_key($reportCnaShare, ['total' => ''])]);
+        $totalMonthlyCollectionTarget['total'] = array_sum(array_column($totalCNAShareCollectionTarget, 'total')) + array_sum(array_column($totalAnnualDueCollectionTarget, 'total'));
+        $actualMonthlyCollection['total'] = array_sum(array_column($actualCNAShareCollectionTarget, 'total')) + array_sum(array_column($actualAnnualDueCollectionTarget, 'total'));
         /*
          * ---------------------------------------------------------
          * 3. Get claims within the report period.
@@ -864,9 +1052,6 @@ class ContributionService
                ];                
         }
 
-        $collectionAdjustmentDetails['cna_share'] = 0;
-    
-    
         /*
          * ---------------------------------------------------------
          * 6. APPLY COLLECTION ADJUSTMENTS
@@ -955,8 +1140,31 @@ class ContributionService
              */
             'actual_monthly_collection' =>
                 $actualMonthlyCollection,
+
+            /**
+             * Raw Expected CNA Share Collection
+             */
+            'total_cna_share_collection_target' =>
+                $totalCNAShareCollectionTarget,
+
+            /**
+             * Raw actual CNS share collection before adjustment
+             */
+            'actual_cna_share_collection' => 
+                $actualCNAShareCollectionTarget,
     
+            /**
+             * Raw Expected Annual Due Collection
+             */
+            'total_annual_due_collection_target' =>
+                $totalAnnualDueCollectionTarget,
     
+            /**
+             * Raw actual annual due collection before adjustment. 
+             */
+            'actual_annual_due_collection' =>
+                $actualAnnualDueCollectionTarget,
+
             /*
              * Collection adjustments from database.
              */
@@ -983,7 +1191,16 @@ class ContributionService
             'balance_collectible' =>
                 $balanceCollectible,
     
-    
+            /**
+             * CNA Shares
+             */ 
+            'cna_share' => $reportCnaShare,
+
+            /**
+             * Annual Dues  
+             */ 
+            'annual_due' => $reportAnnualDues,
+
             /*
              * Member rows.
              *
@@ -1341,8 +1558,94 @@ public function contributionAdjustment(array $data)
         'adjustment_type'  => $data['adjustment_type'], // Pass validation clean data
         'amount'           => $data['amount'], 
         'description'      => $data['description'] ?? null,
-        'created_by'       => Auth::user()->id,
+        'created_by'       => Auth::id(),
     ]);
 }
+
+    /**
+     * Persist the collection of CNA Share into the database engine.
+     * 
+     * @param array $data The contribution year for which the CNA Share is being set up.
+     * @return void
+     */
+    public function setupCNAShare(array $data)
+    {
+        $user = Auth::user();
+
+        // 1. Determine cross-campus access authorization
+        $hasFullAccess = $user->can('view all campus data') || $user->hasAnyRole(['President', 'Treasurer']);
+
+        // 2. Security Guard: Prevent restricted users from injecting other campus IDs
+        if (!$hasFullAccess) {
+            $userCampusId = $user->getCachedCampusId();
+
+            if (!$userCampusId || $userCampusId != $data['campus_filter']) {
+                abort(403, 'Unauthorized action. You can only set up shares for your assigned campus.');
+            }
+        }
+
+        // 3. Prepare Member Query Builder
+        $query = Member::query();
+
+        if ($hasFullAccess) {
+            $query->withoutGlobalScope(CampusMemberScope::class);
+        }
+
+        // 4. Fetch target campus members (selecting only the ID to minimize memory usage)
+        $members = $query->whereHas('campus', function ($q) use ($data) {
+            $q->where('id', $data['campus_filter']);
+        })->select('id')->get();
+
+        // If no members are found, exit early to avoid empty database calls
+        if ($members->isEmpty()) {
+            return;
+        }
+
+        $year = $data['contribution_year'] ?? now()->year;
+        $amount = $data['contribution_amount'] ?? 100.00; // Default to 100.00 if not provided
+        $timestamp = now();
+        $insertData = [];
+
+        // 5. Structure payload array for the bulk insert
+        foreach ($members as $member) {
+            $shareCode = 'CNAS-' . now()->format('Ymd') . '-' . strtoupper(Str::random(6));
+            $insertData[] = [
+                'id'               => (string) Str::orderedUuid(),
+                'reference_number' => $shareCode,
+                'member_id'   => $member->id,
+                'year'        => $year,
+                'due_amount'  => $amount,
+                'paid_amount' => 0.00,
+                'status'     =>  ContributionStatus::Unpaid->value,
+                'created_by'  => $user->user_id,
+                'created_at'  => $timestamp, // Bulk insert requires manual timestamps
+                'updated_at'  => $timestamp,
+            ];
+        }
+
+        // 6. Database Transaction Execution
+        DB::beginTransaction();
+
+        try {
+            // Perform mass chunked bulk insert (chunks of 500 records to prevent SQL binding limits)
+            foreach (array_chunk($insertData, 500) as $chunk) {
+                CNAShare::insert($chunk);
+            }
+
+            DB::commit();
+        } catch (Exception $e) {
+            DB::rollBack();
+
+            // Log the exact database error safely for debugging
+            \Log::error('Failed to setup CNA Shares: ' . $e->getMessage(), [
+                'campus_id' => $data['campus_filter'],
+                'year'      => $year,
+                'user_id'   => $user->id
+            ]);
+
+            // Rethrow or return a custom failure message depending on your architecture
+            throw new Exception('An error occurred while establishing CNA Shares. Please try again.');
+        }
+    }
 
 }

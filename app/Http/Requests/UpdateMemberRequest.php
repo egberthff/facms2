@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
+use App\Enums\MembershipStatus;
 use Illuminate\Validation\Rule;
 
 class UpdateMemberRequest extends FormRequest
@@ -92,8 +93,18 @@ class UpdateMemberRequest extends FormRequest
             ],
 
             'membership_status' => [
-                'required',
-                'in:Active,Inactive,Suspended',
+                'required', 
+                Rule::enum(MembershipStatus::class)
+            ],
+
+            'active_member_on' => [
+                'nullable',
+                'date'
+            ],
+
+            'inactive_member_on' => [
+                'nullable',
+                'date'
             ],
 
             'contact_number' => [

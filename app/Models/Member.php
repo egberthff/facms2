@@ -34,6 +34,8 @@ class Member extends Model
         'position',
         'employment_status',
         'membership_status',
+        'active_member_on',
+        'inactive_member_on',
         'contact_number',
         'address',
         'gcash_number',
@@ -45,6 +47,8 @@ class Member extends Model
     {
         return [
             'birth_date' => 'date',
+            'active_member_on' => 'date',   
+            'inactive_member_on' => 'date',
         ];
     }
 
@@ -80,6 +84,7 @@ class Member extends Model
         return $this->hasMany(Claim::class, 'member_id', 'id');
     }
 
+
     public function contributions()
     {
         // return $this->hasMany(ContributionDetail::class);
@@ -99,6 +104,11 @@ class Member extends Model
     public function annualContributions()
     {
         return $this->hasMany(AnnualContribution::class, "member_id", 'id');
+    }
+
+    public function cnaShares()
+    {
+        return $this->hasMany(CNAShare::class, 'member_id', 'id');
     }
 
     /*

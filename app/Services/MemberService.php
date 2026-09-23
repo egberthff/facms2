@@ -115,6 +115,8 @@ class MemberService
                 'position' => $data['position'],
                 'employment_status' => $data['employment_status'],
                 'membership_status' => MembershipStatus::Active->value,
+                'active_member_on' =>$data['active_member_on'] ?? null,
+                'inactive_member_on' => $data['inactive_member_on'] ?? null,
                 'contact_number' => $data['contact_number'],
                 'address' => $data['address'],
                 'gcash_number' => $data['gcash_number'] ?? null,
@@ -178,7 +180,7 @@ class MemberService
                     'name' => $fullName,
                 ]);
             }
-
+            \Log::error(print_r($data, true));
             $member->update($data);
 
             return $member->load('user');

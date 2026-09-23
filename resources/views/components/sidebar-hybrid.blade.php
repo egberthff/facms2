@@ -239,7 +239,7 @@
         <div>
             <ul class="space-y-2">
                 <li>
-                    <a href="{{ route('dashboard') }}"
+                    <a href="{{ route('members.profile') }}"
                         class="flex items-center p-3 rounded-lg transition
                         {{ request()->routeIs('profile.*') ? 'bg-slate-700 text-white' : 'text-white hover:bg-slate-700' }}">
                         <x-heroicon-o-user-circle class="w-5 h-5"/>

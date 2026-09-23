@@ -98,13 +98,24 @@
                         <label for="membership_status" class="block mb-2.5 text-sm font-medium text-gray-900 dark:text-white">Membership Status</label>
                         <select name="membership_status" id="membership_status" class="block w-full px-3 py-2.5 bg-gray-50 dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 shadow-xs" required>
                             <option value="" disabled selected>Select Status</option>
-                            <option value="Active">Active</option>
-                            <option value="Inactive">Inactive</option>
+                             @foreach(\App\Enums\MembershipStatus::cases() as $status)
+                                <option value="{{ $status->value }}">
+                                    {{ $status->name }}
+                                </option>
+                            @endforeach
                         </select>
                     </div>
                     <div class="col-span-1 sm:col-span-2 md:col-span-2">
                         <label for="contact_number" class="block mb-2.5 text-sm font-medium text-gray-900 dark:text-white">Contact Number</label>
                         <input type="text" name="contact_number" value='' id="contact_number" class="bg-gray-50 dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full px-3 py-2.5 shadow-xs" placeholder="Enter contact number" required>
+                    </div>
+                    <div class="col-span-1 sm:col-span-2 md:col-span-2">
+                        <label for="active_member_on" class="block mb-2.5 text-sm font-medium text-gray-900 dark:text-white">Active Member On</label>
+                        <input type="date" name="active_member_on" value='' id="active_member_on" class="bg-gray-50 dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full px-3 py-2.5 shadow-xs" placeholder="Enter active member date">
+                    </div>
+                    <div class="col-span-1 sm:col-span-2 md:col-span-2">
+                        <label for="inactive_member_on" class="block mb-2.5 text-sm font-medium text-gray-900 dark:text-white">Inactive Member On</label>
+                        <input type="date" name="inactive_member_on" value='' id="inactive_member_on" class="bg-gray-50 dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full px-3 py-2.5 shadow-xs" placeholder="Enter inactive member date">
                     </div>
                     <div class="col-span-1 sm:col-span-2 md:col-span-2">
                         <label for="email" class="block mb-2.5 text-sm font-medium text-gray-900 dark:text-white">Email</label>

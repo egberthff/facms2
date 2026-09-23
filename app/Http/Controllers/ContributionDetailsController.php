@@ -144,6 +144,9 @@ class ContributionDetailsController extends Controller
                 });
                 break;
             
+            case 'cna_share': $formattedData = collect(); 
+            break; // Placeholder for future CNA Share contributions logic
+            
             default:
                 $formattedData = collect();
         }
@@ -195,6 +198,10 @@ class ContributionDetailsController extends Controller
             ], 200);
     
         } catch (\Exception $e) {
+            \Log::error('Error saving collection adjustment configuration: ' . $e->getMessage(), [
+                'exception' => $e,
+                'validated_data' => $validated
+            ]);
             return response()->json([
                 'success' => false,
                 'message' => 'An error occurred while saving the collection adjustment configuration.'

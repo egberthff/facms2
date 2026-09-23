@@ -30,6 +30,70 @@ window.Chart = Chart;
 import './report-center';
 import { all } from 'axios';
 
+document.addEventListener('alpine:init', () => {
+    Alpine.data('claimsFilters', () => ({
+        currentStatus: 'all',
+        selectedCycle: 'current', // Matches default backend value
+
+        init() {
+            // Hook your Alpine state variables directly into DataTables custom row filtering engine
+            DataTable.ext.search.push((settings, data, dataIndex) => {
+                // 1. Handle Status filtering logic
+                if (this.currentStatus !== 'all') {
+                    // Replace 'statusColumnIndex' with the position of your status column (e.g., 4)
+                    const statusColumnIndex = 4; 
+                    const rowStatus = data[statusColumnIndex]?.toLowerCase().trim();
+                    if (rowStatus !== this.currentStatus.toLowerCase().trim()) {
+                        return false;
+                    }
+                }
+
+                // 2. Handle Cycle Date-Range filtering logic
+                if (this.selectedCycle && this.selectedCycle !== 'current') {
+                    // Parse start and end years out of string formatting "2025-2027"
+                    const [startYear, endYear] = this.selectedCycle.split('-').map(Number);
+                    
+                    // Replace 'submittedAtColumnIndex' with your column offset (e.g., 3)
+                    const submittedAtColumnIndex = 3; 
+                    const rawDateText = data[submittedAtColumnIndex]; // Returns raw text inside <td>
+
+                    // Extract the 4-digit calendar year out of strings formatted like "Sep 21, 2026"
+                    const yearMatch = rawDateText.match(/\b\d{4}\b/);
+                    if (!yearMatch) return false;
+                    
+                    const claimYear = parseInt(yearMatch[0], 10);
+
+                    // Drop rows falling outside the boundaries of the selected cycle
+                    if (claimYear < startYear || claimYear > endYear) {
+                        return false;
+                    }
+                }
+
+                return true; // Keep row if it clears both conditional checkpoints
+            });
+        },
+
+        // Trigger redrawing actions across both user selection models
+        filterClaims(status) {
+            this.currentStatus = status;
+            this.redrawTable();
+        },
+
+        filterClaimsByCycle() {
+            this.redrawTable();
+        },
+
+        redrawTable() {
+            const table = document.querySelector('.dt-table');
+            const dataTable = table?.dataTableInstance;
+            if (dataTable) {
+                dataTable.draw(); // Automatically executes the pushing evaluations listed above
+            }
+        }
+    }));
+});
+
+
 // Initialize components on DOM ready
 document.addEventListener('DOMContentLoaded', () => {
 
@@ -55,6 +119,125 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Datatables
     document.querySelectorAll(".dt-table:not([data-datatable-defer])").forEach(initializeDataTable);
+
+    //Submit system setting config
+     document.addEventListener('submit', async function (event) {
+        const form = event.target.closest('.setting-ajax-form');
+        if (!form) return;
+
+        // Prevent native page-reload submission
+        event.preventDefault();
+
+        // 1. Guard rails check for permissions
+        const canEdit = form.getAttribute('data-can-edit') === 'true';
+        if (!canEdit) {
+            Swal.fire({
+                title: 'Action Restrained',
+                text: 'Please select a valid campus cycle configuration before editing values.',
+                icon: 'warning',
+                confirmButtonColor: '#2563eb'
+            });
+            return;
+        }
+
+        // 2. SweetAlert2 Confirmation Dialog
+        const confirmation = await Swal.fire({
+            title: 'Save changes?',
+            text: 'Are you sure you want to update this specific setting value?',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#2563eb',
+            cancelButtonColor: '#64748b',
+            confirmButtonText: 'Yes, save it'
+        });
+
+        if (!confirmation.isConfirmed) return;
+
+        // 3. Initiate Processing State UI Loading Spinner
+        Swal.fire({
+            title: 'Updating settings...',
+            text: 'Validating and saving configuration records.',
+            allowOutsideClick: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+
+        // 4. Capture fields (Including Laravel's hidden _token and _method fields)
+        const actionUrl = form.getAttribute('action');
+        const formData = new FormData(form);
+
+        fetch(actionUrl, {
+            method: 'POST', // Laravel uses method spoofing POST with hidden input _method: 'PUT'
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
+            },
+            body: formData
+        })
+        .then(async response => {
+            let responseData;
+            try {
+                responseData = await response.json();
+            } catch (e) {
+                responseData = { message: 'Server returned an invalid configuration payload.' };
+            }
+
+            if (!response.ok) {
+                throw {
+                    status: response.status,
+                    data: responseData
+                };
+            }
+
+            return responseData;
+        })
+        .then(data => {
+            // SUCCESS STATE (HTTP 200)
+            Swal.fire({
+                title: 'Saved Successfully!',
+                text: data.message || 'The system configuration has been updated successfully.',
+                icon: 'success',
+                confirmButtonColor: '#2563eb'
+            }).then(() => {
+                // Instantly redirects to the selected campus filter or standard settings tab
+                window.location.href = data.redirect || window.location.href;
+            });
+        })
+        .catch(error => {
+            console.error('Settings Form Submission Error:', error);
+
+            if (error && error.data) {
+                // If inline error processing function exists, activate field styling highlights
+                // if (error.status === 422 && error.data.errors && typeof displayValidationErrors === 'function') {
+                //     try {
+                //         displayValidationErrors(error.data.errors);
+                //     } catch (uiError) {
+                //         console.error('Error rendering inline settings indicators:', uiError);
+                //     }
+                // }
+
+                // EXTRACT BACKEND MESSAGES Dynamically
+                const customErrorMessage = error.data.message || 'Please review input parameters and retry.';
+
+                Swal.fire({
+                    title: error.status === 422 ? 'Validation Failed' : 'Update Failed',
+                    text: customErrorMessage,
+                    icon: error.status === 403 ? 'warning' : 'error',
+                    confirmButtonColor: '#2563eb'
+                });
+                return;
+            }
+
+            // CRITICAL SYSTEM OVERFLOW FALLBACK
+            Swal.fire({
+                title: 'System Exception',
+                text: 'An unexpected application exception occurred. Please try again later.',
+                icon: 'error',
+                confirmButtonColor: '#dc2626'
+            });
+        });
+    });
 
     // Map imports
     // if (document.querySelector('#mapOne')) {
@@ -176,11 +359,13 @@ window.markContributionAsPaid = function(id, tag) {
             postUrl = `/contributions/annual-contributions/${id}/mark-paid`;
             break;
         }
+        case 'cna_share' : {
+            postUrl = `/contributions/cna-share/${id}/mark-paid`;
+            console.log(postUrl);
+            break;
+        }
         
     }
-
-    console.log(`Tag: ${tag}`);
-    console.log(`Post Url: ${postUrl}`);
 
     Swal.fire({
         title: 'Mark as paid?',
@@ -264,10 +449,10 @@ window.markContributionAsPaid = function(id, tag) {
             });
         }
 
-    // /**
-    // * Processes and submits the Annual Contribution Batch Setup Form.
-    // * @param {HTMLFormElement} formElement - The submitted form DOM reference.
-    // */
+    /**
+    * Processes and submits the Annual Contribution Batch Setup Form.
+    * @param {HTMLFormElement} formElement - The submitted form DOM reference.
+    */
     window.sendAnnualContributionBatchSetup = function(event, formElement) {
         // Prevent native submission so failed requests keep the Alpine modal open.
         event.preventDefault();
@@ -564,6 +749,252 @@ window.markContributionAsPaid = function(id, tag) {
     
         return false;
     }
+
+    /**
+    * Processes and submits the Annual Contribution Batch Setup Form.
+    * @param {HTMLFormElement} formElement - The submitted form DOM reference.
+    */
+    window.sendCNAShareSetup = function(event, formElement) {
+        // Prevent native submission so failed requests keep the Alpine modal open.
+        event.preventDefault();
+    
+        // 2. Extract input values directly from Form Data
+        const formData = new FormData(formElement);
+        const contributionYear = formData.get('contribution_year'); 
+        const campusFilter = formData.get('campus_filter');
+        const isFederatedUser = formElement.getAttribute('data-user-is-federated') === 'true';
+        
+        // 3. Fallback Client-side Sanity Check Validation
+        const parsedYear = parseInt(contributionYear, 10);
+    
+        if (!contributionYear || isNaN(parsedYear) || parsedYear < 2000 || parsedYear > 2099) {
+            Swal.fire({
+                icon: 'error', // or 'error'
+                title: 'Invalid Year',
+                text: 'Please enter a valid 4-digit setup year between 2000 and 2099.',
+                confirmButtonColor: '#3b82f6'
+            });
+            return false;
+        }
+
+         if (isFederatedUser && (!campusFilter || campusFilter.trim() === '')) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Campus Filter Required',
+                text: 'Please select a campus filter before proceeding.',
+                confirmButtonColor: '#3b82f6'
+            });
+            return false;
+        }
+    
+        // 4. Prompt SweetAlert2 Confirmation Modal Before Submitting
+        Swal.fire({
+            title: 'Are you sure?',
+            text: `You are about to initialize the CNA Share setup for the year ${parsedYear}.`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#2563eb', // Tailwind bg-blue-600
+            cancelButtonColor: '#6b7280',  // Tailwind bg-gray-500
+            confirmButtonText: 'Yes, start setup!',
+            cancelButtonText: 'Cancel'
+        }).then((result) => {
+            // If user cancelled, drop execution context gracefully
+            if (!result.isConfirmed) return;
+    
+            // 5. Visual loading state feedback (Button Spinner + Swal Loading Screen)
+            const submitBtn = formElement.querySelector('button[type="submit"]');
+            let originalBtnText = '';
+            
+            if (submitBtn) {
+                originalBtnText = submitBtn.innerHTML;
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = `
+                    <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline-block" xmlns="http://w3.org" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                    Processing...
+                `;
+            }
+    
+            Swal.fire({
+                title: 'Generating Batch Setup',
+                text: 'Please wait while the system processes the annual configurations...',
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+    
+            // 6. Send Network Request to your Laravel Destination
+            fetch(formElement.action, { 
+                method: formElement.method, 
+                body: formData, 
+                headers: { 
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '', 
+                    'Accept': 'application/json' 
+                } 
+            })
+            .then(async (response) => { 
+                const data = await response.json(); 
+                
+                if (!response.ok) { 
+                    // Checks if data.error or data.message exists, otherwise uses the fallback string
+                    throw new Error(data.error || data.message || 'Something went wrong during form initialization.'); 
+                }
+                
+                // 7. Success State Execution UI Updates 
+                Swal.fire({ 
+                    icon: 'success', 
+                    title: 'Success!', 
+                    text: data.message || `CNA Share setup for ${parsedYear} has been generated successfully.`, 
+                    confirmButtonColor: '#2563eb' 
+                }).then(() => { 
+                    // Safely close Alpine modal overlay using element references 
+                    if (typeof Alpine !== 'undefined') { 
+                        const alpineContainer = formElement.closest('[x-data]'); 
+                        if (alpineContainer) { 
+                            const dataStore = alpineContainer.__x ? alpineContainer.__x.$data : Alpine.$data(alpineContainer); 
+                            if (dataStore) { 
+                                dataStore.openCNAShareSetupModal = false; 
+                                dataStore.contributionYear = ''; 
+                            } 
+                        } 
+                    } 
+                    window.location.reload();
+                }); 
+            }) 
+            .catch((error) => { 
+                // 8. Error/Exception Handling Notification Output 
+                console.error('Form submission failed:', error); 
+                
+                // Fallback message if error.message is completely empty
+                const errorMsg = error.message || 'An unexpected error occurred.';
+            
+                Swal.fire({ 
+                    icon: 'error', 
+                    title: 'Error', 
+                    text: errorMsg, 
+                    confirmButtonColor: '#ef4444' 
+                }); 
+            }) 
+            .finally(() => { 
+                // 9. Reset button UI state context values 
+                if (submitBtn) { 
+                    submitBtn.disabled = false; 
+                    submitBtn.innerHTML = originalBtnText; 
+                } 
+                 
+            });
+            
+        });
+
+        return false;
+    };
+
+window.saveCycleConfig = function (event, formElement) {
+    // 1. Properly stop the browser from reloading the page
+    event.preventDefault();
+
+    // 2. Build FormData using the passed form element context
+    const formData = new FormData(formElement);
+    const actionUrl = formElement.action;
+
+    // 3. For logging FormData, console.log(formData) often prints empty. 
+        Swal.fire({
+            title: 'Save Configuration?',
+            html: 'Are you sure you want to update the claim cycle settings for this campus?</br>Updating configs effects the cycle immediately on success',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#2563eb', // Tailwind blue-600
+            cancelButtonColor: '#4b5563',  // Tailwind gray-600
+            confirmButtonText: 'Yes, save it!',
+            cancelButtonText: 'Cancel'
+        }).then((result) => {
+            // Exit early if user cancels
+            if (!result.isConfirmed) return;
+
+            // 3. Show Loading Spinner Alert
+            Swal.fire({
+                title: 'Processing Request',
+                text: 'Updating cycle settings and running validation tests...',
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            // 4. Dispatch the Fetch AJAX Request
+            fetch(actionUrl, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                },
+                body: formData
+            })
+            .then(async response => {
+                // Read the server's response payload (handles both success and error JSON)
+                let responseData;
+                try {
+                    responseData = await response.json();
+                } catch (e) {
+                    responseData = { message: 'An unhandled server error occurred.' };
+                }
+
+                // If the server returned an error code (422, 403, 500, etc.)
+                if (!response.ok) {
+                    throw {
+                        status: response.status,
+                        data: responseData
+                    };
+                }
+
+                // If successful, pass data to the next .then block
+                return responseData;
+            })
+            .then(data => {
+                // 1. SUCCESS POPUP (Status 200)
+                Swal.fire({
+                    title: 'Success!',
+                    text: data.message || 'The claim cycle configurations have been saved successfully.',
+                    icon: 'success',
+                    confirmButtonColor: '#2563eb'
+                }).then(() => {
+                    window.location.href = data.redirect || window.location.href;
+                });
+            })
+            .catch(error => {
+                console.error('AJAX Error:', error);
+
+                // Check if we caught a structured server error response
+                if (error && error.data) {
+
+                    // 2. ERROR POPUP (Displays whatever custom message the server sent)
+                    Swal.fire({
+                        title: error.status === 422 ? 'Validation Failed' : 'Action Failed',
+                        text: error.data.message || 'Please check your inputs and try again.',
+                        icon: error.status === 403 ? 'warning' : 'error',
+                        confirmButtonColor: '#2563eb'
+                    });
+                    return;
+                }
+
+                // 3. FALLBACK POPUP (If the network dropped completely or server crashed)
+                Swal.fire({
+                    title: 'System Error',
+                    text: 'An unexpected application exception occurred. Please try again later.',
+                    icon: 'error',
+                    confirmButtonColor: '#dc2626'
+                });
+            });
+
+
+        });
+    
+};
+
+
+
         
     
         

@@ -36,10 +36,9 @@ return new class extends Migration
                 'Contractual',
                 'Part-time',
             ]);
-            $table->enum('membership_status', [
-                'Active',
-                'Inactive',
-            ])->default('Active');
+            $table->string('membership_status', 20)->default('Active');
+            $table->date('active_member_on')->nullable()->comment('Date the member become active in the association');
+            $table->date('inactive_member_on')->nullable()->comment('Date the member become inactive in the association');
             $table->string('contact_number', 20);
             $table->text('address');
             $table->string('gcash_number', 20)->nullable();

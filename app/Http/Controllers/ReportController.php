@@ -140,7 +140,7 @@ class ReportController extends Controller
             $validated = array_merge($validated, $request->validate([
                 'date_from' => ['required', 'date'],
                 'date_to' => ['required', 'date', 'after_or_equal:date_from'],
-                'campus_id' => ['string'],
+                'campus_id' => ['nullable', 'string'],
             ]));
 
             $validated = $this->facultyDeductionsSummary($validated);
@@ -149,7 +149,7 @@ class ReportController extends Controller
         if($validated['report_type'] === 'medical-assistance-report') {
             $validated = array_merge($validated, $request->validate([
                 'cycle' => ['required', 'string'],
-                'campus_id' => ['string'],
+                'campus_id' => ['nullable','string'],
             ]));
 
             $validated = $this->medicalAssistanceReport($validated);

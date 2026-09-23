@@ -9,18 +9,81 @@
 <div class="max-w-auto mx-auto p-2" 
     x-data="{ 
             currentStatus: 'all', 
+            cycles: @js($cycle),
+            selectedCycle: 'current',
             totalClaims: {{ $claims->count() }},
             statusCounts: @js($claimStatusCounts),
             openModal: false,
             activeClaim: {},
-            filterClaims(status) {
-                const table = document.querySelector('.dt-table');
-                const dataTable = table?.dataTableInstance;
+            init() {
+            // Hook directly into DataTables global filtering engine
+            if (window.DataTable) {
+                DataTable.ext.search.push((settings, data) => {
+                    // Filter Checkpoint A: Status
+                    if (this.currentStatus !== 'all') {
+                        const statusColumnIndex = 4; // ⚠️ Update to your actual status column index
+                        const rowStatus = data[statusColumnIndex]?.toLowerCase().trim();
+                        if (rowStatus !== this.currentStatus.toLowerCase().trim()) return false;
+                    }
 
-                if (dataTable) {
-                    dataTable.search(status === 'all' ? '' : status);
-                }
-            },
+                    // Filter Checkpoint B: Year Range Cycle
+                    if (this.selectedCycle && this.selectedCycle !== 'current') {
+                        const [startYear, endYear] = this.selectedCycle.split('-').map(Number);
+                        const submittedAtColumnIndex = 3; // ⚠️ Update to your actual submitted_at column index
+                        
+                        const rawDateText = data[submittedAtColumnIndex];
+                        const yearMatch = rawDateText ? rawDateText.match(/\b\d{4}\b/) : null;
+                        if (!yearMatch) return false;
+
+                        const claimYear = parseInt(yearMatch[0], 10);
+                        if (claimYear < startYear || claimYear > endYear) return false;
+                    }
+
+                    return true; // Keep row if it satisfies both rules
+                });
+            }
+        },
+            
+             filterClaims(status) {
+            this.currentStatus = status;
+            this.redrawTable();
+        },
+
+        filterClaimsByCycle() {
+            this.redrawTable();
+        },
+
+redrawTable() {
+    const tableEl = document.querySelector('.dt-table');
+    if (!tableEl) return;
+
+    const dataTable = tableEl.dataTableInstance;
+    
+    if (dataTable) {
+        let searchQueries = [];
+
+        // 1. Core Status Filtering
+        if (this.currentStatus !== 'all') {
+            searchQueries.push(this.currentStatus);
+        }
+
+        // 2. Mathematical Cycle Range Translation
+        if (this.selectedCycle && this.selectedCycle !== 'current') {
+            const [startYear, endYear] = this.selectedCycle.split('-').map(Number);
+            
+            let acceptableYears = [];
+            for (let year = startYear; year <= endYear; year++) {
+                acceptableYears.push(year);
+            }
+
+            searchQueries.push(acceptableYears.join(' ')); 
+        }
+
+        const finalQuery = searchQueries.join(' ');
+        dataTable.search(finalQuery);
+    }
+}
+,
             filteredCount() {
                 return this.currentStatus === 'all'
                     ? this.totalClaims
@@ -62,51 +125,46 @@
     <!-- ===================================================== -->
     <!-- FILTER TOOLBAR -->
     <!-- ===================================================== -->
-    <div class="px-6 py-4 bg-slate-50 border-b border-slate-200">
-        <div class="flex flex-col xl:flex-row gap-3 xl:items-center">
-            {{-- Search --}}
-            {{-- <div class="flex-1">
-                <input
-                    x-model="searchText"
-                    type="search"
-                    placeholder="Search claim number, member, description..."
-                    class="w-full rounded-lg border-slate-300 focus:border-blue-500 focus:ring-blue-500">
-            </div> --}}
-            {{-- Status --}}
-                <div class="flex flex-wrap gap-2">
-                    <template x-for="status in ['all', ...@js($claimStatuses)]">
-                        <button 
-                            type="button"
-                            @click="currentStatus = status; filterClaims(status)"
-                            :class="currentStatus === status 
-                                ? 'bg-blue-400 text-blue-600 border-blue-600' 
-                                : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'"
-                            class="px-4 py-2 text-sm rounded-lg border transition font-medium capitalize"
-                            x-text="status === 'all' ? 'All' : status">
-                        </button>
-                    </template>
-                </div>
-            {{-- Refresh --}}
-            <div class="flex-1 flex">
-                <button
-                    @click="window.location.reload()"
-                    class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-300 bg-white hover:bg-slate-100">
-                    <x-heroicon-o-arrow-path class="size-5 text-black text-solid" />
-                    Refresh
+    <!-- 1. Wrapped the entire filters section in a single clean x-data element -->
+<div class="px-6 py-4 bg-slate-50 border-b border-slate-200">
+    
+    <div class="flex flex-col xl:flex-row gap-3 xl:items-center">
+        {{-- Status Filters --}}
+        <div class="flex flex-wrap gap-2">
+            <template x-for="status in ['all', ...@js($claimStatuses)]">
+                <button 
+                    type="button"
+                    @click="filterClaims(status)"
+                    :class="currentStatus === status 
+                        ? 'bg-blue-400 text-blue-600 border-blue-600' 
+                        : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'"
+                    class="px-4 py-2 text-sm rounded-lg border transition font-medium capitalize"
+                    x-text="status === 'all' ? 'All' : status">
                 </button>
-                {{-- <div class="mb-4 max-w-sm">
-                    <select 
-                      name="config-option" 
-                      id="config-option" 
-                      onchange="toggleForm(this.value)" 
-                      class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-300 bg-white hover:bg-slate-100">
-                      <option value="claims-based" selected>Search Claims</option>
-                      <option value="member-based">Search Member</option>
-                    </select>
-                </div> --}}
-            </div> 
+            </template>
         </div>
+
+        {{-- Dropdown and Utility Controls --}}
+        <div class="flex-1 flex gap-2 justify-end">
+            {{-- <select 
+                @change="selectedCycle = $event.target.value; filterClaimsByCycle()"
+                class="px-4 py-2 text-sm rounded-lg border border-slate-200 bg-white text-slate-600 font-medium transition focus:border-blue-600 focus:outline-none">               
+
+                <template x-for="cycle in cycles" :key="cycle.value">
+                    <option :value="cycle.value" x-text="cycle.label"></option>
+                </template>
+            </select> --}}
+
+            <button
+                @click="window.location.reload()"
+                class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 text-sm font-medium">
+                <x-heroicon-o-arrow-path class="size-5 text-slate-500" />
+                Refresh
+            </button>
+        </div> 
     </div>
+</div>
+
     <!-- ===================================================== -->
     <!-- TABLE -->
     <!-- ===================================================== -->

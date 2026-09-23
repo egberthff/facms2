@@ -19,8 +19,11 @@
             <div class="relative w-full lg:w-72">
                 <label for="contribution-type" class="block mb-2.5 text-sm font-medium text-heading">Select an option</label>
                 <select id="contribution-type" name="contribution_type" onchange="this.form.submit()" class="block w-full px-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand shadow-xs placeholder:text-body">
-                    <option value="claims" {{ $contribution_type == 'claims' ? 'selected' : '' }}>Claims</option>
-                    <option value="annual" {{ $contribution_type == 'annual' ? 'selected' : '' }}>Annual</option>
+                    @foreach(\App\Enums\ClaimTypes::cases() as $case)
+                        <option value="{{ $case->value }}" {{ $contribution_type == $case->value ? 'selected' : '' }}>
+                            {{ $case->value }}
+                        </option>
+                    @endforeach
                 </select>
             </div>
         </form>

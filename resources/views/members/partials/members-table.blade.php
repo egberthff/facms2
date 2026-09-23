@@ -72,6 +72,8 @@
                                         data-member-position="{{ $member->position }}"
                                         data-member-employment-status="{{ $member->employment_status }}"
                                         data-member-membership-status="{{ $member->membership_status }}"
+                                        data-member-active-member-on="{{ $member->active_member_on }}"
+                                        data-member-inactive-member-on="{{ $member->inactive_member_on }}"
                                         data-contact-number="{{ $member->contact_number }}"
                                         data-member-address="{{ $member->address }}"
                                         data-member-gcash-number="{{ $member->gcash_number }}"
