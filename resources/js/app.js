@@ -359,7 +359,7 @@ window.markContributionAsPaid = function(id, tag) {
             postUrl = `/contributions/annual-contributions/${id}/mark-paid`;
             break;
         }
-        case 'cna_share' : {
+        case 'cna share' : {
             postUrl = `/contributions/cna-share/${id}/mark-paid`;
             console.log(postUrl);
             break;

@@ -78,13 +78,13 @@ class ContributionBatchController extends Controller
     public function monitorBatch(Request $request)
     {
         $selectedCampusId = $request->input('campus_filter');
-        $contributionType = $request->input('contribution_type', 'claims'); // 'claims' is the fallback default
+        $contributionType = strtolower(trim($request->input('contribution_type', 'claims'))); // 'claims' is the fallback default
 
         // 2. Conditionally fetch dashboard metric payloads based on the type chosen
         if ($contributionType === 'annual') {
             // Calls your upcoming annual metrics logic inside the service file
             $data = $this->contributionService->getAnnualContributionData($selectedCampusId);
-        } else if ($contributionType === 'cna_share') {
+        } else if ($contributionType === 'cna share') {
             // Falls back to your original presidential metrics pipeline
             $data = $this->contributionService->getCNAShareContributionData($selectedCampusId);
         } else {

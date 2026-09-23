@@ -12,7 +12,7 @@
                     <div class="flex items-center gap-2">
                         <select id="contribution-type" name="contribution_type" onchange="this.form.submit()" class="block w-full px-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand shadow-xs placeholder:text-body">
                             @foreach(\App\Enums\ClaimTypes::cases() as $case)
-                                <option value="{{ $case->value }}" {{ $contribution_type == $case->value ? 'selected' : '' }}>
+                                <option value="{{ $case->value }}" {{ $contribution_type == strtolower(trim($case->value)) ? 'selected' : '' }}>
                                     {{ $case->value }}
                                 </option>
                             @endforeach
