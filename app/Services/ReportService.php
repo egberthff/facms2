@@ -294,7 +294,7 @@ class ReportService
             $totalAmount += $claimsAmount;
 
             $rows[] = [                                         
-                'campus' => $campus->acronym, // Replace 'name' with your actual campus name column
+                'campus' => $campus->acronym, 
                 'members' => $membersCount,
                 'claims' => $claimsCount,
                 'amount' => $claimsAmount,
@@ -436,19 +436,27 @@ class ReportService
     protected function collectionSummary(array $filters): array
     {
         $campusId = $filters['campus_id'] ?? null;
+        $campusData = $this->memberService->getCampus($campusId);
+        $campusLookups = collect();
+        if ($campusData instanceof Campus) {
+            $campusLookups->put($campusData->id, $campusData->acronym);
+        } elseif ($campusData instanceof \Illuminate\Support\Collection) {
+            // Key by the UUID string so we can perform quick lookups
+            $campusLookups = $campusData->pluck('acronym', 'id');
+        }
+
         $summaryService = app(\App\Services\CollectionSummaryService::class);
         $transfers = $summaryService->transfersForCampus($campusId, $filters['from'] ?? null, $filters['to'] ?? null);
 
         $collections = collect($transfers['collections'] ?? [])
-            ->map(fn ($item) => ['label' => $item->label, 'amount' => (float) $item->amount, 'section' => 'collections'])
+            ->map(fn ($item) => ['campus' => $campusLookups->get($item->campus) ?? 'N/A', 'label' => $item->label, 'amount' => (float) $item->amount, 'section' => 'Collection'])
             ->values();
 
         $disbursements = collect($transfers['disbursements'] ?? [])
-            ->map(fn ($item) => ['label' => $item->label, 'amount' => (float) $item->amount, 'section' => 'disbursements'])
+            ->map(fn ($item) => ['campus' => $campusLookups->get($item->campus) ?? 'N/A', 'label' => $item->label, 'amount' => (float) $item->amount, 'section' => 'Disbursement'])
             ->values();
 
         $rows = $collections->merge($disbursements)->values();
-
         return [
             'context' => $this->buildContext(
                 'Collection Summary',
@@ -460,8 +468,10 @@ class ReportService
                 ['key' => 'disbursements', 'label' => 'Disbursements', 'value' => (float) ($transfers['disbursement_total'] ?? 0)],
             ],
             'columns' => [
+                ['key' => 'campus', 'label' => 'Campus', 'type' => 'text'],
                 ['key' => 'label', 'label' => 'Description', 'type' => 'text'],
                 ['key' => 'amount', 'label' => 'Amount', 'type' => 'currency'],
+                ['key' => 'section', 'label' => 'Section', 'type' => 'text'],
             ],
             'rows' => $rows->toArray(),
             'summary' => [

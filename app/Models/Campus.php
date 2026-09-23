@@ -13,9 +13,9 @@ class Campus extends Model
     /** @use HasFactory<\Database\Factories\CampusFactory> */
     use HasFactory;
     use HasUuids;
-
+    protected $table = 'campuses';
+    protected $primaryKey = 'id';
     public $incrementing = false;
-
     protected $keyType = 'string';
 
     protected $fillable = [
@@ -45,6 +45,11 @@ class Campus extends Model
     public function settings()
     {
         return $this->hasMany(SystemSetting::class);
+    }
+
+    public function fundTranfers()
+    {
+        return $this->hasMany(fundTranfers::class);
     }
 
     public function collectionAdjustments()
