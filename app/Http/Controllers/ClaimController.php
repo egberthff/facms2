@@ -60,6 +60,7 @@ class ClaimController extends Controller
         $data['userRole'] = $userRoles[0] ?? null;
         $data['claims'] = $this->claimService->getAllClaims($userRoles, $selectedCampusId);
         $data['cycles'] = $this->reportService->getAllowanceCycles() ?? [];
+        $data['isMemberMenu'] = false;
 
         if ($data['isPresident']) {
             $data['allCampuses'] = Campus::where('is_active', true)->get();
