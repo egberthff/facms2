@@ -27,7 +27,7 @@
                     <!-- Campus Filter (Note: Fixed array syntax to object syntax) -->
                      @if(Auth::user()->hasAnyRole(['Federated President', 'Federated Treasurer']) || Auth::user()->hasPermissionTo('view all campus data'))
                         <div class="flex items-center gap-2">
-                            <select name="campus_filter" onchange="this.form.submit()" class="block w-full px-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand shadow-xs placeholder:text-body>
+                            <select name="campus_filter" onchange="this.form.submit()" class="block w-full px-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand shadow-xs placeholder:text-body">
                                 <option value="">All Campuses (Global View)</option>
                                 @foreach($allCampuses as $campus)
                                     <option value="{{ $campus->id }}" {{ $selectedCampusId == $campus->id ? 'selected' : '' }}>
