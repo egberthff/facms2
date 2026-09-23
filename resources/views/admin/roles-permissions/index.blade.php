@@ -171,7 +171,7 @@
               name="config-option" 
               id="config-option" 
               onchange="toggleForm(this.value)" 
-              class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
+              class="block w-full px-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand shadow-xs placeholder:text-body"
             >
               {{-- <option value="role-based">Role Based Access Config</option> --}}
               <option value="user-based" selected>User Based Access Config</option>

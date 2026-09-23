@@ -21,7 +21,7 @@
                 <select
                     x-model="selectedReport"
                     @change="changeReport()"
-                    class="mt-1 w-full rounded-lg border-gray-300">
+                    class="block w-full px-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand shadow-xs placeholder:text-body">
                     <template
                         x-for="(category, categoryKey) in configuration.categories"
                         :key="categoryKey">
@@ -52,7 +52,7 @@
                     </label>
                     <select
                         x-model="filters.campus_id"
-                        class="mt-1 w-full rounded-lg border-gray-300">
+                        class="block w-full px-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand shadow-xs placeholder:text-body">
                         <option value="">
                             All Campuses
                         </option>
@@ -81,7 +81,7 @@
                     </label>
                     <select
                         x-model="filters.member_id"
-                        class="mt-1 w-full rounded-lg border-gray-300">
+                        class="block w-full px-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand shadow-xs placeholder:text-body">
                         <option value="">
                             All Members
                         </option>
@@ -117,7 +117,7 @@
                         <input
                             x-model="filters.date_from"
                             type="date"
-                            class="mt-1 w-full rounded-lg border-gray-300">
+                            class="block w-full px-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand shadow-xs placeholder:text-body">
                     </div>
                 </template>
 
@@ -132,7 +132,7 @@
                         <input
                             x-model="filters.claim_month"
                             type="month"
-                            class="mt-1 w-full rounded-lg border-gray-300">
+                            class="block w-full px-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand shadow-xs placeholder:text-body">
                     </div>
                 </template>
 
@@ -147,7 +147,7 @@
                         <input
                             x-model="filters.payroll_month"
                             type="month"
-                            class="mt-1 w-full rounded-lg border-gray-300">
+                            class="block w-full px-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand shadow-xs placeholder:text-body">
                     </div>
                 </template>
 
@@ -163,7 +163,7 @@
                         <input
                             x-model="filters.date_to"
                             type="date"
-                            class="mt-1 w-full rounded-lg border-gray-300">
+                            class="block w-full px-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand shadow-xs placeholder:text-body">
                     </div>
                 </template>
 
@@ -178,7 +178,8 @@
                         <!-- Corrected select without an internal x-if -->
                         <select 
                             x-model="filters.reporting_year"
-                            id="year-select">
+                            id="year-select"
+                            class="block w-full px-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand shadow-xs placeholder:text-body">
                             <option value="">--Select Year--</option>
 
                             <!-- Pure Alpine way to loop from 2026 down to 1900 -->
@@ -201,7 +202,7 @@
                         </label>
                         <select
                             x-model="filters.cycle"
-                            class="mt-1 w-full rounded-lg border-gray-300">
+                            class="block w-full px-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand shadow-xs placeholder:text-body">
                             <template
                                 x-for="cycle in cycles"
                                 :key="cycle.value">
@@ -225,7 +226,7 @@
                         </label>
                         <select
                             x-model="filters.status"
-                            class="mt-1 w-full rounded-lg border-gray-300">
+                            class="block w-full px-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand shadow-xs placeholder:text-body">
                             <option value="">All Status</option>
                             <option value="Pending">Pending</option>
                             <option value="Processing">Processing</option>
@@ -247,7 +248,7 @@
                         </label>
                         <select
                             x-model="filters.claim_type"
-                            class="mt-1 w-full rounded-lg border-gray-300">
+                            class="block w-full px-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand shadow-xs placeholder:text-body">
                             <option value="">All Claim Types</option>
                              <template
                                 x-for="claimType in claimTypes"

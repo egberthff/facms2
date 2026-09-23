@@ -30,9 +30,9 @@
     <div class="p-4 bg-white border border-blue-200 rounded-xl shadow-sm ">
         <div class="flex justify-between items-center mb-4 w-full p-2">
             <!-- Left End: Filter Dropdown -->
-            <div class="flex items-center bg-blue-100 border border-blue-300 rounded-xl">
+            <div class="flex items-center bg-blue-100 rounded-xl">
                 <label for="member-status-filter" class="sr-only">Filter by Status</label>
-                <select id="member-status-filter" class="text-black text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
+                <select id="member-status-filter" class="block w-full px-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand shadow-xs placeholder:text-body">
                 <option value="">All Members</option>
                 <?php $currentStatus = 'Active' ?>
                 @foreach(\App\Enums\MembershipStatus::cases() as $status)

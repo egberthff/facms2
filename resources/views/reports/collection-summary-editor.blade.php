@@ -21,7 +21,7 @@
             <div class="grid md:grid-cols-2 gap-4 bg-white rounded-xl border border-gray-200 p-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700">Campus</label>
-                    <select name="campus_id" class="mt-1 w-full rounded-lg border-gray-300">
+                    <select name="campus_id" class="block w-full px-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand shadow-xs placeholder:text-body">
                         @foreach($campuses as $campus)
                             <option value="{{ $campus->id }}">{{ $campus->campus_name }}</option>
                         @endforeach
@@ -29,7 +29,7 @@
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700">Transfer type</label>
-                    <select name="type" class="mt-1 w-full rounded-lg border-gray-300" required>
+                    <select name="type" class="block w-full px-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand shadow-xs placeholder:text-body" required>
                         <option value="campus_remittance">Campus remittance to FFA</option>
                         <option value="ffa_disbursement">FFA disbursement to campus</option>
                     </select>
