@@ -60,14 +60,17 @@
                 </div> --}}
                 <select name="year" class="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400">
                     <option value="">All years</option>
-                    @foreach ($yearOptions as $year)
+                    {{-- @foreach ($yearOptions as $year)
                         <option value="{{ $year }}" {{ ($filters['year'] ?? '') == $year ? 'selected' : '' }}>{{ $year }}</option>
-                    @endforeach
+                    @endforeach --}}
+                    <template x-for="year in Array.from({length: new Date().getFullYear() - 2010 + 1}, (_, i) => new Date().getFullYear() - i)">
+                        <option :value="year" x-text="year"></option>
+                    </template>
                 </select>
                 <select name="claim_type" class="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400">
                     <option value="">All claim types</option>
                     @foreach ($claimTypeOptions as $claimType)
-                        <option value="{{ $claimType }}" {{ ($filters['claim_type'] ?? '') == $claimType ? 'selected' : '' }}>{{ $claimType }}</option>
+                        <option value="{{ $claimType['id'] }}" {{ ($filters['claim_type']['id'] ?? '') == $claimType['id'] ? 'selected' : '' }}>{{ $claimType['name'] }}</option>
                     @endforeach
                 </select>
                 <select name="status" class="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400">
