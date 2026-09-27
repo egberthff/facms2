@@ -6,6 +6,7 @@
                 <div class="mb-6">
                     <h2 class="text-xl font-bold">
                         Supporting Documents
+                        <span class="text-red-500">*</span>
                     </h2>
                     <p class="text-sm text-gray-500 mt-1">
                         Upload all required supporting documents.

@@ -154,6 +154,7 @@
                 <div>
                     <label class="block text-sm font-medium mb-2">
                         Bank Name
+                        <span class="text-red-500">*</span>
                     </label>
                     <select
                         name="bank"
@@ -170,6 +171,7 @@
                 <div>
                     <label class="block text-sm font-medium mb-2">
                         Account Number
+                        <span class="text-red-500">*</span>
                     </label>
                     <input
                         name="accountNumber"
@@ -179,6 +181,7 @@
                 <div>
                     <label class="block text-sm font-medium mb-2">
                         Account Name
+                        <span class="text-red-500">*</span>
                     </label>
                     <input
                         name="accountName"

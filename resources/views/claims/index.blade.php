@@ -338,17 +338,27 @@
                     case 1:
 
                         if (!this.claimType) {
-                            alert('Please select a Claim Type.');
+                            Swal.fire('Please select a Claim Type.');
                             return false;
                         }
 
                         if (!this.amount) {
-                            alert('Please enter the Claim Amount.');
+                             Swal.fire('Please enter the Claim Amount');
                             return false;
                         }
 
                         if (!this.description) {
-                            alert('Please provide a Description.');
+                            Swal.fire('Please provide a Description.');
+                            return false;
+                        }
+
+                        if(!this.incidentDate) {
+                            Swal.fire("Please provide the incident date");
+                            return false;
+                        }
+
+                        if(!this.hospital) {
+                            Swal.fire("Please provide the hospital/institution");
                             return false;
                         }
 
@@ -356,22 +366,32 @@
 
                     case 2:
 
-                        if (this.files.length === 0) {
+                        // if (this.files.length === 0) {
 
-                            if (!confirm(
-                                'No supporting documents have been uploaded. Continue anyway?'
-                            )) {
-                                return false;
+                            // if (!confirm(
+                            //     'No supporting documents have been uploaded. Continue anyway?'
+                            // )) {
+                            //     return false;
+                            // }
+
+                            if (this.files.length === 0) {
+        
+                                Swal.fire("Please provide the required documents");
+                                    return false;
+
+                            } else {
+                                // If there are files, skip the alert and proceed immediately
+                               return true;
                             }
 
-                        }
+                        // }
 
-                        return true;
+                        // return true;
 
                     case 3:
 
                         if (!this.paymentMethod) {
-                            alert('Please select a payment method.');
+                            Swal.fire("Please select your preferred disbursement method");
                             return false;
                         }
 
@@ -383,7 +403,7 @@
                                 !this.accountName
                             ) {
 
-                                alert(
+                                Swal.fire(
                                     'Please complete all required bank information.'
                                 );
 
@@ -399,7 +419,7 @@
                                 !this.gcashNumber
                             ) {
 
-                                alert(
+                                Swal.fire(
                                     'Please complete your GCash details.'
                                 );
 

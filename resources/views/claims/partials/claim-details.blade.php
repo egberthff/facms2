@@ -68,16 +68,19 @@
                     <div>
                         <label class="block text-sm font-medium mb-2">
                             Incident Date
+                            <span class="text-red-500">*</span>
                         </label>
                         <input
                             name="incidentDate"
                             type="date"
+                            required
                             x-model="incidentDate"
                             class="w-full rounded-xl border border-gray-300 px-4 py-3">
                     </div>
                     <div>
                         <label class="block text-sm font-medium mb-2">
                             Hospital / Institution
+                            <span class="text-red-500">*</span>
                         </label>
                         <input
                             name="hospital"
