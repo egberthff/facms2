@@ -310,7 +310,7 @@ window.reportCenter = function(options)
 
                 Swal.fire({
                   title: "Success",
-                  html: "Report generated successfully.</br>Click the Preview button to view the printable version of the report",
+                  html: "Report generated successfully.</br>Click the Preview & Print button to view the printable version of the report",
                   icon: "success"
                 });
 
