@@ -16,6 +16,7 @@ use App\Services\ContributionService;
 use App\Services\CycleService;
 use App\Services\ClaimService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use InvalidArgumentException;
 
 class ReportService
@@ -435,6 +436,13 @@ class ReportService
 
     protected function collectionSummary(array $filters): array
     {
+        abort_unless(
+            Auth::user()->hasRole('Federated Treasurer'), 
+            403, 
+            'Only the Federated Treasurer can generate this report.'
+        );
+        \Log::error(print_r(Auth::user()->hasRole('Federated Treasurer'), true));
+
         $campusId = $filters['campus_id'] ?? null;
         $campusData = $this->memberService->getCampus($campusId);
         $campusLookups = collect();
@@ -668,6 +676,11 @@ class ReportService
     protected function payrollDeductionRequest(array $filters): array
     {
         $campusId = $filters['treasurer_campus_id'] ?? null;
+        abort_unless(
+            Auth::user()->hasRole('Treasurer'), 
+            403, 
+            'Only the Campus Treasurer can generate this report.'
+        );
 
         $query = ContributionBatch::query()
             ->with([
@@ -1203,7 +1216,12 @@ class ReportService
     public function medicalAssistanceReport(array $filters): array
     {
         $request = new Request($filters);
-    
+            abort_unless(
+            Auth::user()->hasRole('Federated Treasurer'), 
+            403, 
+            'Only the Federated Treasurer can generate this report.'
+        );
+
         $campusId = $request->input('campus_id');
         $cycleParam = $request->input('cycle');
     

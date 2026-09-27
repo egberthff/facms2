@@ -38,7 +38,7 @@
             background-color: white;
             max-width: 8.5in;
             margin: 0 auto;
-            padding: 0.5in 0.75in;
+            padding: 0.2in 0.65in;
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
             box-sizing: border-box;
         }
@@ -57,7 +57,7 @@
             display: grid;
             grid-template-columns: 1fr 1fr;
             border: 1px solid #000;
-            padding: 10px;
+            padding: 5px;
             margin-bottom: 25px;
             font-size: 10pt;
             background-color: #fafafa;
@@ -245,7 +245,7 @@
                 <div class="sig-label" style="margin-bottom: 40px;">Prepared by:</div>
                 <div class="sig-line" style="border-bottom: 1px solid black; margin-bottom: 3px;"></div>
                 <div class="sig-name" style="font-weight: bold; text-transform: uppercase; font-size: 11pt;">{{ $preparedByName ?? 'Association Secretary' }}</div>
-                <div class="sig-title" style="font-size: 10pt; color: #333;">Faculty Association Secretary / Representative</div>
+                <div class="sig-title" style="font-size: 10pt; color: #333;">Faculty Association Treasurer</div>
             </div>
 
             <div class="sig-block">
