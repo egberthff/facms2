@@ -107,45 +107,67 @@ table.datatable-table {
  *For compact table design
  *
  */ 
- table {
+table {
   width: 100%;
-  max-width: 1000px;
-  border-collapse: collapse;
-  font-family: system-ui, -apple-system, sans-serif;
-  font-size: 0.875rem; /* 14px compact text */
-  color: #1f2937;
+  max-width: 100%;
+  border-collapse: separate; /* Required for modern rounded corners with borders */
+  border-spacing: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 0.8125rem; /* 13px */
+  line-height: 1.2;
+  color: #334155; /* Modern slate-gray text */
   background-color: #ffffff;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.1);
-  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px; /* Smooth dashboard corners */
   overflow: hidden;
 }
 
 th, 
 td {
-  padding: 8px 12px; /* Tight padding for compact design */
+  padding: 10px 12px; /* Tight height (5px), generous horizontal width (12px) for elegance */
   text-align: left;
-  border-bottom: 1px solid #f3f4f6;
+  border-bottom: 1px solid #e2e8f0;
+  white-space: nowrap;
 }
 
 th {
-  background-color: #f9fafb;
+  background-color: #13254a; /* Premium dark slate header */
   font-weight: 600;
-  color: #374151;
-  text-transform: uppercase;
-  font-size: 0.75rem; /* Slightly smaller header for modern typography */
-  letter-spacing: 0.05em;
+  color: #f8fafc; /* Crisp white header text */
+  font-size: 0.75rem; /* 12px tracking */
+  letter-spacing: 0.03em;
 }
 
+/* Round top-left corner of the header */
+tr:first-child th:first-child {
+  border-top-left-radius: 7px;
+}
+
+/* Round top-right corner of the header */
+tr:first-child th:last-child {
+  border-top-right-radius: 7px;
+}
+
+/* Remove border line under the last row */
 tbody tr:last-child td {
-  border-bottom: none; /* Clean bottom edge */
+  border-bottom: none;
 }
 
+/* Modern, high-contrast hover effect */
 tbody tr:hover {
-  background-color: #f9fafb; /* Smooth hover state */
-  transition: background-color 0.15s ease-in-out;
+  background-color: #f1f5f9; 
+  cursor: pointer;
 }
 
-
+/* Modern status pills or badges if you use them inside cells */
+td span.badge {
+  display: inline-block;
+  padding: 2px 6px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  border-radius: 4px;
+  background-color: #e2e8f0;
+}
 
 
 /* ==========================================================================
