@@ -4,7 +4,7 @@
             x-cloak>
 
             <div class="bg-white rounded-2xl border border-blue-700 shadow-sm p-6">
-
+                <x-file-preview-modal />
                 <div class="mb-6">
 
                     <h2 class="text-xl font-bold">
@@ -175,16 +175,23 @@
                                                 </p>
 
                                             </div>
-
+                                            
                                         </div>
 
-                                        <span
-                                            class="text-green-600 font-semibold">
+                                        <div class="flex flex-row gap-1">
+                                            <span
+                                                class="text-green-600 font-semibold">
 
-                                            Uploaded
+                                                Uploaded
 
-                                        </span>
-
+                                            </span>
+                                            <button 
+                                                type="button" 
+                                                @click="window.dispatchEvent(new CustomEvent('open-file-preview', { detail: { url: window.URL.createObjectURL(file), name: file.name } }))" 
+                                                class="inline-flex items-center gap-1 font-semibold text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100/70 px-2.5 py-1 rounded transition shrink-0">
+                                                View File
+                                            </button>
+                                        </div>
                                     </div>
 
                                 </template>

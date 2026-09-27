@@ -23,6 +23,7 @@ use App\Services\ClaimService;
 use App\Services\TreasuryLedgerService;
 use App\Services\ReportService;
 use App\Services\EmailService;
+use App\Services\DashboardService;
 
 use Exception;
 class ClaimController extends Controller
@@ -31,18 +32,22 @@ class ClaimController extends Controller
     private TreasuryLedgerService $ledgerService;
     private EmailService $emailService;
     private ReportService $reportService;
+    
+    private DashboardService $dashboardService;
 
      public function __construct(
         ClaimService $claimService, 
         TreasuryLedgerService $ledgerService,
         EmailService $emailService,
-        ReportService $reportService
+        ReportService $reportService,
+        DashboardService $dashboardService,
         )
     {
         $this->claimService = $claimService;
         $this->ledgerService = $ledgerService;
         $this->emailService = $emailService;
         $this->reportService = $reportService;
+        $this->dashboardService = $dashboardService;
     }
     /**
      * Display a listing of the resource.
@@ -186,6 +191,13 @@ class ClaimController extends Controller
         $data['cycles'] = $this->reportService->getAllowanceCycles() ?? [];
 
         return view('claims.claims-list', $data);
+    }
+
+    public function getRunningBalance(User $user)
+    {
+        $data = $this->dashboardService->getMemberMetrics($user);   
+          
+        return response()->json(array('amount' => $data['balance']), 200);
     }
 
 }

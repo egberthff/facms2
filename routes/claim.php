@@ -27,6 +27,9 @@ Route::middleware(['auth', 'active'])
         Route::get('claims/list', [ClaimController::class, 'index'])
             ->middleware('can:viewAny,App\\Models\\Claim')
             ->name('claim.list');
+        
+        Route::get('claims/running-balance/{user}', [ClaimController::class, 'getRunningBalance'])
+            ->name('claim.running-balance');    
 
     });
 

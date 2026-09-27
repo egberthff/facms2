@@ -1,7 +1,75 @@
 <x-app-layout>
 
 <div
-    x-data="claimWizard()"
+    x-data="{
+        ...claimWizard(),
+        userId: '{{ auth()->id() }}',
+        claimableBalanceOk: true,
+        rawAmount: '',
+        get amount() {
+            if (!this.rawAmount) return '';
+            // Format the raw number with commas for display
+            return Number(this.rawAmount).toLocaleString('en-US');
+        }, 
+        set amount(value) {
+            // Strip out everything except digits and decimal points
+            let cleanValue = value.replace(/[^0-9.]/g, '');
+
+            // Prevent multiple decimals
+            const points = cleanValue.split('.');
+            if (points.length > 2) {
+                cleanValue = points[0] + '.' + points.slice(1).join('');
+            }
+
+            this.rawAmount = cleanValue;
+        },
+        async checkRunningBalance() {
+            // Don't check anything if the field is empty
+            if (!this.rawAmount) return;
+
+            try {
+                // Build the URL matching your route: claims/running-balance/{user}
+                const url = `/claims/running-balance/${this.userId}`;
+
+                const response = await fetch(url, {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    }
+                });
+
+                if (!response.ok) throw new Error('Network response failure');
+
+                const data = await response.json();          
+
+                // 1. Safely parse the inputted amount (fallback to 0 if empty/invalid)
+                const inputAmount = parseFloat(this.rawAmount.replaceAll(',', '')) || 0;          
+
+                // 2. Safely parse the controller amount (handles numbers or strings with formatters)
+                let rawBalanceValue = data.amount;
+                if (typeof rawBalanceValue === 'string') {
+                    rawBalanceValue = rawBalanceValue.replace(/[^0-9.]/g, ''); // Strip currency signs or commas if present
+                }
+                const runningBalance = parseFloat(rawBalanceValue) || 0;
+
+               // 3. Fire SweetAlert if running balance is greater than the input amount
+                if (inputAmount > runningBalance) {
+                    this.claimableBalanceOk = false
+                    Swal.fire({
+                        title: 'Balance Threshold Exceeded',
+                        text: `The inputted amount (₱${inputAmount.toLocaleString('en-PH')}) is greater than claimable balance balance (₱${runningBalance.toLocaleString('en-PH')}).`,
+                        icon: 'warning',
+                        confirmButtonColor: '#FDBA74', // Tailwind orange-300 matching focus ring
+                        confirmButtonText: 'Understood'
+                    });
+                }else{
+                    this.claimableBalanceOk = true;
+                }
+            } catch (error) {
+                console.error('Error fetching running balance:', error);
+            }
+        }
+    }"
     class="max-w-6xl mx-auto px-4 py-6">
 
     <form
@@ -359,6 +427,11 @@
 
                         if(!this.hospital) {
                             Swal.fire("Please provide the hospital/institution");
+                            return false;
+                        }
+
+                        if(!this.claimableBalanceOk)  {
+                            Swal.fire('Requested amount is greater than claimable balance');
                             return false;
                         }
 

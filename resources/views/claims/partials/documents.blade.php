@@ -14,6 +14,7 @@
                         <strong>PDF, JPG, JPEG, PNG</strong>
                     </p>
                 </div>
+                <x-file-preview-modal />
                 <!-- Upload Area -->
                 <label
                     for="documents"
@@ -112,24 +113,33 @@
                                         </p>
                                     </div>
                                 </div>
-                                <!-- Remove -->
-                                <button
-                                    type="button"
-                                    @click="files.splice(index,1)"
-                                    class="text-red-500 hover:text-red-700">
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        class="w-6 h-6"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        stroke-width="2"
-                                        viewBox="0 0 24 24">
-                                        <path
-                                            stroke-linecap="round"
-                                            stroke-linejoin="round"
-                                            d="M6 18L18 6M6 6l12 12"/>
-                                    </svg>
-                                </button>
+                                <!-- Preview -->
+                                <div class="flex flex-row gap-1">
+                                    <button 
+                                        type="button" 
+                                        @click="window.dispatchEvent(new CustomEvent('open-file-preview', { detail: { url: window.URL.createObjectURL(file), name: file.name } }))" 
+                                        class="inline-flex items-center gap-1 font-semibold text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100/70 px-2.5 py-1 rounded transition shrink-0">
+                                        View File
+                                    </button>
+                                    <!-- Remove -->
+                                    <button
+                                        type="button"
+                                        @click="files.splice(index,1)"
+                                        class="text-red-500 hover:text-red-700">
+                                        <svg
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            class="w-6 h-6"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            stroke-width="2"
+                                            viewBox="0 0 24 24">
+                                            <path
+                                                stroke-linecap="round"
+                                                stroke-linejoin="round"
+                                                d="M6 18L18 6M6 6l12 12"/>
+                                        </svg>
+                                    </button>
+                                </div>
                             </div>
                         </template>
                     </div>

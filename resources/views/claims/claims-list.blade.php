@@ -279,7 +279,7 @@ redrawTable() {
                             <p class="text-slate-700 leading-relaxed whitespace-pre-line text-xs" x-text="activeClaim.description || 'No descriptions were written during submission.'"></p>
                         </div>
 
-                        <div class="p-4 rounded-xl border" :class="activeClaim.remarks && activeClaim.remarks !== 'No remarks provided.' ? 'bg-amber-50/40 border-amber-100' : 'bg-slate-50/30 border-slate-100'">
+                        {{-- <div class="p-4 rounded-xl border" :class="activeClaim.remarks && activeClaim.remarks !== 'No remarks provided.' ? 'bg-amber-50/40 border-amber-100' : 'bg-slate-50/30 border-slate-100'">
                             <span class="block text-xs font-bold uppercase tracking-wider mb-2" :class="activeClaim.remarks && activeClaim.remarks !== 'No remarks provided.' ? 'text-amber-700' : 'text-slate-400'">
                                 Processor Evaluation Remarks
                             </span>
@@ -297,7 +297,7 @@ redrawTable() {
                                 <!-- View-only text display container for other user roles -->
                                 <p class="leading-relaxed whitespace-pre-line text-xs" :class="activeClaim.remarks && activeClaim.remarks !== 'No remarks provided.' ? 'text-slate-800 font-medium' : 'text-slate-400 italic'" x-text="activeClaim.remarks"></p>
                             @endrole
-                        </div>
+                        </div> --}}
 
                     </div>
 

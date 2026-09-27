@@ -45,7 +45,9 @@
                             <input
                                 name="amount"
                                 x-model="amount"
-                                type="number"
+                                type="text"
+                                @blur="checkRunningBalance()"
+                                inputmode
                                 class="w-full rounded-xl border border-gray-300 pl-9 pr-4 py-3 focus:ring-2 focus:ring-orange-300">
                         </div>
                     </div>
