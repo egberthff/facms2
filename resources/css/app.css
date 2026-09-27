@@ -102,6 +102,50 @@ table.datatable-table {
   font-family: 'Outfit', 'Figtree', sans-serif !important;
 }
 
+/*
+ *
+ *For compact table design
+ *
+ */ 
+ table {
+  width: 100%;
+  max-width: 1000px;
+  border-collapse: collapse;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 0.875rem; /* 14px compact text */
+  color: #1f2937;
+  background-color: #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.1);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+th, 
+td {
+  padding: 8px 12px; /* Tight padding for compact design */
+  text-align: left;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+th {
+  background-color: #f9fafb;
+  font-weight: 600;
+  color: #374151;
+  text-transform: uppercase;
+  font-size: 0.75rem; /* Slightly smaller header for modern typography */
+  letter-spacing: 0.05em;
+}
+
+tbody tr:last-child td {
+  border-bottom: none; /* Clean bottom edge */
+}
+
+tbody tr:hover {
+  background-color: #f9fafb; /* Smooth hover state */
+  transition: background-color 0.15s ease-in-out;
+}
+
+
 
 
 /* ==========================================================================
