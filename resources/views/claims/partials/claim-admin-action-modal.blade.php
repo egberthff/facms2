@@ -56,15 +56,22 @@
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div class="bg-blue-50/50 border border-blue-100 p-4 rounded-xl">
                         <span class="block text-xs font-semibold text-blue-500 uppercase tracking-wider mb-1">Requested Amount</span>
-                        <span class="text-xl font-black text-blue-900" x-text="'₱' + activeClaim.requested_amount"></span>
+                        {{-- <span class="text-xl font-black text-blue-900" x-text="'₱' + activeClaim.requested_amount"></span> --}}
+                        <span class="text-xl font-black text-blue-900" x-text="'₱' + Number(activeClaim.requested_amount).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })"></span>
                     </div>
                     <div class="p-4 rounded-xl border border-slate-100" :class="activeClaim.approved_amount && activeClaim.approved_amount !== 'N/A' ? 'bg-emerald-50/50 border-emerald-100' : 'bg-slate-50/50'">
                         <span class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1" :class="activeClaim.approved_amount && activeClaim.approved_amount !== 'N/A' ? 'text-emerald-500' : ''">Approved Amount</span>
-                        <span class="text-xl font-black" :class="activeClaim.approved_amount && activeClaim.approved_amount !== 'N/A' ? 'text-emerald-900' : 'text-slate-400'" x-text="activeClaim.approved_amount && activeClaim.approved_amount !== 'N/A' ? '₱' + activeClaim.approved_amount : '—'"></span>
+                        {{-- <span class="text-xl font-black" :class="activeClaim.approved_amount && activeClaim.approved_amount !== 'N/A' ? 'text-emerald-900' : 'text-slate-400'" x-text="activeClaim.approved_amount && activeClaim.approved_amount !== 'N/A' ? '₱' + activeClaim.approved_amount : '—'"></span> --}}
+                        <span class="text-xl font-black" :class="activeClaim.approved_amount && activeClaim.approved_amount !== 'N/A' ? 'text-emerald-900' : 'text-slate-400'" x-text="activeClaim.approved_amount && activeClaim.approved_amount !== 'N/A' ? '₱' + Number(activeClaim.approved_amount).toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '—'"></span>
+                    </div>
+                     <div class="p-4 rounded-xl border border-slate-100" :class="activeClaim.approved_amount && activeClaim.approved_amount !== 'N/A' ? 'bg-emerald-70/70 border-emerald-700' : 'bg-slate-50/50'">
+                        <span class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1" :class="activeClaim.approved_amount && activeClaim.approved_amount !== 'N/A' ? 'text-emerald-700' : ''">Running Balance</span>
+                        <span class="text-xl font-black" :class="activeClaim.approved_amount && activeClaim.approved_amount !== 'N/A' ? 'text-emerald-600' : 'text-slate-300'" x-text="activeClaim.approved_amount && activeClaim.approved_amount !== 'N/A' ? '₱' + Number(activeClaim.annual_limit - activeClaim.approved_amount).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—'"></span>
                     </div>
                     <div class="bg-slate-50/50 border border-slate-100 p-4 rounded-xl">
                         <span class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Annual Available Limit</span>
-                        <span class="text-xl font-bold text-slate-700" x-text="'₱' + activeClaim.annual_limit"></span>
+                        {{-- <span class="text-xl font-bold text-slate-700" x-text="'₱' + activeClaim.annual_limit"></span> --}}
+                        <span class="text-xl font-bold text-slate-700" x-text="'₱' + Number(activeClaim.annual_limit).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })"></span>
                     </div>
                 </div>
 
