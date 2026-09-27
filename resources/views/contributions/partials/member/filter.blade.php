@@ -1,4 +1,4 @@
-<div class="p-4 border-b">
+<div class="p-4">
     <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <!-- Filters -->
         <div class="flex flex-wrap gap-2">
