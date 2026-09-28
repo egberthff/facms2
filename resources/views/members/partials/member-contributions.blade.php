@@ -18,7 +18,8 @@
                 <table id="contributions-table" class="w-full text-sm text-left text-gray-500 dark:text-zinc-400 border-separate border-spacing-0">
                     <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-zinc-800/80 dark:text-zinc-300">
                         <tr>
-                            <th scope="col" class="px-6 py-3.5 font-semibold border-b border-gray-200 dark:border-zinc-700">Batch ID</th>
+                            <th scope="col" class="px-6 py-3.5 font-semibold border-b border-gray-200 dark:border-zinc-700">Contribution ID</th>
+                            <th scope="col" class="px-6 py-3.5 font-semibold border-b border-gray-200 dark:border-zinc-700">Contribution Type</th>
                             <th scope="col" class="px-6 py-3.5 font-semibold border-b border-gray-200 dark:border-zinc-700">Contribution Amount</th>
                             <th scope="col" class="px-6 py-3.5 font-semibold border-b border-gray-200 dark:border-zinc-700">Payment Status</th>
                             <th scope="col" class="px-6 py-3.5 font-semibold border-b border-gray-200 dark:border-zinc-700">Paid Date</th>
