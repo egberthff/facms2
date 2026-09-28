@@ -81,7 +81,7 @@ class ContributionBatchController extends Controller
         $contributionType = strtolower(trim($request->input('contribution_type', 'claims'))); // 'claims' is the fallback default
 
         // 2. Conditionally fetch dashboard metric payloads based on the type chosen
-        if ($contributionType === 'annual') {
+        if ($contributionType === 'annual due') {
             // Calls your upcoming annual metrics logic inside the service file
             $data = $this->contributionService->getAnnualContributionData($selectedCampusId);
         } else if ($contributionType === 'cna share') {
