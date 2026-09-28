@@ -118,7 +118,7 @@
             <!-- ============================================== -->
             <!-- ACTION -->
             <!-- ============================================== -->
-            <td class="px-5 py-4 text-center">
+            <td class="px-5 py-4 text-center z-50">
                 <div
                     x-data="{ open:false }"
                     class="relative inline-block text-left">
@@ -157,27 +157,27 @@
                         @click.away="open=false"
                         x-transition
                         class="absolute right-0 mt-2 w-52 origin-top-right rounded-xl bg-white shadow-xl ring-1 ring-slate-200 z-50">
-                        <div class="py-2">
+                        <div class="py-2 z-999">
                             <button
                                 @click="
                                     activeClaim = @js($claim);
                                     openModal = true;
                                     open = false;
                                 "
-                                class="flex w-full items-center px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-100">
+                                class="flex w-full items-center px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-100 z-50">
                                 <x-heroicon-o-eye class="size-6 text-blue-600" />
                                 <span class="ml-3">View Details</span>
                             </button>
                             @if($userRole === 'President' && strtolower(trim($claim->status ?? '')) === 'pending')
                                     <button
                                         @click="updateClaimStatus('{{ $claim->id }}', 'Approved', @js($claim))"
-                                        class="flex w-full items-center px-4 py-2.5 text-sm text-blue-700 hover:bg-blue-50">
+                                        class="flex w-full items-center px-4 py-2.5 text-sm text-blue-700 hover:bg-blue-50 z-50">
                                         <x-heroicon-o-check class="size-5 text-blue-500" />
                                         <span class="ml-3">Approve</span>
                                     </button>
                                     <button
                                         @click="updateClaimStatus('{{ $claim->id }}', 'Rejected', @js($claim))"
-                                        class="flex w-full items-center px-4 py-2.5 text-sm text-rose-700 hover:bg-rose-50">
+                                        class="flex w-full items-center px-4 py-2.5 text-sm text-rose-700 hover:bg-rose-50" z-50>
                                         <x-heroicon-o-x-mark class="size-5 text-rose-500" />
                                         <span class="ml-3">Reject</span>
                                     </button>
@@ -185,14 +185,14 @@
                                 @if(strtolower(trim($claim->status ?? '')) === 'approved')
                                 <button
                                     @click="updateClaimStatus('{{ $claim->id }}', 'For Review FP', @js($claim))"
-                                    class="flex w-full items-center px-4 py-2.5 text-sm text-blue-700 hover:bg-blue-50">
+                                    class="flex w-full items-center px-4 py-2.5 text-sm text-blue-700 hover:bg-blue-50 z-50">
                                     <x-heroicon-o-arrow-path class="size-5 text-blue-500" />
                                     <span class="ml-3">Forward to FP</span>
                                 </button>
                                 @elseif(strtolower(trim($claim->status ?? '')) === 'for disbursement')
                                 <button
                                     @click="updateClaimStatus('{{ $claim->id }}', 'Disbursed', @js($claim))"
-                                    class="flex w-full items-center px-4 py-2.5 text-sm text-emerald-700 hover:bg-emerald-50">
+                                    class="flex w-full items-center px-4 py-2.5 text-sm text-emerald-700 hover:bg-emerald-50 z-50">
                                     <x-heroicon-o-credit-card class="size-5 text-emerald-500" />
                                     <span class="ml-3">Mark as Disbursed</span>
                                 </button>
@@ -200,14 +200,14 @@
                             @elseif($userRole === 'Federated President' && strtolower(trim($claim->status ?? '')) === 'for review fp')
                                 <button
                                     @click="updateClaimStatus('{{ $claim->id }}', 'Processing', @js($claim))"
-                                    class="flex w-full items-center px-4 py-2.5 text-sm text-amber-700 hover:bg-amber-50">
+                                    class="flex w-full items-center px-4 py-2.5 text-sm text-amber-700 hover:bg-amber-50 z-50">
                                     <x-heroicon-o-arrow-path class="size-5 text-amber-500" />
                                     <span class="ml-3">Processing</span>
                                 </button>
                             @elseif($userRole === 'Federated Treasurer' && strtolower(trim($claim->status ?? '')) === 'processing')
                                 <button
                                     @click="updateClaimStatus('{{ $claim->id }}', 'For Disbursement', @js($claim))"
-                                    class="flex w-full items-center px-4 py-2.5 text-sm text-emerald-700 hover:bg-emerald-50">
+                                    class="flex w-full items-center px-4 py-2.5 text-sm text-emerald-700 hover:bg-emerald-50 z-50">
                                     <x-heroicon-o-credit-card class="size-5 text-emerald-500" />
                                     <span class="ml-3">For Disbursement</span>
                                 </button>

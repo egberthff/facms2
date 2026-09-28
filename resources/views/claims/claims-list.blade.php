@@ -130,7 +130,7 @@ redrawTable() {
     <!-- FILTER TOOLBAR -->
     <!-- ===================================================== -->
     <!-- 1. Wrapped the entire filters section in a single clean x-data element -->
-<div class="px-6 py-4 bg-slate-50 border-b border-slate-200">
+<div class="px-4 py-3">
     
     <div class="flex flex-col xl:flex-row gap-3 xl:items-center">
         {{-- Status Filters --}}
@@ -208,7 +208,7 @@ redrawTable() {
 
             <button
                 @click="window.location.reload()"
-                class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 text-sm font-medium">
+                class="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 text-sm font-medium">
                 <x-heroicon-o-arrow-path class="size-5 text-slate-500" />
                 Refresh
             </button>
@@ -220,7 +220,7 @@ redrawTable() {
     <!-- TABLE -->
     <!-- ===================================================== -->
     <!-- Default Display -->
-    <div id="claims-form-container" class="overflow-x-auto p-8">
+    <div id="claims-form-container" class="overflow-x-auto p-3">
         <!-- Claims-based view (Visible by default) -->
         <div id="template-claims-table" style="display: block;">
             @include('claims.partials.claims-table')

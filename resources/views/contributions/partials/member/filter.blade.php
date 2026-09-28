@@ -42,7 +42,7 @@
                 x-transition:leave="transition ease-in duration-75"
                 x-transition:leave-start="transform opacity-100 scale-100"
                 x-transition:leave-end="transform opacity-0 scale-95"
-                class="absolute left-0 z-30 mt-2 w-56 origin-top-left rounded-lg bg-white shadow-lg border border-slate-100 focus:outline-none py-1 max-h-60 overflow-y-auto"
+                class="absolute left-0 z-50 w-56 origin-top-left rounded-lg bg-white shadow-lg border border-slate-100 focus:outline-none py-1 max-h-60 overflow-y-auto"
                 style="display: none;">
                 
                 <!-- Loop through statuses -->
