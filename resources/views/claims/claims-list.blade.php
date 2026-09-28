@@ -353,7 +353,7 @@ redrawTable() {
 
                     <!-- Section 4: Workflow Lifecycle Status Timeline Logs -->
                     <div class="border border-slate-100 rounded-xl p-4 bg-white shadow-sm">
-                        <span class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Processing Timeline Logs</span>
+                        <span class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Processing Timeline Overview</span>
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 border-l-2 border-slate-100 pl-4 sm:border-l-0 sm:pl-0 sm:divide-x sm:divide-slate-100">
                             <div>
                             <span class="block text-xs text-slate-400 font-medium">1. Filed / Submitted On</span>

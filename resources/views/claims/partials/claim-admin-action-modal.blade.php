@@ -118,7 +118,7 @@
 
                 <!-- Section 4: Workflow Lifecycle Status Timeline Logs -->
                 <div class="border border-slate-100 rounded-xl p-4 bg-white shadow-sm">
-                    <span class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Processing Timeline Logs</span>
+                    <span class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Processing Timeline Overview</span>
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 border-l-2 border-slate-100 pl-4 sm:border-l-0 sm:pl-0 sm:divide-x sm:divide-slate-100">
                         <div>
                         <span class="block text-xs text-slate-400 font-medium">1. Filed / Submitted On</span>
@@ -127,7 +127,7 @@
                         </span>
                         </div>
                         <div class="sm:pl-4">
-                            <span class="block text-xs text-slate-400 font-medium">2. Board Evaluated On</span>
+                            <span class="block text-xs text-slate-400 font-medium">2. Approved On</span>
                             <span class="block font-semibold text-slate-700 mt-0.5 text-xs" 
                               x-text="activeClaim.approved_at ? new Date(activeClaim.approved_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'N/A'">
                             </span>
