@@ -213,7 +213,7 @@ class MemberController extends Controller
         abort(403);
     }
 
-    public function getHistory(Member $member, string $type): JsonResponse
+    public function getHistory(Member $member, string $type): JsonResponse 
     {
         // 1. Ensure the request parameter matches expected historical scopes
         if (! in_array($type, ['claims', 'contributions'])) {
@@ -227,28 +227,90 @@ class MemberController extends Controller
             case 'claims':
                 $member->load(['claims' => function ($query) {
                     $query->select(['id', 'member_id', 'claim_number', 'requested_amount', 'status', 'submitted_at'])
-                    ->latest('submitted_at');
+                        ->latest('submitted_at');
                 }]);
+
+                // Format claims payload
+                $records = $member->claims;
                 break;
 
-                case 'contributions':
-                    $member->load(['contributions' => function ($query) {
+            case 'contributions':
+                $member->load([
+                    'contributions' => function ($query) {
                         $query->select(['id', 'member_id', 'contribution_batch_id', 'amount', 'status', 'paid_at'])
-                              ->latest('created_at')
-                              ->with(['contributionBatch' => function ($batchQuery) {
-                                  $batchQuery->select(['id', 'batch_reference', 'generated_at']); 
-                              }]);
-                    }]);
-                    break;
-                
-        }
+                            ->latest('created_at')
+                            ->with(['contributionBatch' => function ($batchQuery) {
+                                $batchQuery->select(['id', 'batch_reference', 'generated_at']);
+                            }]);
+                    }, 
+                    'annualContributions' => function ($query) {
+                        $query->select(['id', 'member_id', 'reference_number', 'amount_paid', 'status', 'paid_at'])
+                            ->latest('created_at');
+                    }, 
+                    'cnaShares' => function ($query) {
+                        $query->select(['id', 'member_id','reference_number', 'due_amount', 'status', 'paid_at']) // Fixed missing array syntax here
+                            ->latest('created_at');
+                    }
+                ]);
 
+                // Format grouped contributions payload
+                $records = [
+                    'claims' => $member->contributions,
+                    'annual_dues'   => $member->annualContributions,
+                    'cna'      => $member->cnaShares,
+                ];
+                break;
+        }
+            \Log::error(print_r($records, true));
         return response()->json([
             'member'  => $member->only(['id', 'first_name', 'last_name']),
-            'records' => $member->getRelation($type), 
             'balance' => $balance,
+            'records' => $records,
         ]);
     }
+
+    // public function getHistory(Member $member, string $type): JsonResponse
+    // {
+    //     // 1. Ensure the request parameter matches expected historical scopes
+    //     if (! in_array($type, ['claims', 'contributions'])) {
+    //         return response()->json(['error' => 'Invalid history type requested'], 400);
+    //     }
+
+    //     $user = $member->user;
+    //     $balance = $this->dashboardService->calculateMemberBalanceData($user);
+
+    //     switch ($type) {
+    //         case 'claims':
+    //             $member->load(['claims' => function ($query) {
+    //                 $query->select(['id', 'member_id', 'claim_number', 'requested_amount', 'status', 'submitted_at'])
+    //                 ->latest('submitted_at');
+    //             }]);
+    //             break;
+
+    //             case 'contributions':
+    //                 $member->load(['contributions' => function ($query) {
+    //                     $query->select(['id', 'member_id', 'contribution_batch_id', 'amount', 'status', 'paid_at'])
+    //                           ->latest('created_at')
+    //                           ->with(['contributionBatch' => function ($batchQuery) {
+    //                               $batchQuery->select(['id', 'batch_reference', 'generated_at']); 
+    //                           }]);
+    //                 }, 'annualContributions' => function ($query) {
+    //                     $query->select(['id', 'member_id', 'amount_paid', 'status', 'paid_at'])
+    //                           ->latest('created_at');
+    //                 }, 'cnaShares' => function ($query) {
+    //                     $query->select('id','member_id', 'due_amount', 'status', 'paid_at')
+    //                           ->latest('created_at');
+    //                 }]);
+    //                 break;
+                
+    //     }
+
+    //     return response()->json([
+    //         'member'  => $member->only(['id', 'first_name', 'last_name']),
+    //         'records' => $member->getRelation($type), 
+    //         'balance' => $balance,
+    //     ]);
+    // }
 
     public function getProfilePage() {
         

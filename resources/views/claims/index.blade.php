@@ -1,7 +1,75 @@
 <x-app-layout>
 
 <div
-    x-data="claimWizard()"
+    x-data="{
+        ...claimWizard(),
+        userId: '{{ auth()->id() }}',
+        claimableBalanceOk: true,
+        rawAmount: '',
+        get amount() {
+            if (!this.rawAmount) return '';
+            // Format the raw number with commas for display
+            return Number(this.rawAmount).toLocaleString('en-US');
+        }, 
+        set amount(value) {
+            // Strip out everything except digits and decimal points
+            let cleanValue = value.replace(/[^0-9.]/g, '');
+
+            // Prevent multiple decimals
+            const points = cleanValue.split('.');
+            if (points.length > 2) {
+                cleanValue = points[0] + '.' + points.slice(1).join('');
+            }
+
+            this.rawAmount = cleanValue;
+        },
+        async checkRunningBalance() {
+            // Don't check anything if the field is empty
+            if (!this.rawAmount) return;
+
+            try {
+                // Build the URL matching your route: claims/running-balance/{user}
+                const url = `/claims/running-balance/${this.userId}`;
+
+                const response = await fetch(url, {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    }
+                });
+
+                if (!response.ok) throw new Error('Network response failure');
+
+                const data = await response.json();          
+
+                // 1. Safely parse the inputted amount (fallback to 0 if empty/invalid)
+                const inputAmount = parseFloat(this.rawAmount.replaceAll(',', '')) || 0;          
+
+                // 2. Safely parse the controller amount (handles numbers or strings with formatters)
+                let rawBalanceValue = data.amount;
+                if (typeof rawBalanceValue === 'string') {
+                    rawBalanceValue = rawBalanceValue.replace(/[^0-9.]/g, ''); // Strip currency signs or commas if present
+                }
+                const runningBalance = parseFloat(rawBalanceValue) || 0;
+
+               // 3. Fire SweetAlert if running balance is greater than the input amount
+                if (inputAmount > runningBalance) {
+                    this.claimableBalanceOk = false
+                    Swal.fire({
+                        title: 'Balance Threshold Exceeded',
+                        text: `The inputted amount (₱${inputAmount.toLocaleString('en-PH')}) is greater than claimable balance balance (₱${runningBalance.toLocaleString('en-PH')}).`,
+                        icon: 'warning',
+                        confirmButtonColor: '#FDBA74', // Tailwind orange-300 matching focus ring
+                        confirmButtonText: 'Understood'
+                    });
+                }else{
+                    this.claimableBalanceOk = true;
+                }
+            } catch (error) {
+                console.error('Error fetching running balance:', error);
+            }
+        }
+    }"
     class="max-w-6xl mx-auto px-4 py-6">
 
     <form
@@ -94,10 +162,13 @@
             },
 
             get amount() {
-                return this.form.amount;
+                // return this.form.amount;
+                return parseFloat(String(this.form.amount).replace(/,/g, ''));
             },
+
             set amount(value) {
-                this.form.amount = value;
+              const cleaned = String(value).replace(/,/g, ''); 
+              this.form.amount = parseFloat(cleaned) || 0; 
             },
 
             get description() {
@@ -203,7 +274,7 @@
                             'gcash': '019f32cb-c172-72d3-97bd-b1b888fe3611',
                             'bank':  '019f32cb-c17d-7362-94af-09d027798fca'
                         };
-                        const selectedId = paymentMethodMap[this.form.paymentMethod] || this.form.paymentMethod;
+                        const selectedId = paymentMethodMap[this.form.paymentMethod] || this.form.paymentMethod || paymentMethodMap[this.paymentMethod] || this.paymentMethod;
                         formData.append('paymentMethod', selectedId);
                         // formData.append('paymentMethod', this.form.paymentMethod);
 
@@ -338,40 +409,70 @@
                     case 1:
 
                         if (!this.claimType) {
-                            alert('Please select a Claim Type.');
+                            Swal.fire('Please select a Claim Type.');
                             return false;
                         }
 
                         if (!this.amount) {
-                            alert('Please enter the Claim Amount.');
+                             Swal.fire('Please enter the Claim Amount');
                             return false;
                         }
 
                         if (!this.description) {
-                            alert('Please provide a Description.');
+                            Swal.fire('Please provide a Description.');
                             return false;
                         }
 
+                        if(!this.incidentDate) {
+                            Swal.fire("Please provide the incident date");
+                            return false;
+                        }
+
+                        if(!this.hospital) {
+                            Swal.fire("Please provide the hospital/institution");
+                            return false;
+                        }
+
+                        if(!this.claimableBalanceOk)  {
+                            Swal.fire('Requested amount is greater than claimable balance');
+                            return false;
+                        }
+
+                        this.form.claimType = this.claimType;
+                        this.form.amount = parseFloat(String(this.amount).replace(/,/g, ''));
+                        this.form.description = this.description;
+                        this.form.incidentDate = this.incidentDate;
+                        this.form.hospital = this.hospital;
                         return true;
 
                     case 2:
 
-                        if (this.files.length === 0) {
+                        // if (this.files.length === 0) {
 
-                            if (!confirm(
-                                'No supporting documents have been uploaded. Continue anyway?'
-                            )) {
-                                return false;
+                            // if (!confirm(
+                            //     'No supporting documents have been uploaded. Continue anyway?'
+                            // )) {
+                            //     return false;
+                            // }
+
+                            if (this.files.length === 0) {
+        
+                                Swal.fire("Please provide the required documents");
+                                    return false;
+
+                            } else {
+                                // If there are files, skip the alert and proceed immediately
+                               return true;
                             }
 
-                        }
+                        // }
 
-                        return true;
+                        // return true;
 
                     case 3:
 
                         if (!this.paymentMethod) {
-                            alert('Please select a payment method.');
+                            Swal.fire("Please select your preferred disbursement method");
                             return false;
                         }
 
@@ -383,12 +484,17 @@
                                 !this.accountName
                             ) {
 
-                                alert(
+                                Swal.fire(
                                     'Please complete all required bank information.'
                                 );
 
                                 return false;
                             }
+                            
+                            this.form.paymentMethod = this.selectedId;
+                            this.form.bank = this.bank;
+                            this.form.accountNumber = this.accountNumber;
+                            this.form.accountName = this.accountName;
 
                         }
 
@@ -399,15 +505,20 @@
                                 !this.gcashNumber
                             ) {
 
-                                alert(
+                                Swal.fire(
                                     'Please complete your GCash details.'
                                 );
 
                                 return false;
                             }
+                            
+                            this.form.paymentMethod = this.selectedId;
+                            this.form.gcashName = this.gcashName;
+                            this.form.gcashNumber = this.gcashNumber;
 
                         }
 
+                        this.form.paymentMethod = this.selectedId;
                         return true;
 
                     default:

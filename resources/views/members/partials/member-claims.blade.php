@@ -41,7 +41,7 @@
             
                 <!-- Card: Total Approved Cycle -->
                 <div class="p-4 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl shadow-sm">
-                    <p class="text-xs font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Total Approved Cycle</p>
+                    <p class="text-xs font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Total Approved</p>
                     <p id="balance-approved-cycle" class="mt-2 text-2xl font-semibold text-gray-900 dark:text-white">
                         0
                     </p>
@@ -49,7 +49,7 @@
             
                 <!-- Card: Total Disbursed Cycle -->
                 <div class="p-4 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl shadow-sm">
-                    <p class="text-xs font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Total Disbursed Cycle</p>
+                    <p class="text-xs font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Total Disbursed</p>
                     <p id="balance-disbursed-cycle" class="mt-2 text-2xl font-semibold text-gray-900 dark:text-white">
                         0
                     </p>

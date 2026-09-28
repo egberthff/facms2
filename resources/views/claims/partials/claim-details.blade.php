@@ -38,14 +38,15 @@
                             <span class="text-red-500">*</span>
                         </label>
                         <div class="relative">
-                            <span
-                                class="absolute left-4 top-3.5 text-gray-500">
+                            <span class="absolute left-4 top-3.5 text-gray-500">
                                 ₱
                             </span>
                             <input
                                 name="amount"
                                 x-model="amount"
-                                type="number"
+                                type="text"
+                                @blur="checkRunningBalance()"
+                                inputmode="decimal"
                                 class="w-full rounded-xl border border-gray-300 pl-9 pr-4 py-3 focus:ring-2 focus:ring-orange-300">
                         </div>
                     </div>
@@ -68,16 +69,19 @@
                     <div>
                         <label class="block text-sm font-medium mb-2">
                             Incident Date
+                            <span class="text-red-500">*</span>
                         </label>
                         <input
                             name="incidentDate"
                             type="date"
+                            required
                             x-model="incidentDate"
                             class="w-full rounded-xl border border-gray-300 px-4 py-3">
                     </div>
                     <div>
                         <label class="block text-sm font-medium mb-2">
                             Hospital / Institution
+                            <span class="text-red-500">*</span>
                         </label>
                         <input
                             name="hospital"

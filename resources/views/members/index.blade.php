@@ -143,6 +143,7 @@
                     if (type === 'claims') {
                         renderClaimsModal(data);
                     } else {
+                        console.log(data);
                         renderContributionsModal(data);
                     }
                 })
@@ -271,16 +272,27 @@
             if (!tbody || !modalElement) return;
         
             // 1. Dynamic Title Injection
-            if (data.member) {
+            if (data.member) {  
                 contributionModalTitle.textContent = `Contributions History: ${data.member.first_name} ${data.member.last_name}`;
             } else {
                 contributionModalTitle.textContent = 'Member Contributions History';
             }
         
-            // 2. Extract records array from response structure
-            const contributions = data.records || [];
+            // 1. Gather all individual collections safely from data.records
+            const records = data.records || {};
+            const annualDues = records.annual_dues || [];
+            const claims = records.claims || []; // standard monthly claims/contributions
+            const cna = records.cna || [];
+
+            // 2. Combine and normalize the structure into a single flat array
+            const contributions = [
+                ...claims.map(item => ({ ...item, type: 'Claims Contribution', displayAmount: item.amount })),
+                ...annualDues.map(item => ({ ...item, type: 'Annual Dues', displayAmount: item.amount_paid })),
+                ...cna.map(item => ({ ...item, type: 'CNA Share', displayAmount: item.due_amount || item.amount }))
+            ];
+
             tbody.innerHTML = '';
-        
+
             // 3. Fallback Handling
             if (contributions.length === 0) {
                 tbody.innerHTML = `
@@ -296,23 +308,21 @@
                     </tr>
                 `;
             } else {
-                // Clear content before populating
-                tbody.innerHTML = '';           
-
+                // Populate rows
                 contributions.forEach(item => {
-                    const contributionAmount = parseFloat(item.amount || 0).toLocaleString('en-PH', {
+                    // Uses normalized displayAmount safely 
+                    const contributionAmount = parseFloat(item.displayAmount || 0).toLocaleString('en-PH', {
                         minimumFractionDigits: 2,
                         maximumFractionDigits: 2
                     });
                 
                     const paidDate = item.paid_at ? item.paid_at.split('T')[0] : '—';
-                
                     const rawStatus = (item.status || 'Unpaid').toLowerCase();
-
+                
                     // Define modern style variants for status pills
                     let badgeClasses = 'bg-gray-50 text-gray-700 border-gray-200 dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-700';
                     let dotClasses = 'bg-gray-400';         
-
+                
                     if (rawStatus === 'paid') {
                         badgeClasses = 'bg-green-50 text-green-700 border-green-200 dark:bg-green-950/40 dark:text-green-400 dark:border-green-900/50';
                         dotClasses = 'bg-green-500';
@@ -324,10 +334,16 @@
                         dotClasses = 'bg-red-500';
                     }
                 
+                    // Safely extract batch reference if it exists, otherwise fall back to item type
+                    const typeOrReference = item.contribution_batch?.batch_reference || item.reference_number;
+                
                     const rowHTML = `
                         <tr class="bg-white dark:bg-zinc-900/50 hover:bg-gray-50 dark:hover:bg-zinc-800/60 transition-colors duration-150">
                             <td class="px-6 py-4 font-mono text-xs text-gray-500 dark:text-zinc-400 whitespace-nowrap">
-                                ${item.contribution_batch.batch_reference || '—'}
+                                ${typeOrReference}
+                            </td>
+                            <td class="px-6 py-4 font-mono text-xs text-gray-500 dark:text-zinc-400 whitespace-nowrap">
+                                ${item.type}
                             </td>
                             <td class="px-6 py-4 font-medium text-gray-900 dark:text-white whitespace-nowrap">
                                 ₱${contributionAmount}
@@ -347,6 +363,77 @@
                     tbody.insertAdjacentHTML('beforeend', rowHTML);
                 });
             }
+
+            // 2. Extract records array from response structure
+            // const contributions = data.records || [];
+            // tbody.innerHTML = '';
+        
+            // // 3. Fallback Handling
+            // if (contributions.length === 0) {
+            //     tbody.innerHTML = `
+            //         <tr>
+            //             <td colspan="4" class="px-6 py-12 text-center text-sm text-gray-400 dark:text-zinc-500">
+            //                 <div class="flex flex-col items-center justify-center space-y-2">
+            //                     <svg class="w-8 h-8 text-gray-300 dark:text-zinc-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://w3.org">
+            //                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
+            //                     </svg>
+            //                     <span>No contribution history records found for this member.</span>
+            //                 </div>
+            //             </td>
+            //         </tr>
+            //     `;
+            // } else {
+            //     // Clear content before populating
+            //     tbody.innerHTML = '';           
+
+            //     contributions.forEach(item => {
+            //         const contributionAmount = parseFloat(item.amount || 0).toLocaleString('en-PH', {
+            //             minimumFractionDigits: 2,
+            //             maximumFractionDigits: 2
+            //         });
+                
+            //         const paidDate = item.paid_at ? item.paid_at.split('T')[0] : '—';
+                
+            //         const rawStatus = (item.status || 'Unpaid').toLowerCase();
+
+            //         // Define modern style variants for status pills
+            //         let badgeClasses = 'bg-gray-50 text-gray-700 border-gray-200 dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-700';
+            //         let dotClasses = 'bg-gray-400';         
+
+            //         if (rawStatus === 'paid') {
+            //             badgeClasses = 'bg-green-50 text-green-700 border-green-200 dark:bg-green-950/40 dark:text-green-400 dark:border-green-900/50';
+            //             dotClasses = 'bg-green-500';
+            //         } else if (rawStatus === 'pending') {
+            //             badgeClasses = 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-900/50';
+            //             dotClasses = 'bg-amber-500';
+            //         } else if (rawStatus === 'unpaid') {
+            //             badgeClasses = 'bg-red-50 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-400 dark:border-red-900/50';
+            //             dotClasses = 'bg-red-500';
+            //         }
+                
+            //         const rowHTML = `
+            //             <tr class="bg-white dark:bg-zinc-900/50 hover:bg-gray-50 dark:hover:bg-zinc-800/60 transition-colors duration-150">
+            //                 <td class="px-6 py-4 font-mono text-xs text-gray-500 dark:text-zinc-400 whitespace-nowrap">
+            //                     ${item.contribution_batch.batch_reference || '—'}
+            //                 </td>
+            //                 <td class="px-6 py-4 font-medium text-gray-900 dark:text-white whitespace-nowrap">
+            //                     ₱${contributionAmount}
+            //                 </td>
+            //                 <td class="px-6 py-4 whitespace-nowrap">
+            //                     <span class="inline-flex items-center px-2.5 py-1 text-xs font-semibold rounded-md border ${badgeClasses}">
+            //                         <span class="w-1.5 h-1.5 me-1.5 rounded-full ${dotClasses}"></span>
+            //                         ${item.status || 'Unpaid'}
+            //                     </span>
+            //                 </td>
+            //                 <td class="px-6 py-4 text-gray-600 dark:text-zinc-400 whitespace-nowrap">
+            //                     ${paidDate}
+            //                 </td>
+            //             </tr>
+            //         `;
+                    
+            //         tbody.insertAdjacentHTML('beforeend', rowHTML);
+            //     });
+            // }
 
 
             modalElement.classList.remove('hidden');

@@ -37,7 +37,7 @@
         
         <!-- Table -->
         <div class="overflow-x-auto">
-            @if($contribution_type === 'annual')
+            @if($contribution_type === 'annual due')
                 <!-- ANNUAL CONTRIBUTION TABLE -->
                 @include('contributions.partials.member.annual-table')
             @elseif($contribution_type === 'claims')

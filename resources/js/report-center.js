@@ -308,31 +308,32 @@ window.reportCenter = function(options)
 
                 this.hasGenerated = true;
 
-                this.showAlert(
-
-                    'success',
-
-                    'Report Generated',
-
-                    'The report has been generated successfully.'
-
-                );
+                Swal.fire({
+                  title: "Success",
+                  html: "Report generated successfully.</br>Click the Preview & Print button to view the printable version of the report",
+                  icon: "success"
+                });
 
             }
             catch (error) {
 
                 console.error(error);
 
-                this.showAlert(
+                // this.showAlert(
 
-                    'error',
+                //     'error',
 
-                    'Generation Failed',
+                //     'Generation Failed',
 
-                    error.response?.data?.message ??
-                    'Unable to generate report.'
+                //     error.response?.data?.message ??
+                //     'Unable to generate report.'
 
-                );
+                // );
+                Swal.fire({
+                //   title: "S",
+                  text: error.response?.data?.message ?? 'Unable to generate report.',
+                  icon: "error"
+                });
 
             }
             finally {

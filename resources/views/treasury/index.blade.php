@@ -50,7 +50,7 @@
             </div>
         @endif
 
-        {{-- @if(!$isPresident) --}}
+        @if(!$isPresident)
             <div class="rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-zinc-800 dark:bg-zinc-800/40">
                 <form method="GET" action="{{ url()->current() }}" class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <div>
@@ -67,7 +67,7 @@
                     </select>
                 </form>
             </div>
-        {{-- @endif --}}
+        @endif
 
         <!-- Top Dashboard Metrics Section -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">

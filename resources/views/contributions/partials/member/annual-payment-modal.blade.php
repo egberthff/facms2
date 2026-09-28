@@ -49,10 +49,10 @@
             <div class="space-y-5 text-sm max-h-[calc(100vh-220px)] overflow-y-auto pr-1">
 
                 <!-- Notice Banner: Compliance & Standing Rules -->
-                <div class="bg-blue-50/60 border border-blue-100 text-blue-800 p-3.5 rounded-xl text-xs leading-relaxed flex items-start gap-2.5">
+                {{-- <div class="bg-blue-50/60 border border-blue-100 text-blue-800 p-3.5 rounded-xl text-xs leading-relaxed flex items-start gap-2.5">
                     <svg class="w-4 h-4 text-blue-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                     <span>Annual contributions secure your baseline validation window in the community fund. Keeping this up to date protects your account from sudden premium allocation penalties or benefit freezing.</span>
-                </div>
+                </div> --}}
 
                 <!-- Section 1: Money Grid Summary (Uniform sizing with Claims) -->
                 <div class="grid grid-cols-1 gap-4">

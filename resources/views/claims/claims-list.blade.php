@@ -130,11 +130,11 @@ redrawTable() {
     <!-- FILTER TOOLBAR -->
     <!-- ===================================================== -->
     <!-- 1. Wrapped the entire filters section in a single clean x-data element -->
-<div class="px-6 py-4 bg-slate-50 border-b border-slate-200">
+<div class="px-4 py-3">
     
     <div class="flex flex-col xl:flex-row gap-3 xl:items-center">
         {{-- Status Filters --}}
-        <div class="flex flex-wrap gap-2">
+        {{-- <div class="flex flex-wrap gap-2">
             <template x-for="status in ['all', ...@js($claimStatuses)]">
                 <button 
                     type="button"
@@ -146,7 +146,53 @@ redrawTable() {
                     x-text="status === 'all' ? 'All' : status">
                 </button>
             </template>
+        </div> --}}
+        <div class="relative inline-block text-left" x-data="{ open: false }" @click.outside="open = false">
+            <!-- Dropdown Trigger Button -->
+            <button 
+                type="button"
+                @click="open = !open"
+                class="inline-flex w-full justify-between items-center gap-x-2 rounded-lg bg-white px-4 py-2 text-sm font-medium text-slate-700 border border-slate-200 hover:bg-slate-50 transition focus:outline-none focus:ring-2 focus:ring-blue-400 min-w-[160px]">
+                
+                <div class="flex items-center gap-2">
+                    <span class="text-slate-400 font-normal">Status:</span>
+                    <!-- Dynamically shows current selected status -->
+                    <span class="capitalize font-semibold text-slate-800" x-text="currentStatus === 'all' ? 'All' : currentStatus"></span>
+                </div>
+        
+                <!-- Chevron Icon -->
+                <svg class="h-4 w-4 text-slate-400 transition-transform duration-200" :class="open ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                </svg>
+            </button>
+        
+            <!-- Dropdown Menu Options Panel -->
+            <div 
+                x-show="open"
+                x-transition:enter="transition ease-out duration-100"
+                x-transition:enter-start="transform opacity-0 scale-95"
+                x-transition:enter-end="transform opacity-100 scale-100"
+                x-transition:leave="transition ease-in duration-75"
+                x-transition:leave-start="transform opacity-100 scale-100"
+                x-transition:leave-end="transform opacity-0 scale-95"
+                class="absolute left-0 z-30 mt-2 w-56 origin-top-left rounded-lg bg-white shadow-lg border border-slate-100 focus:outline-none py-1 max-h-60 overflow-y-auto"
+                style="display: none;">
+                
+                <!-- Loop through statuses -->
+                <template x-for="status in ['all', ...@js($claimStatuses)]">
+                    <button 
+                        type="button"
+                        @click="filterClaims(status); open = false"
+                        :class="currentStatus === status 
+                            ? 'bg-blue-50 text-blue-600 font-semibold' 
+                            : 'text-slate-700 hover:bg-slate-50 font-normal'"
+                        class="flex w-full items-center px-4 py-2.5 text-sm transition capitalize text-left"
+                        x-text="status === 'all' ? 'All' : status">
+                    </button>
+                </template>
+            </div>
         </div>
+        
 
         {{-- Dropdown and Utility Controls --}}
         <div class="flex-1 flex gap-2 justify-end">
@@ -162,7 +208,7 @@ redrawTable() {
 
             <button
                 @click="window.location.reload()"
-                class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 text-sm font-medium">
+                class="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 text-sm font-medium">
                 <x-heroicon-o-arrow-path class="size-5 text-slate-500" />
                 Refresh
             </button>
@@ -174,7 +220,7 @@ redrawTable() {
     <!-- TABLE -->
     <!-- ===================================================== -->
     <!-- Default Display -->
-    <div id="claims-form-container" class="overflow-x-auto p-8">
+    <div id="claims-form-container" class="overflow-x-auto p-3">
         <!-- Claims-based view (Visible by default) -->
         <div id="template-claims-table" style="display: block;">
             @include('claims.partials.claims-table')
@@ -245,18 +291,22 @@ redrawTable() {
                 <div class="space-y-6 text-sm max-h-[calc(100vh-200px)] overflow-y-auto pr-1">
 
                     <!-- Section 1: Financial Cards Summary Grid -->
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div class="grid grid-cols-1 sm:grid-cols-4 gap-2">
                         <div class="bg-blue-50/50 border border-blue-100 p-4 rounded-xl">
                             <span class="block text-xs font-semibold text-blue-500 uppercase tracking-wider mb-1">Requested Amount</span>
-                            <span class="text-xl font-black text-blue-900" x-text="'₱' + activeClaim.requested_amount"></span>
+                            <span class="text-xl font-black text-blue-900" x-text="'₱' + Number(activeClaim.requested_amount).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })"></span>
                         </div>
                         <div class="p-4 rounded-xl border border-slate-100" :class="activeClaim.approved_amount && activeClaim.approved_amount !== 'N/A' ? 'bg-emerald-50/50 border-emerald-100' : 'bg-slate-50/50'">
                             <span class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1" :class="activeClaim.approved_amount && activeClaim.approved_amount !== 'N/A' ? 'text-emerald-500' : ''">Approved Amount</span>
-                            <span class="text-xl font-black" :class="activeClaim.approved_amount && activeClaim.approved_amount !== 'N/A' ? 'text-emerald-900' : 'text-slate-400'" x-text="activeClaim.approved_amount && activeClaim.approved_amount !== 'N/A' ? '₱' + activeClaim.approved_amount : '—'"></span>
+                            <span class="text-xl font-black" :class="activeClaim.approved_amount && activeClaim.approved_amount !== 'N/A' ? 'text-emerald-900' : 'text-slate-400'" x-text="activeClaim.approved_amount && activeClaim.approved_amount !== 'N/A' ? '₱' + Number(activeClaim.approved_amount).toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '—'"></span>
+                        </div>
+                        <div class="p-4 rounded-xl border border-slate-100" :class="activeClaim.approved_amount && activeClaim.approved_amount !== 'N/A' ? 'bg-emerald-70/70 border-emerald-700' : 'bg-slate-50/50'">
+                            <span class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1" :class="activeClaim.approved_amount && activeClaim.approved_amount !== 'N/A' ? 'text-emerald-700' : ''">Running Balance</span>
+                            <span class="text-xl font-black" :class="activeClaim.approved_amount && activeClaim.approved_amount !== 'N/A' ? 'text-emerald-600' : 'text-slate-300'" x-text="activeClaim.approved_amount && activeClaim.approved_amount !== 'N/A' ? '₱' + Number(activeClaim.annual_limit - activeClaim.approved_amount).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—'"></span>
                         </div>
                         <div class="bg-slate-50/50 border border-slate-100 p-4 rounded-xl">
                             <span class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Annual Available Limit</span>
-                            <span class="text-xl font-bold text-slate-700" x-text="'₱' + activeClaim.annual_limit"></span>
+                            <span class="text-xl font-bold text-slate-700" x-text="'₱' + Number(activeClaim.annual_limit).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })"></span>
                         </div>
                     </div>
 
@@ -279,7 +329,7 @@ redrawTable() {
                             <p class="text-slate-700 leading-relaxed whitespace-pre-line text-xs" x-text="activeClaim.description || 'No descriptions were written during submission.'"></p>
                         </div>
 
-                        <div class="p-4 rounded-xl border" :class="activeClaim.remarks && activeClaim.remarks !== 'No remarks provided.' ? 'bg-amber-50/40 border-amber-100' : 'bg-slate-50/30 border-slate-100'">
+                        {{-- <div class="p-4 rounded-xl border" :class="activeClaim.remarks && activeClaim.remarks !== 'No remarks provided.' ? 'bg-amber-50/40 border-amber-100' : 'bg-slate-50/30 border-slate-100'">
                             <span class="block text-xs font-bold uppercase tracking-wider mb-2" :class="activeClaim.remarks && activeClaim.remarks !== 'No remarks provided.' ? 'text-amber-700' : 'text-slate-400'">
                                 Processor Evaluation Remarks
                             </span>
@@ -297,13 +347,13 @@ redrawTable() {
                                 <!-- View-only text display container for other user roles -->
                                 <p class="leading-relaxed whitespace-pre-line text-xs" :class="activeClaim.remarks && activeClaim.remarks !== 'No remarks provided.' ? 'text-slate-800 font-medium' : 'text-slate-400 italic'" x-text="activeClaim.remarks"></p>
                             @endrole
-                        </div>
+                        </div> --}}
 
                     </div>
 
                     <!-- Section 4: Workflow Lifecycle Status Timeline Logs -->
                     <div class="border border-slate-100 rounded-xl p-4 bg-white shadow-sm">
-                        <span class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Processing Timeline Logs</span>
+                        <span class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Processing Timeline Overview</span>
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 border-l-2 border-slate-100 pl-4 sm:border-l-0 sm:pl-0 sm:divide-x sm:divide-slate-100">
                             <div>
                             <span class="block text-xs text-slate-400 font-medium">1. Filed / Submitted On</span>

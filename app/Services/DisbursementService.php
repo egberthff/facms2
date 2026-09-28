@@ -3,6 +3,7 @@ namespace App\Services;
 
 use App\Models\Claim;
 use App\Models\ClaimPayment;
+use App\Models\ClaimType;
 use App\Models\Scopes\CampusMemberScope;
 use App\Enums\ClaimStatus;
 use Illuminate\Database\Eloquent\Collection;
@@ -38,7 +39,8 @@ class DisbursementService
         if (!empty($filters['claim_type'])) {
             $claimType = trim($filters['claim_type']);
             $query->whereHas('claim.claimType', function ($query) use ($claimType) {
-                $query->where('name', 'like', '%' . $claimType . '%');
+                // $query->where('name', 'like', '%' . $claimType . '%');
+                $query->where('claim_type_id', $claimType);
             });
         }
 
@@ -110,15 +112,17 @@ class DisbursementService
 
     public function getClaimTypeOptions(): array
     {
-        return Claim::query()
-            ->with('claimType')
-            ->get()
-            ->pluck('claimType.name')
-            ->filter()
-            ->unique()
-            ->sort()
-            ->values()
-            ->all();
+        // return Claim::query()
+        //     ->with('claimType')
+        //     ->get()
+        //     ->pluck('claimType.name')
+        //     ->filter()
+        //     ->unique()
+        //     ->sort()
+        //     ->values()
+        //     ->all();
+        // return ClaimTypes::cases();
+       return ClaimType::where('is_active', true)->get()->toArray();
     }
 
     public function getDisbursementSummary(?string $selectedCampusId = null): array

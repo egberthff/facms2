@@ -120,7 +120,7 @@ class ContributionDetailsController extends Controller
                 });
                 break;
             
-            case 'annual': 
+            case 'annual due': 
                 $contributions = $this->contributionService->getUserOwedContributionsAnnual($user, $status);
                 
                 // Format data specifically for your newly added Annual Table layout
@@ -165,8 +165,27 @@ class ContributionDetailsController extends Controller
                 });
             break; // Placeholder for future CNA Share contributions logic
 
-            case 'annual_due': $formattedData = collect();
-            break;
+            // case 'annual due': 
+            //     $contributions = $this->contributionService->gerMemberAnnualDueContributions($user, $status);
+            //     \Log::error(print_r($contributions, true));
+            //     $formattedData = $contributions->map(function ($contribution) {
+            //         return [
+            //             'id'                        => $contribution->id,
+            //             'reference_number'          => $contribution->reference_number ?? 'N/A',
+            //             'contribution_year'         => $contribution->contribution_year,
+            //             'amount_paid'               => (float) $contribution->amount_paid,
+            //             'status'                    => $contribution->status,
+            //             'remarks'                   => $contribution->remarks,
+            //             'paid_at'                   => $contribution->paid_at,
+            //             'payment_reference_number'  => $contribution->payment_reference_number ?? 'N/A',
+            //             // Eager loaded relationship arrays mapping to Blade components
+            //             'payment_method' => $contribution->paymentMethod ? [
+            //                 'id'   => $contribution->paymentMethod->id ?? 'N/A',
+            //                 'name' => $contribution->paymentMethod->name ?? 'N/A',
+            //             ] : null,
+            //         ];
+            //     });
+            // break;
             
             default:
                 $formattedData = collect();

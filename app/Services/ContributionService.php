@@ -510,6 +510,18 @@ class ContributionService
         return CNAShare::with('member.user')->where('member_id', $member->id)->get();
     }
 
+    /**
+     * Get members Annual Duew contribution
+     */
+    public function gerMemberAnnualDueContributions(User $user, string $status = null): Collection
+    {
+        $member = $user->member;
+        if(!$member){
+            return new Collection();
+        }
+        return AnnualContribution::with('member.user')->where('member_id', $member->id)->get();
+    }
+
      /**
      * Get the total paid contributions sum, filtered by optional campus.
      */
