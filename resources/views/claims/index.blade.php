@@ -162,10 +162,13 @@
             },
 
             get amount() {
-                return this.form.amount;
+                // return this.form.amount;
+                return parseFloat(String(this.form.amount).replace(/,/g, ''));
             },
+
             set amount(value) {
-                this.form.amount = value;
+              const cleaned = String(value).replace(/,/g, ''); 
+              this.form.amount = parseFloat(cleaned) || 0; 
             },
 
             get description() {
@@ -271,7 +274,7 @@
                             'gcash': '019f32cb-c172-72d3-97bd-b1b888fe3611',
                             'bank':  '019f32cb-c17d-7362-94af-09d027798fca'
                         };
-                        const selectedId = paymentMethodMap[this.form.paymentMethod] || this.form.paymentMethod;
+                        const selectedId = paymentMethodMap[this.form.paymentMethod] || this.form.paymentMethod || paymentMethodMap[this.paymentMethod] || this.paymentMethod;
                         formData.append('paymentMethod', selectedId);
                         // formData.append('paymentMethod', this.form.paymentMethod);
 
@@ -435,6 +438,11 @@
                             return false;
                         }
 
+                        this.form.claimType = this.claimType;
+                        this.form.amount = parseFloat(String(this.amount).replace(/,/g, ''));
+                        this.form.description = this.description;
+                        this.form.incidentDate = this.incidentDate;
+                        this.form.hospital = this.hospital;
                         return true;
 
                     case 2:
@@ -482,6 +490,11 @@
 
                                 return false;
                             }
+                            
+                            this.form.paymentMethod = this.selectedId;
+                            this.form.bank = this.bank;
+                            this.form.accountNumber = this.accountNumber;
+                            this.form.accountName = this.accountName;
 
                         }
 
@@ -498,9 +511,14 @@
 
                                 return false;
                             }
+                            
+                            this.form.paymentMethod = this.selectedId;
+                            this.form.gcashName = this.gcashName;
+                            this.form.gcashNumber = this.gcashNumber;
 
                         }
 
+                        this.form.paymentMethod = this.selectedId;
                         return true;
 
                     default:
