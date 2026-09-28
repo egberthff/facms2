@@ -170,6 +170,8 @@
         </div>
     </div>
 
+    <x-file-preview-modal />
+
     <div class="fixed inset-0 z-50 overflow-y-auto" x-show="openModal" style="display: none;" @keydown.escape.window="openModal = false">
         <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm" x-show="openModal" @click="openModal = false"></div>
         <div class="flex min-h-full items-center justify-center p-4">

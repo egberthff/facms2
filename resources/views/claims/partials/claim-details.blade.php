@@ -38,8 +38,7 @@
                             <span class="text-red-500">*</span>
                         </label>
                         <div class="relative">
-                            <span
-                                class="absolute left-4 top-3.5 text-gray-500">
+                            <span class="absolute left-4 top-3.5 text-gray-500">
                                 ₱
                             </span>
                             <input
@@ -47,7 +46,7 @@
                                 x-model="amount"
                                 type="text"
                                 @blur="checkRunningBalance()"
-                                inputmode
+                                inputmode="decimal"
                                 class="w-full rounded-xl border border-gray-300 pl-9 pr-4 py-3 focus:ring-2 focus:ring-orange-300">
                         </div>
                     </div>
