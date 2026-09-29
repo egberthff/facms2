@@ -24,6 +24,7 @@ use App\Services\TreasuryLedgerService;
 use App\Services\ReportService;
 use App\Services\EmailService;
 use App\Services\DashboardService;
+use App\Services\NotificationService;
 
 use Exception;
 class ClaimController extends Controller
@@ -32,6 +33,7 @@ class ClaimController extends Controller
     private TreasuryLedgerService $ledgerService;
     private EmailService $emailService;
     private ReportService $reportService;
+    private NotificationService $notificationService;
     
     private DashboardService $dashboardService;
 
@@ -41,6 +43,7 @@ class ClaimController extends Controller
         EmailService $emailService,
         ReportService $reportService,
         DashboardService $dashboardService,
+        NotificationService $notificationService,
         )
     {
         $this->claimService = $claimService;
@@ -48,6 +51,7 @@ class ClaimController extends Controller
         $this->emailService = $emailService;
         $this->reportService = $reportService;
         $this->dashboardService = $dashboardService;
+        $this->notificationService = $notificationService;
     }
     /**
      * Display a listing of the resource.
@@ -99,6 +103,7 @@ class ClaimController extends Controller
                     );
 
             $emailService->newSubmittedClaimAlert($claim); 
+            $this->notificationService->newSubmittedClaimAlert($claim);
 
             return response()->json([
                 'success' => true,
