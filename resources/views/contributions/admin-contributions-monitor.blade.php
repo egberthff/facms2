@@ -1,5 +1,5 @@
 <x-app-layout>
-    <div class="p-6 max-w-7xl mx-auto space-y-6" x-data="{
+    <div class="p-6 mx-auto space-y-6" x-data="{
         search: '',
         batches: @js($batches),
         selectedBatch: null,

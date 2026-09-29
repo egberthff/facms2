@@ -43,7 +43,7 @@
                      @foreach($filteredCampuses as $campus)
                         <div class="shrink-12 bg-white dark:bg-zinc-900 px-3 py-1.5 rounded-lg border {{ $selectedCampusId == $campus->id ? 'border-blue-500 bg-blue-50/10' : 'border-gray-200 dark:border-zinc-800' }} text-xs">
                             <span class="font-bold text-gray-500 dark:text-gray-400">{{ $campus->acronym }}:</span>
-                            <span class="font-mono font-semibold ml-1 text-gray-900 dark:text-white">₱{{ number_format($campus->latest_balance, 2) }}</span>
+                            {{-- <span class="font-mono font-semibold ml-1 text-gray-900 dark:text-white">₱{{ number_format($campus->latest_balance, 2) }}</span> --}}
                         </div>
                     @endforeach
                 </div>
