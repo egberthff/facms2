@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Notification;
 use App\Http\Requests\StoreNotificationRequest;
 use App\Http\Requests\UpdateNotificationRequest;
+use Illuminate\Http\Request;
 
 class NotificationController extends Controller
 {
@@ -62,5 +63,13 @@ class NotificationController extends Controller
     public function destroy(Notification $notification)
     {
         //
+    }
+
+    public function markAsRead(Request $request)
+    {
+        // Mark all unread notifications for this user as read
+        auth()->user()->unreadNotifications->markAsRead();
+
+        return back()->with('status', 'All notifications marked as read.');
     }
 }
