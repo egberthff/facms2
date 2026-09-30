@@ -16,7 +16,7 @@
         unifiedReportUrl: '{{ route('reports.unified-report-url') }}',
     })"
     x-init="initialize()"
-    class="max-w-7xl mx-auto px-4 py-6 space-y-6">
+    class="mx-auto px-4 py-6 space-y-6">
 
     {{-- ========================================================= --}}
     {{-- PAGE HEADER --}}
