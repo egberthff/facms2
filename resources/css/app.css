@@ -173,6 +173,10 @@ td.action-cell {
   z-index: 40;
 }
 
+.error-border {
+  border-color: red !important;
+}
+
 
 /* ==========================================================================
    LEGACY SCREEN LAYOUT & PRINT STYLES

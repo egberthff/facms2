@@ -1,7 +1,7 @@
         <section
             x-show="step==1"
             x-transition.opacity.duration.250ms>
-            <div class="bg-white rounded-2xl border border-blue-700 shadow-sm p-6">
+            <div class="bg-white rounded-2xl shadow-sm p-6">
                 <div class="mb-6">
                     <h2 class="text-xl font-bold">
                         Claim Information
@@ -17,17 +17,19 @@
                             Claim Type
                             <span class="text-red-500">*</span>
                         </label>
-                        <select 
+                       <select 
+                            id="claim-type-input"
                             name="claimType"
                             x-model="claimType"
-                            class="w-full rounded-xl border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-orange-300">
-                            <option value="">
-                                Select Claim Type
-                            </option>
-                            @foreach ($claimTypes as $claimType )
-                                <option value="{{ $claimType->id }}">
-                                {{ $claimType->name }}
-                            </option>
+                            @change="claimTypeText = $el.selectedIndex > 0 ? $el.options[$el.selectedIndex].text : ''"
+                            class="w-full rounded-xl border border-gray-300 px-4 py-3">
+
+                            <option value="">Select Claim Type</option>
+
+                            @foreach ($claimTypes as $type)
+                                <option value="{{ $type->id }}">
+                                    {{ $type->name }}
+                                </option>
                             @endforeach
                         </select>
                     </div>
@@ -41,13 +43,44 @@
                             <span class="absolute left-4 top-3.5 text-gray-500">
                                 ₱
                             </span>
-                            <input
-                                name="amount"
-                                x-model="amount"
-                                type="text"
-                                @blur="checkRunningBalance()"
-                                inputmode="decimal"
-                                class="w-full rounded-xl border border-gray-300 pl-9 pr-4 py-3 focus:ring-2 focus:ring-orange-300">
+                                <input
+                                    id="claim-amount-input"
+                                    name="amount"
+                                    x-model="amount"
+                                    type="text"
+                                    inputmode="numeric"
+                                    x-on:input="
+                                        let value = $event.target.value.replace(/[^0-9]/g, '');
+
+                                        if (value === '') {
+                                            amount = '';
+                                            $event.target.value = '';
+                                            return;
+                                        }
+
+                                        amount = value;
+                                        $event.target.value = Number(value).toLocaleString('en-US');
+                                    "
+
+                                    x-on:paste="
+                                        setTimeout(() => {
+                                            let value = $event.target.value.replace(/[^0-9]/g, '');
+
+                                            if (value === '') {
+                                                amount = '';
+                                                $event.target.value = '';
+                                                return;
+                                            }
+
+                                            amount = value;
+                                            $event.target.value = Number(value).toLocaleString('en-US');
+                                        }, 0);
+                                    "
+
+                                    @blur="checkRunningBalance()"
+
+                                    class="w-full rounded-xl border border-gray-300 pl-9 pr-4 py-3"
+                                >
                         </div>
                     </div>
                 </div>
@@ -58,10 +91,21 @@
                         <span class="text-red-500">*</span>
                     </label>
                     <textarea
+                        id="claim-description-input"
                         name="description"
                         rows="5"
                         x-model="description"
-                        class="w-full rounded-xl border border-gray-300 p-4 resize-none focus:ring-2 focus:ring-orange-300"
+                         x-on:input="
+                            let value = $event.target.value;
+
+                            value = value
+                                .toLowerCase()
+                                .replace(/\b\w/g, char => char.toUpperCase());
+
+                            $event.target.value = value;
+                            description = value;
+                        "
+                        class="w-full rounded-xl border border-gray-300 p-4 resize-none"
                         placeholder="Provide a brief description of your claim..."></textarea>
                 </div>
                 <!-- Bottom -->
@@ -72,6 +116,7 @@
                             <span class="text-red-500">*</span>
                         </label>
                         <input
+                            id="claim-incident-date-input"
                             name="incidentDate"
                             type="date"
                             required
@@ -84,9 +129,20 @@
                             <span class="text-red-500">*</span>
                         </label>
                         <input
+                            id="claim-hospital-input"
                             name="hospital"
                             type="text"
                             x-model="hospital"
+                             x-on:input="
+                                let value = $event.target.value;
+
+                                value = value
+                                    .toLowerCase()
+                                    .replace(/\b\w/g, char => char.toUpperCase());
+
+                                $event.target.value = value;
+                                hospital = value;
+                            "
                             class="w-full rounded-xl border border-gray-300 px-4 py-3"
                             placeholder="Hospital / Institution">
                     </div>

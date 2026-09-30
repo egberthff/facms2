@@ -6,6 +6,7 @@
         userId: '{{ auth()->id() }}',
         claimableBalanceOk: true,
         rawAmount: '',
+        claimTypeText: '',
         get amount() {
             if (!this.rawAmount) return '';
             // Format the raw number with commas for display
@@ -60,8 +61,9 @@
                         text: `The inputted amount (₱${inputAmount.toLocaleString('en-PH')}) is greater than claimable balance balance (₱${runningBalance.toLocaleString('en-PH')}).`,
                         icon: 'warning',
                         confirmButtonColor: '#FDBA74', // Tailwind orange-300 matching focus ring
-                        confirmButtonText: 'Understood'
+                        confirmButtonText: 'Understood',
                     });
+                     $('#claim-amount-input').toggleClass('error-border', true);
                 }else{
                     this.claimableBalanceOk = true;
                 }
@@ -70,7 +72,7 @@
             }
         }
     }"
-    class="max-w-6xl mx-auto px-4 py-6">
+    class="mx-auto px-4 py-6">
 
     <form
         id="claim-form"
@@ -410,31 +412,37 @@
 
                         if (!this.claimType) {
                             Swal.fire('Please select a Claim Type.');
+                            this.setErrorFocus(step = 1)
                             return false;
                         }
 
                         if (!this.amount) {
                              Swal.fire('Please enter the Claim Amount');
+                            this.setErrorFocus(step = 1)
                             return false;
                         }
 
                         if (!this.description) {
                             Swal.fire('Please provide a Description.');
+                            this.setErrorFocus(step = 1)
                             return false;
                         }
 
                         if(!this.incidentDate) {
                             Swal.fire("Please provide the incident date");
+                            this.setErrorFocus(step = 1)
                             return false;
                         }
 
                         if(!this.hospital) {
-                            Swal.fire("Please provide the hospital/institution");
+                            Swal.fire("Please provide the hospital/institution"); 
+                            this.setErrorFocus(step = 1)
                             return false;
                         }
 
                         if(!this.claimableBalanceOk)  {
                             Swal.fire('Requested amount is greater than claimable balance');
+                            this.setErrorFocus(step = 1)
                             return false;
                         }
 
@@ -446,29 +454,13 @@
                         return true;
 
                     case 2:
-
-                        // if (this.files.length === 0) {
-
-                            // if (!confirm(
-                            //     'No supporting documents have been uploaded. Continue anyway?'
-                            // )) {
-                            //     return false;
-                            // }
-
                             if (this.files.length === 0) {
-        
                                 Swal.fire("Please provide the required documents");
+                                this.setErrorFocus(step = 2)
                                     return false;
-
                             } else {
-                                // If there are files, skip the alert and proceed immediately
                                return true;
                             }
-
-                        // }
-
-                        // return true;
-
                     case 3:
 
                         if (!this.paymentMethod) {
@@ -487,9 +479,15 @@
                                 Swal.fire(
                                     'Please complete all required bank information.'
                                 );
-
+                                this.setErrorFocus(step = 3)
                                 return false;
                             }
+
+                         if (this.accountNumber.length < 8 || this.accountNumber.length > 20) { 
+                            Swal.fire('Please double check account number.'); 
+                            this.setErrorFocus(step = 3); 
+                            return false; 
+                        }
                             
                             this.form.paymentMethod = this.selectedId;
                             this.form.bank = this.bank;
@@ -508,8 +506,14 @@
                                 Swal.fire(
                                     'Please complete your GCash details.'
                                 );
-
+                                this.setErrorFocus(step = 3);
                                 return false;
+                            }
+
+                             if (this.gcashNumber.length < 11 || this.gcashNumber.length > 11) { 
+                                Swal.fire('Please double check account number.'); 
+                                this.setErrorFocus(step = 3); 
+                                return false; 
                             }
                             
                             this.form.paymentMethod = this.selectedId;
@@ -529,24 +533,102 @@
 
             },
 
+            setErrorFocus(step = 1) {
+                if (step === 1) {
+                  const isClaimTypeInvalid = !this.claimType;
+                  $('#claim-type-input').toggleClass('error-border', isClaimTypeInvalid);
+                  const isAmountInvalid = !this.amount;
+                  $('#claim-amount-input').toggleClass('error-border', isAmountInvalid);
+                  const isDescriptionInvalid = !this.description
+                  $('#claim-description-input').toggleClass('error-border', isDescriptionInvalid);
+                  const isIncidentDatInvalid = !this.incidentDate;
+                  $('#claim-incident-date-input').toggleClass('error-border', isIncidentDatInvalid);
+                  const isHospitalInvalid = !this.hospital;
+                  $('#claim-hospital-input').toggleClass('error-border', isHospitalInvalid);
+                  const isClaimableBalanceValid = !this.claimableBalanceOk;
+                  $('#claim-amount-input').toggleClass('error-border', isClaimableBalanceValid);
+                
+                  // 3. Focus the first invalid field found
+                  if (isClaimTypeInvalid) {
+                    $('#claim-type-input').focus();
+                  }else if (isAmountInvalid || !this.claimableBalanceOk) {
+                    $('#claim-amount-input').focus();
+                  }else if (isDescriptionInvalid) {
+                    $('#claim-description-input').focus();
+                  }else if (isIncidentDatInvalid) {
+                    $('#claim-incident-date-input').focus();
+                  }else if (isHospitalInvalid) {
+                    $('#claim-hospital-input').focus();
+                  }
+                } 
+
+                if (step == 2) {
+                    const isDocumentsValid = !this.files.length === 0
+                    $('#documents').toggleClass('error-border', isDocumentsValid);
+                }
+
+                if (step == 3) {
+                    if(this.paymentMethod === 'bank') {
+                        $('[name="bank"]').toggleClass('error-border', !this.bank);
+                        $('[name="accountNumber"]').toggleClass('error-border', !this.accountNumber);
+                        $('[name="accountName"]').toggleClass('error-border', !this.accountName);
+
+                        const isAccountNumberInvalid = this.accountNumber.length < 8 || this.accountNumber.length > 20;                     
+                        $('[name="accountNumber"]').toggleClass('error-border', isAccountNumberInvalid);
+
+                        if(!this.bank){
+                            $('[name="bank"]').focus();
+                        } else if(!this.accountNumber){
+                             $('[name="accountNumber"]').focus();
+                        }else if(!this.accountName) {
+                            $('[name="accountName"]').focus();
+                        }else if(isAccountNumberInvalid) {
+                             $('[name="accountNumber"]').focus();
+                        }
+                    }
+
+                    if(this.paymentMethod === 'gcash') {
+                        $('[name="gcashNumber"]').toggleClass('error-border', !this.gcashNumber);
+                        $('[name="gcashName"]').toggleClass('error-border', !this.gcashName);
+                        const isGcashNumberInvalid = this.accountNumber.length < 11 || this.accountNumber.length > 11;                     
+                        $('[name="gcashNumber"]').toggleClass('error-border', isGcashNumberInvalid);
+                        if(!this.gcashNumber){
+                            $('[name="gcashNumber"]').focus();
+                        }else if(!this.gcashName) {
+                            $('[name="gcashName"]').focus();
+                        }else if(isGcashNumberInvalid) {
+                            $('[name="gcashNumber"]').focus();
+                        }
+                    }
+                }
+            },
+
+
             /* =====================================================
              * HELPERS
              * ===================================================== */
 
-            formatCurrency(value) {
+           formatCurrency(value) {
+              // 1. Handle null, undefined, 0, or empty string safely
+              if (!value) { 
+                return '0.00'; 
+              }         
 
-                if (!value) {
-                    return '0.00';
-                }
+              // 2. Convert to string and strip out ALL commas
+              const sanitizedValue = String(value).replace(/,/g, '');           
 
-                return Number(value).toLocaleString(
-                    'en-PH',
-                    {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2
-                    }
-                );
+              // 3. Convert to a number
+              const numberValue = Number(sanitizedValue);           
 
+              // 4. Return formatted string (falls back to 0.00 if the input wasn't a valid number)
+              if (isNaN(numberValue)) {
+                return '0.00';
+              }         
+
+              return numberValue.toLocaleString('en-PH', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+              });
             },
 
             resetForm() {
