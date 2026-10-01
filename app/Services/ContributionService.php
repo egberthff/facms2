@@ -610,837 +610,2473 @@ class ContributionService
         return (float) $query->sum('contribution_details.amount');
     }
 
-    //Testing
-    public function getContributionPerMonth(Request $request, ?string $campusId = null): array
-    {
-        
-        $dateFrom = $request->date_from
-        ? Carbon::parse($request->date_from)->startOfMonth()
-        : null;
+    //Testing 3
+    public function getContributionPerMonth(
+    Request $request,
+    ?string $campusId = null
+): array {
+    /*
+     * =========================================================
+     * 1. RESOLVE FISCAL YEAR
+     * =========================================================
+     *
+     * FY 2026:
+     *
+     * October 15, 2026 00:00:00
+     * through
+     * October 14, 2027 23:59:59
+     *
+     * January 2027:
+     * - CNA Share
+     * - Annual Dues
+     *
+     * February - October 2027:
+     * - Normal claim deductions
+     *
+     * November 2027:
+     * - Missed / unpaid deductions
+     */
 
-        if (!$dateFrom) {
-            return [
-                'header_months_amount' => [],
-                'header_month_label' => [],
-                'total_monthly_collection_target' => [],
-                'actual_monthly_collection' => [],
-                'collection_adjustments' => [],
-                'adjusted_monthly_collection' => [],
-                'balance_collectible' => [],
-                'members' => [],
-            ];
-        }      
+    $fiscalYear = $request->input('fiscal_year')
+        ?? $request->input('reporting_year')
+        ?? null;
 
-        /*
-         * Reporting year:
-         *
-         * Selected October 2021
-         *      ↓
-         * October 2021 → October 2022
-         *
-         * The selected October is the beginning of the
-         * reporting cycle.
-         */
-        $dateTo = $dateFrom->copy()
-            ->addYear()
-            ->endOfMonth();    
-
-        /*
-         * Annual Share / CNA Share belong to the January
-         * inside this reporting cycle.
-         *
-         * October 2021 → October 2022
-         *               ↑
-         *            January 2022
-         *
-         * Therefore the share year is 2022.
-         */
-        $shareYear = $dateFrom->copy()
-            ->addYear()
-            ->year;    
-
-        /*
-         * November immediately following the reporting period
-         * is the lump-sum settlement month.
-         *
-         * October 2021 → October 2022
-         * November 2022 = accumulated missed deductions
-         */
-        $settlementMonth = $dateTo->copy()
-            ->addMonth()
-            ->startOfMonth();      
-
-        $settlementMonthKey = strtolower(
-            $settlementMonth->format('F Y')
+    /*
+     * Backward compatibility for the previous UI.
+     *
+     * If date_from is still being sent as an October selector,
+     * October belongs to the fiscal year beginning in that year.
+     *
+     * January - September belong to the fiscal year that began
+     * during the previous calendar year.
+     */
+    if (!$fiscalYear && $request->filled('date_from')) {
+        $selectedDate = Carbon::parse(
+            $request->input('date_from')
         );
-    
-        /*
-         * ---------------------------------------------------------
-         * 1. Initialize report months and totals.
-         * ---------------------------------------------------------
-         *
-         * "total" represents the grand total across all months.
-         */
-    
-        $headerMonthsAmount = [
-            'total' => 0,
-        ];
-    
-        $headerMonthLabel = [];
 
-        // $totalAnnualDueCollectionTarget = [
-        //     'total' => 0,
-        // ];
+        if ($selectedDate->month >= 10) {
+            $fiscalYear = $selectedDate->year;
+        } else {
+            $fiscalYear = $selectedDate->year - 1;
+        }
+    }
 
-        // $actualAnnualDueCollectionTarget = [
-        //     'total' => 0,
-        // ];
-    
-        $totalMonthlyCollectionTarget = [
-            'total' => 0,
+    if (!$fiscalYear) {
+        return [
+            'header_months_amount' => [],
+            'header_month_label' => [],
+            'total_monthly_collection_target' => [],
+            'actual_monthly_collection' => [],
+            'total_cna_share_collection_target' => [],
+            'actual_cna_share_collection' => [],
+            'total_annual_due_collection_target' => [],
+            'actual_annual_due_collection' => [],
+            'collection_adjustments' => [],
+            'collection_adjustment_details' => [],
+            'adjusted_monthly_collection' => [],
+            'balance_collectible' => [],
+            'cna_share' => [
+                'amount' => 0,
+                'total' => 0,
+            ],
+            'annual_due' => [
+                'amount' => 0,
+                'total' => 0,
+            ],
+            'members' => [],
         ];
-    
-        /*
-         * Actual collection BEFORE adjustments.
-         */
-        $actualMonthlyCollection = [
-            'total' => 0,
-        ];
-    
-        /*
-         * Collection adjustments retrieved from the database.
-         *
-         * Positive amount = increase collection
-         * Negative amount = decrease collection
-         */
-        $collectionAdjustments = [
-            'total' => 0,
-        ];
+    }
 
-        $collectionAdjustmentDetails = [];
-    
-        /*
-         * Actual collection AFTER adjustments.
-         */
-        $adjustedMonthlyCollection = [
-            'total' => 0,
-        ];
-    
-        $balanceCollectible = [
-            'cna_share' => [],
-            'annual_due' => [],
-            'total' => 0,
-        ];
-    
-        $currentMonth = $dateFrom->copy();
+    $fiscalYear = (int) $fiscalYear;
 
-        $months = [];
+    /*
+     * =========================================================
+     * 2. EXACT FISCAL-YEAR BOUNDARIES
+     * =========================================================
+     */
 
-        $cnaShare = [
-            'total' => 0,
-        ];
-        $anualDues = [
-            'total' => 0,
-        ];
-    
-        while ($currentMonth->lte($dateTo)) {
-    
-            $monthKey = strtolower(
-                $currentMonth->format('F Y')
-            );
-    
-            $months[$monthKey] = 0;
-    
-            $headerMonthsAmount[$monthKey] = 0;
-    
-            $totalMonthlyCollectionTarget[$monthKey] = 0;
-    
-            $actualMonthlyCollection[$monthKey] = 0;
-    
-            $collectionAdjustments[$monthKey] = 0;
-    
-            $adjustedMonthlyCollection[$monthKey] = 0;
-    
-            $balanceCollectible[$monthKey] = 0;
+    $dateFrom = Carbon::create(
+        $fiscalYear,
+        10,
+        15
+    )->startOfDay();
+
+    $dateTo = Carbon::create(
+        $fiscalYear + 1,
+        10,
+        14
+    )->endOfDay();
+
+    /*
+     * The visible deduction report belongs primarily to the
+     * following calendar year.
+     *
+     * FY 2026 => report year 2027.
+     */
+    $reportYear = $fiscalYear + 1;
+
+    /*
+     * CNA Share / Annual Dues are January obligations.
+     */
+    $shareYear = $reportYear;
+
+    $januaryMonth = Carbon::create(
+        $reportYear,
+        1,
+        1
+    )->startOfMonth();
+
+    $januaryMonthEnd = $januaryMonth
+        ->copy()
+        ->endOfMonth();
+
+    /*
+     * November is the settlement / unpaid deductions month.
+     */
+    $settlementMonth = Carbon::create(
+        $reportYear,
+        11,
+        1
+    )->startOfMonth();
+
+    $settlementMonthEnd = $settlementMonth
+        ->copy()
+        ->endOfMonth();
+
+    $settlementMonthKey = strtolower(
+        $settlementMonth->format('F Y')
+    );
+
+    /*
+     * =========================================================
+     * 3. INITIALIZE REPORT ARRAYS
+     * =========================================================
+     */
+
+    $headerMonthsAmount = [
+        'total' => 0,
+    ];
+
+    $headerMonthLabel = [];
+
+    $totalMonthlyCollectionTarget = [
+        'total' => 0,
+    ];
+
+    $actualMonthlyCollection = [
+        'total' => 0,
+    ];
+
+    $collectionAdjustments = [
+        'total' => 0,
+    ];
+
+    $collectionAdjustmentDetails = [];
+
+    $adjustedMonthlyCollection = [
+        'total' => 0,
+    ];
+
+    $balanceCollectible = [
+        'cna_share' => [],
+        'annual_due' => [],
+        'total' => 0,
+    ];
+
+    /*
+     * =========================================================
+     * 4. BUILD VISIBLE CLAIM-DEDUCTION MONTHS
+     * =========================================================
+     *
+     * Based on the manual report:
+     *
+     * January  = CNA Share
+     * January  = Annual Dues
+     * February = Claim deductions
+     * March    = Claim deductions
+     * ...
+     * October  = Claim deductions
+     * November = Unpaid deductions
+     *
+     * January is therefore NOT inserted into $months because
+     * CNA and Annual Dues already have their own report columns.
+     */
+
+    $months = [];
+
+    for ($monthNumber = 2; $monthNumber <= 10; $monthNumber++) {
+        $monthDate = Carbon::create(
+            $reportYear,
+            $monthNumber,
+            1
+        );
+
+        $monthKey = strtolower(
+            $monthDate->format('F Y')
+        );
+
+        $months[$monthKey] = 0;
+
+        $headerMonthsAmount[$monthKey] = 0;
+
+        $totalMonthlyCollectionTarget[$monthKey] = 0;
+
+        $actualMonthlyCollection[$monthKey] = 0;
+
+        $collectionAdjustments[$monthKey] = 0;
+
+        $adjustedMonthlyCollection[$monthKey] = 0;
+
+        $balanceCollectible[$monthKey] = 0;
+
+        $collectionAdjustmentDetails[$monthKey] = [];
+
+        $headerMonthLabel[] = $monthKey;
+    }
+
+    /*
+     * November settlement column.
+     */
+    $months[$settlementMonthKey] = 0;
+
+    $headerMonthsAmount[$settlementMonthKey] = 0;
+
+    $totalMonthlyCollectionTarget[$settlementMonthKey] = 0;
+
+    $actualMonthlyCollection[$settlementMonthKey] = 0;
+
+    $collectionAdjustments[$settlementMonthKey] = 0;
+
+    $adjustedMonthlyCollection[$settlementMonthKey] = 0;
+
+    $balanceCollectible[$settlementMonthKey] = 0;
+
+    $collectionAdjustmentDetails[$settlementMonthKey] = [];
+
+    $headerMonthLabel[] = $settlementMonthKey;
+
+    /*
+     * =========================================================
+     * 5. GET CAMPUS MEMBERS
+     * =========================================================
+     */
+
+    $members = Member::query()
+        ->with('user')
+        ->when(
+            $campusId,
+            function ($query, $campusId) {
+                $query
+                    ->withoutGlobalScope(
+                        CampusMemberScope::class
+                    )
+                    ->where(
+                        'campus_id',
+                        $campusId
+                    );
+            }
+        )
+        ->get();
+
+    $memberIds = $members->pluck('id');
+
+    /*
+     * =========================================================
+     * 6. INITIALIZE MEMBER ROWS
+     * =========================================================
+     */
+
+    $memberData = [];
+
+    foreach ($members as $member) {
+        $memberData[$member->id] = [
+            'member_id' => $member->id,
+
+            'name' => $member->user->name ?? '',
 
             /*
-             * Detailed adjustment records for this month.
+             * February -> October
+             * plus November unpaid deductions.
              */
-            $collectionAdjustmentDetails[$monthKey] = [];
-    
-            $headerMonthLabel[] = $monthKey;
-    
-            $currentMonth->addMonth();
-        }
+            'months' => $months,
 
-        /*
-         * ---------------------------------------------------------
-         * Settlement / lump-sum month
-         * ---------------------------------------------------------
-         *
-         * This is NOT part of the October-to-October reporting
-         * period. It is the collection month for missed deductions.
-         */
-        $months[$settlementMonthKey] = 0;       
-
-        $headerMonthsAmount[$settlementMonthKey] = 0;       
-
-        $totalMonthlyCollectionTarget[$settlementMonthKey] = 0;     
-
-        $actualMonthlyCollection[$settlementMonthKey] = 0;      
-
-        $collectionAdjustments[$settlementMonthKey] = 0;        
-
-        $adjustedMonthlyCollection[$settlementMonthKey] = 0;        
-
-        $balanceCollectible[$settlementMonthKey] = 0;       
-
-        $collectionAdjustmentDetails[$settlementMonthKey] = [];     
-
-        $headerMonthLabel[] = $settlementMonthKey;
-    
-        /*
-         * ---------------------------------------------------------
-         * 2. Get all members belonging to the selected campus.
-         * ---------------------------------------------------------
-         *
-         * Each member gets:
-         *
-         * - monthly contribution values
-         * - total_contributed = Y-axis / row total
-         */
-
-        $members = Member::query()
-            ->with('user')
-            // Only apply the manual where clause if a specific campus filter was explicitly selected
-            ->when($campusId, function ($query, $campusId) {
-                // Safe bypass to avoid duplicate SQL where filters if the scope already handled it
-                $query->withoutGlobalScope(CampusMemberScope::class)
-                      ->where('campus_id', $campusId);
-            })
-            ->get();
-
-         
-            
             /*
-            * ---------------------------------------------------------
-            * Report-level CNA Share
-            * ---------------------------------------------------------
-            *
-            * There is only ONE CNA Share column for the reporting
-            * cycle.
-            *
-            * Example:
-            *
-            * October 2021 → October 2022
-            * CNA Share = 2022
-            */
-           $reportCnaShare = [
-               'amount' => 0,
-               'total' => 0,
-           ];
-           
-           /*
-            * ---------------------------------------------------------
-            * Report-level Annual Share
-            * ---------------------------------------------------------
-            */
-           $reportAnnualDues = [
-               'amount' => 0,
-               'total' => 0,
-           ];
-           
-           /*
-            * Keep the year internally for collection calculations,
-            * but do not expose it as a separate report column.
-            */
-           $totalCNAShareCollectionTarget = [
-               $shareYear => [
-                   'total' => 0,
-               ],
-           ];
-           
-           $actualCNAShareCollectionTarget = [
-               $shareYear => [
-                   'total' => 0,
-               ],
-           ];
-           
-           $totalAnnualDueCollectionTarget = [
-               $shareYear => [
-                   'total' => 0,
-               ],
-           ];
-           
-           $actualAnnualDueCollectionTarget = [
-               $shareYear => [
-                   'total' => 0,
-               ],
-           
-           ];
-           
-           $balanceCollectible['cna_share'][$shareYear] = [
-               'total' => 0,
-           ];
-           
-           $balanceCollectible['annual_due'][$shareYear] = [
-               'total' => 0,
-           ];  
+             * Calculated again after all deductions have
+             * been assigned to their final report columns.
+             */
+            'total_contributed' => 0,
 
-        $cnaShares = CnaShare::query()
-            ->where('year', $shareYear)
-            ->whereIn('member_id', $members->pluck('id'))
-            ->get()
-            ->groupBy('member_id'); 
-
-        $annualDues = AnnualContribution::query()
-            ->where('contribution_year', $shareYear)
-            ->whereIn('member_id', $members->pluck('id'))
-            ->get()
-            ->groupBy('member_id');
-            
-        $memberData = [];
-    
-        foreach ($members as $member) {
-            $memberCnaShares = $cnaShares->get($member->id, collect());
-            $memberAnnualDues = $annualDues->get($member->id, collect());
-            $annualDue = [];
-            $cnaShare = [];
-
-            $cnaShare = [
+            /*
+             * January CNA Share column.
+             */
+            'cna_share' => [
                 $shareYear => 0,
-            ];
+            ],
 
-            $annualDue = [
+            /*
+             * January Annual Dues column.
+             */
+            'annual_due' => [
                 $shareYear => 0,
-            ];
+            ],
+        ];
+    }
 
-            foreach ($memberCnaShares as $share) {
+    /*
+     * =========================================================
+     * 7. REPORT-LEVEL CNA / ANNUAL STRUCTURES
+     * =========================================================
+     *
+     * amount = amount expected from ONE member
+     * total  = amount expected from ALL applicable members
+     */
 
-                $amount = (float) $share->paid_amount;
-                $dueAmount = (float) $share->due_amount;            
+    $reportCnaShare = [
+        'amount' => 0,
+        'total' => 0,
+    ];
 
-                $cnaShare[$shareYear] = $amount;            
+    $reportAnnualDues = [
+        'amount' => 0,
+        'total' => 0,
+    ];
 
-                /*
-                 * Report-level CNA Share.
-                 *
-                 * Only one CNA Share column exists.
-                 */
-                $reportCnaShare['amount'] += $dueAmount;
-                $reportCnaShare['total'] += $dueAmount;         
+    $totalCNAShareCollectionTarget = [
+        $shareYear => [
+            'total' => 0,
+        ],
+    ];
 
-                $totalCNAShareCollectionTarget[$shareYear]['total'] += $dueAmount;          
+    $actualCNAShareCollectionTarget = [
+        $shareYear => [
+            'total' => 0,
+        ],
+    ];
 
-                $actualCNAShareCollectionTarget[$shareYear]['total'] += $amount;
-            }
+    $totalAnnualDueCollectionTarget = [
+        $shareYear => [
+            'total' => 0,
+        ],
+    ];
 
-            foreach ($totalCNAShareCollectionTarget as $year => $targetData) {
-                $target = $targetData['total'];
-                $actual = $actualCNAShareCollectionTarget[$year]['total'] ?? 0;
-                
-                $balanceCollectible['cna_share'][$year]['total'] = (float) ($target - $actual);
-            }
-             
-            foreach ($memberAnnualDues as $due) {
+    $actualAnnualDueCollectionTarget = [
+        $shareYear => [
+            'total' => 0,
+        ],
+    ];
 
-                $amount = (float) $due->amount_paid;
+    $balanceCollectible['cna_share'][$shareYear] = [
+        'total' => 0,
+    ];
 
-                $annualDue[$shareYear] = $amount;
+    $balanceCollectible['annual_due'][$shareYear] = [
+        'total' => 0,
+    ];
 
-                /*
-                 * Only one Annual Share column exists in the report.
-                 */
-                $reportAnnualDues['amount'] += $amount;
-                $reportAnnualDues['total'] += $amount;
+    /*
+     * =========================================================
+     * 8. HELPERS
+     * =========================================================
+     */
 
-                $totalAnnualDueCollectionTarget[$shareYear]['total'] += $amount;
+    $isSameMonth = function (
+        Carbon $left,
+        Carbon $right
+    ): bool {
+        return $left->year === $right->year
+            && $left->month === $right->month;
+    };
 
-                if ($due->status === ContributionStatus::Paid->value) {
-                    $actualAnnualDueCollectionTarget[$shareYear]['total'] += $amount;
-                }
-            }
-
-            foreach ($totalAnnualDueCollectionTarget as $year => $targetData) {
-                
-                $target = (is_array($targetData) && isset($targetData['total'])) 
-                          ? $targetData['total'] 
-                          : (float) $targetData;
-            
-                $actualData = $actualAnnualDueCollectionTarget[$year] ?? 0;
-                $actual = (is_array($actualData) && isset($actualData['total'])) 
-                          ? $actualData['total'] 
-                          : (float) $actualData;
-                
-                $balanceCollectible['annual_due'][$year]['total'] = (float) ($target - $actual);
-            }
-            
-            $memberData[$member->id] = [
-                'member_id' => $member->id,
-    
-                'name' => $member->user->name ?? '',
-    
-                /*
-                 * Monthly contribution values.
-                 */
-                'months' => $months,
-    
-                /*
-                 * Y-axis / row total.
-                 */
-                'total_contributed' => array_sum([...$annualDue, ...$cnaShare]),
-    
-                'cna_share' => $cnaShare,
-
-                'annual_due' => $annualDue,
-                
-            ];
-
+    /*
+     * Add an obligation into the November unpaid-deductions
+     * target without adding it again into the grand target.
+     *
+     * The obligation already existed in January / February-Oct.
+     * November is only a carry-forward.
+     */
+    $addNovemberTarget = function (
+        string $memberId,
+        float $amount
+    ) use (
+        &$memberData,
+        &$totalMonthlyCollectionTarget,
+        $settlementMonthKey
+    ): void {
+        if ($amount <= 0) {
+            return;
         }
 
-        $headerMonthsAmount['total'] = array_sum([...array_diff_key($reportAnnualDues, ['total' => '']), ...array_diff_key($reportCnaShare, ['total' => ''])]);
-        $totalMonthlyCollectionTarget['total'] = array_sum(array_column($totalCNAShareCollectionTarget, 'total')) + array_sum(array_column($totalAnnualDueCollectionTarget, 'total'));
-        $actualMonthlyCollection['total'] = array_sum(array_column($actualCNAShareCollectionTarget, 'total')) + array_sum(array_column($actualAnnualDueCollectionTarget, 'total'));
+        if (!isset($memberData[$memberId])) {
+            return;
+        }
+
+        $memberData[$memberId]
+            ['months']
+            [$settlementMonthKey] += $amount;
+
         /*
-         * ---------------------------------------------------------
-         * 3. Get claims within the report period.
-         * ---------------------------------------------------------
+         * Do NOT add this amount into
+         * total_monthly_collection_target['total'].
          *
-         * claims.created_at determines the month.
+         * It is a rollover, not a new obligation.
          */
-    
-        $claims = Claim::query()
-            ->with([
-                'claimType',
-    
-                'contributionBatches.contributionDetails' => function ($query) use ($campusId) {
-    
-                    $query->whereHas('member', function ($query) use ($campusId) {
-                        $query->where('campus_id', $campusId);
-                    });
-    
+        $totalMonthlyCollectionTarget
+            [$settlementMonthKey] += $amount;
+    };
+
+    /*
+     * Record an actual salary deduction made during November.
+     */
+    $addNovemberActual = function (
+        float $amount
+    ) use (
+        &$actualMonthlyCollection,
+        $settlementMonthKey
+    ): void {
+        if ($amount <= 0) {
+            return;
+        }
+
+        $actualMonthlyCollection
+            [$settlementMonthKey] += $amount;
+
+        $actualMonthlyCollection
+            ['total'] += $amount;
+    };
+
+    /*
+     * =========================================================
+     * 9. LOAD CNA SHARE / ANNUAL DUES
+     * =========================================================
+     */
+
+    $cnaShares = CnaShare::query()
+        ->where(
+            'year',
+            $shareYear
+        )
+        ->whereIn(
+            'member_id',
+            $memberIds
+        )
+        ->get()
+        ->groupBy('member_id');
+
+    $annualDues = AnnualContribution::query()
+        ->where(
+            'contribution_year',
+            $shareYear
+        )
+        ->whereIn(
+            'member_id',
+            $memberIds
+        )
+        ->get()
+        ->groupBy('member_id');
+
+    /*
+     * =========================================================
+     * 10. PROCESS JANUARY CNA SHARE
+     * =========================================================
+     */
+
+    foreach ($members as $member) {
+        $memberCnaShares = $cnaShares->get(
+            $member->id,
+            collect()
+        );
+
+        foreach ($memberCnaShares as $share) {
+            $dueAmount = (float) $share->due_amount;
+
+            $paidAmount = (float) $share->paid_amount;
+
+            $paidAt = $share->paid_at
+                ? Carbon::parse($share->paid_at)
+                : null;
+
+            /*
+             * Header amount = standard amount per member.
+             *
+             * The manual report displays one amount in the
+             * yellow CNA Share header.
+             */
+            if (
+                $reportCnaShare['amount'] == 0
+                && $dueAmount > 0
+            ) {
+                $reportCnaShare['amount'] =
+                    $dueAmount;
+            }
+
+            /*
+             * Total expected CNA collection.
+             */
+            $reportCnaShare['total'] +=
+                $dueAmount;
+
+            $totalCNAShareCollectionTarget
+                [$shareYear]['total'] +=
+                    $dueAmount;
+
+            $totalMonthlyCollectionTarget
+                ['total'] += $dueAmount;
+
+            /*
+             * -------------------------------------------------
+             * Paid correctly during January
+             * -------------------------------------------------
+             */
+            if (
+                $paidAt
+                && $isSameMonth(
+                    $paidAt,
+                    $januaryMonth
+                )
+            ) {
+                $memberData
+                    [$member->id]
+                    ['cna_share']
+                    [$shareYear] += $paidAmount;
+
+                $actualCNAShareCollectionTarget
+                    [$shareYear]['total'] +=
+                        $paidAmount;
+
+                $actualMonthlyCollection
+                    ['total'] += $paidAmount;
+
+                /*
+                 * Partial January payment:
+                 *
+                 * only the unpaid remainder moves to November.
+                 */
+                $remainingAmount = max(
+                    0,
+                    $dueAmount - $paidAmount
+                );
+
+                $addNovemberTarget(
+                    $member->id,
+                    $remainingAmount
+                );
+
+                continue;
+            }
+
+            /*
+             * -------------------------------------------------
+             * Not deducted during January
+             * -------------------------------------------------
+             *
+             * January displays 0.
+             *
+             * The full expected amount moves to November.
+             */
+            $addNovemberTarget(
+                $member->id,
+                $dueAmount
+            );
+
+            /*
+             * If it was eventually deducted in settlement
+             * November, count the November actual collection.
+             */
+            if (
+                $paidAt
+                && $isSameMonth(
+                    $paidAt,
+                    $settlementMonth
+                )
+            ) {
+                $actualCNAShareCollectionTarget
+                    [$shareYear]['total'] +=
+                        $paidAmount;
+
+                $addNovemberActual(
+                    $paidAmount
+                );
+            }
+        }
+    }
+
+    /*
+     * =========================================================
+     * 11. PROCESS JANUARY ANNUAL DUES
+     * =========================================================
+     *
+     * Existing implementation uses amount_paid as the annual
+     * contribution amount/target, so that behavior is retained.
+     */
+
+    foreach ($members as $member) {
+        $memberAnnualDues = $annualDues->get(
+            $member->id,
+            collect()
+        );
+
+        foreach ($memberAnnualDues as $due) {
+            $annualAmount = (float)
+                $due->amount_paid;
+
+            $paidAt = $due->paid_at
+                ? Carbon::parse($due->paid_at)
+                : null;
+
+            $status = $due->status;
+
+            /*
+             * Support both enum-cast and string status values.
+             */
+            $statusValue =
+                $status instanceof ContributionStatus
+                    ? $status->value
+                    : $status;
+
+            $isPaid =
+                $statusValue ===
+                ContributionStatus::Paid->value;
+
+            if (
+                $reportAnnualDues['amount'] == 0
+                && $annualAmount > 0
+            ) {
+                $reportAnnualDues['amount'] =
+                    $annualAmount;
+            }
+
+            $reportAnnualDues['total'] +=
+                $annualAmount;
+
+            $totalAnnualDueCollectionTarget
+                [$shareYear]['total'] +=
+                    $annualAmount;
+
+            $totalMonthlyCollectionTarget
+                ['total'] += $annualAmount;
+
+            /*
+             * -------------------------------------------------
+             * Paid correctly during January
+             * -------------------------------------------------
+             */
+            if (
+                $isPaid
+                && $paidAt
+                && $isSameMonth(
+                    $paidAt,
+                    $januaryMonth
+                )
+            ) {
+                $memberData
+                    [$member->id]
+                    ['annual_due']
+                    [$shareYear] +=
+                        $annualAmount;
+
+                $actualAnnualDueCollectionTarget
+                    [$shareYear]['total'] +=
+                        $annualAmount;
+
+                $actualMonthlyCollection
+                    ['total'] += $annualAmount;
+
+                continue;
+            }
+
+            /*
+             * Otherwise the January obligation moves into
+             * November unpaid deductions.
+             */
+            $addNovemberTarget(
+                $member->id,
+                $annualAmount
+            );
+
+            /*
+             * Actual payment made during settlement November.
+             */
+            if (
+                $isPaid
+                && $paidAt
+                && $isSameMonth(
+                    $paidAt,
+                    $settlementMonth
+                )
+            ) {
+                $actualAnnualDueCollectionTarget
+                    [$shareYear]['total'] +=
+                        $annualAmount;
+
+                $addNovemberActual(
+                    $annualAmount
+                );
+            }
+        }
+    }
+
+    /*
+     * =========================================================
+     * 12. GET ALL CLAIMS INSIDE THE EXACT FISCAL YEAR
+     * =========================================================
+     */
+
+    $claims = Claim::query()
+        ->with([
+            'claimType',
+
+            /*
+             * Contribution batches themselves should also be
+             * campus-scoped.
+             */
+            'contributionBatches' =>
+                function ($query) use ($campusId) {
+                    $query->when(
+                        $campusId,
+                        function (
+                            $query,
+                            $campusId
+                        ) {
+                            $query->where(
+                                'campus_id',
+                                $campusId
+                            );
+                        }
+                    );
                 },
-            ])
-            ->whereBetween('created_at', [
+
+            'contributionBatches.contributionDetails' =>
+                function ($query) use ($campusId) {
+                    $query->when(
+                        $campusId,
+                        function (
+                            $query,
+                            $campusId
+                        ) {
+                            $query->whereHas(
+                                'member',
+                                function (
+                                    $query
+                                ) use (
+                                    $campusId
+                                ) {
+                                    $query->where(
+                                        'campus_id',
+                                        $campusId
+                                    );
+                                }
+                            );
+                        }
+                    );
+                },
+        ])
+        ->whereBetween(
+            'created_at',
+            [
                 $dateFrom,
                 $dateTo,
-            ])
-            ->get();
-    
-    
+            ]
+        )
+        ->get();
+
+    /*
+     * =========================================================
+     * 13. PROCESS CLAIM DEDUCTIONS
+     * =========================================================
+     *
+     * Expected contribution month:
+     *
+     * claims.created_at
+     *
+     * Actual deduction timing:
+     *
+     * contribution_details.paid_at
+     *
+     * Rule:
+     *
+     * - paid in expected month => show in expected month
+     * - missed expected month => expected month stays 0
+     * - missed amount => move to November
+     * - paid during settlement November => actual November
+     */
+
+    foreach ($claims as $claim) {
+        $claimDate = Carbon::parse(
+            $claim->created_at
+        );
+
         /*
-         * ---------------------------------------------------------
-         * 4. Process claims.
-         * ---------------------------------------------------------
+         * Exact defensive fiscal-boundary validation.
          */
-    
-        foreach ($claims as $claim) {
-    
-            $monthKey = strtolower(
-                Carbon::parse($claim->created_at)->format('F Y')
-            );
-    
-            if (!isset($months[$monthKey])) {
-                continue;
-            }
-    
-    
+        if (
+            !$claimDate->between(
+                $dateFrom,
+                $dateTo,
+                true
+            )
+        ) {
+            continue;
+        }
+
+        $expectedMonthKey = strtolower(
+            $claimDate->format('F Y')
+        );
+
+        /*
+         * The manual deduction report contains claim columns
+         * only from February through October of the report year.
+         *
+         * Claims elsewhere in the fiscal query are retained by
+         * the query scope but have no visible claim column in
+         * this particular report format.
+         */
+        if (
+            !array_key_exists(
+                $expectedMonthKey,
+                $months
+            )
+            ||
+            $expectedMonthKey ===
+                $settlementMonthKey
+        ) {
+            continue;
+        }
+
+        foreach (
+            $claim->contributionBatches
+            as $batch
+        ) {
+            $amountPerMember = (float)
+                $batch->amount_per_member;
+
+            $memberCount = (int)
+                $batch->total_members;
+
             /*
-             * -----------------------------------------------------
-             * A. HEADER MONTH AMOUNT
-             * -----------------------------------------------------
+             * -------------------------------------------------
+             * MONTH HEADER
+             * -------------------------------------------------
              *
-             * Total required amount of all claims created during
-             * this month.
+             * Manual report yellow header:
              *
-             * Example:
+             * e.g.
              *
-             * Burial      = 5,000
-             * Burial      = 5,000
-             * Medical     = 3,000
-             * Educational = 2,000
+             * February = 250
+             * March    = 350
              *
-             * January = 15,000
-             *
-             * This is NOT based on the number of members.
+             * If multiple contribution batches fall in the same
+             * month, their per-member amounts are accumulated.
              */
-    
-            if ($claim->claimType) {
-    
-                $claimAmount = (float) $claim->claimType->required_amount;
-    
-                $headerMonthsAmount[$monthKey] += $claimAmount;
-    
-                $headerMonthsAmount['total'] += $claimAmount;
-            }
-    
-    
+            $headerMonthsAmount
+                [$expectedMonthKey] +=
+                    $amountPerMember;
+
             /*
-             * -----------------------------------------------------
-             * B. CONTRIBUTION BATCHES
-             * -----------------------------------------------------
+             * Expected total collection for this batch.
              */
-    
-            foreach ($claim->contributionBatches as $batch) {
-    
-                $amountPerMember = (float) $batch->amount_per_member;
-    
-                /*
-                 * -------------------------------------------------
-                 * C. TOTAL MONTHLY COLLECTION TARGET
-                 * -------------------------------------------------
-                 *
-                 * Expected collection:
-                 *
-                 * amount_per_member × total_members
-                 */
-    
-                $memberCount = (int) $batch->total_members;
-    
-                $batchTarget = $amountPerMember * $memberCount;
-    
-                /*
-                 * X-axis / monthly target.
-                 */
-                $totalMonthlyCollectionTarget[$monthKey] +=
+            $batchTarget =
+                $amountPerMember
+                * $memberCount;
+
+            $totalMonthlyCollectionTarget
+                [$expectedMonthKey] +=
                     $batchTarget;
-    
-                /*
-                 * Grand total target.
-                 */
-                $totalMonthlyCollectionTarget['total'] +=
+
+            /*
+             * Grand expected collection.
+             *
+             * November rollover is NOT included again here.
+             */
+            $totalMonthlyCollectionTarget
+                ['total'] +=
                     $batchTarget;
-    
-    
+
+            foreach (
+                $batch->contributionDetails
+                as $detail
+            ) {
+                $memberId =
+                    $detail->member_id;
+
+                if (!isset(
+                    $memberData[$memberId]
+                )) {
+                    continue;
+                }
+
                 /*
-                 * -------------------------------------------------
-                 * D. ACTUAL MEMBER CONTRIBUTIONS
-                 * -------------------------------------------------
+                 * amount_per_member represents what should have
+                 * been deducted from this member.
                  */
-    
-                foreach ($batch->contributionDetails as $detail) {
+                $expectedAmount =
+                    $amountPerMember;
 
-                    $memberId = $detail->member_id;
+                /*
+                 * contribution_details.amount represents what
+                 * was actually deducted/recorded.
+                 */
+                $actualAmount = (float)
+                    $detail->amount;
 
-                    if (!isset($memberData[$memberId])) {
-                        continue;
-                    }
+                $paidAt = $detail->paid_at
+                    ? Carbon::parse(
+                        $detail->paid_at
+                    )
+                    : null;
 
-                    $actualAmount = (float) $detail->amount;
+                /*
+                 * ---------------------------------------------
+                 * A. PAID DURING EXPECTED MONTH
+                 * ---------------------------------------------
+                 */
+
+                if (
+                    $paidAt
+                    && $paidAt->between(
+                        $dateFrom,
+                        $dateTo,
+                        true
+                    )
+                    && $paidAt->year ===
+                        $claimDate->year
+                    && $paidAt->month ===
+                        $claimDate->month
+                ) {
+                    /*
+                     * Show actual salary deduction in the
+                     * correct month.
+                     */
+                    $memberData
+                        [$memberId]
+                        ['months']
+                        [$expectedMonthKey] +=
+                            $actualAmount;
+
+                    $actualMonthlyCollection
+                        [$expectedMonthKey] +=
+                            $actualAmount;
+
+                    $actualMonthlyCollection
+                        ['total'] +=
+                            $actualAmount;
 
                     /*
-                     * ---------------------------------------------------------
-                     * Determine the actual salary deduction month.
-                     * ---------------------------------------------------------
+                     * Partial deduction:
                      *
-                     * paid_at is the actual date the salary deduction happened.
+                     * only the remainder moves to November.
                      */
-                    if ($detail->paid_at) {
+                    $remainingAmount = max(
+                        0,
+                        $expectedAmount -
+                            $actualAmount
+                    );
 
-                        $paidAt = Carbon::parse($detail->paid_at);
+                    $addNovemberTarget(
+                        $memberId,
+                        $remainingAmount
+                    );
 
-                        /*
-                         * Normal payment:
-                         *
-                         * Paid within the contribution month.
-                         */
-                        $paidMonthKey = strtolower(
-                            $paidAt->format('F Y')
-                        );
-
-                        /*
-                         * Missed contribution:
-                         *
-                         * Paid during the November settlement month.
-                         *
-                         * It is recorded ONLY in November.
-                         */
-                        if ($paidAt->year === $settlementMonth->year
-                            && $paidAt->month === $settlementMonth->month) {
-
-                            $actualMonthlyCollection[$settlementMonthKey] +=
-                                $actualAmount;
-
-                            $actualMonthlyCollection['total'] +=
-                                $actualAmount;
-
-                            $memberData[$memberId]['months'][$settlementMonthKey] +=
-                                $actualAmount;
-
-                            $memberData[$memberId]['total_contributed'] +=
-                                $actualAmount;
-
-                        } elseif (isset($memberData[$memberId]['months'][$paidMonthKey])) {
-
-                            /*
-                             * Normal actual deduction.
-                             */
-                            $actualMonthlyCollection[$paidMonthKey] +=
-                                $actualAmount;
-
-                            $actualMonthlyCollection['total'] +=
-                                $actualAmount;
-
-                            $memberData[$memberId]['months'][$paidMonthKey] +=
-                                $actualAmount;
-
-                            $memberData[$memberId]['total_contributed'] +=
-                                $actualAmount;
-                        }
-                    }
+                    continue;
                 }
-            }
-        }
-    
-    
-        /*
-         * ---------------------------------------------------------
-         * 5. GET COLLECTION ADJUSTMENTS FROM DATABASE
-         * ---------------------------------------------------------
-         *
-         * An adjustment belongs to the campus and is applied only
-         * to its adjustment_month.
-         *
-         * Example:
-         *
-         * June:
-         *     Actual = 14,950
-         *
-         * September:
-         *     Actual = 8,050
-         *     Adjustment = -100
-         *
-         * September adjusted actual:
-         *
-         *     8,050 + (-100) = 7,950
-         *
-         * June remains 14,950.
-         */
-    
-        $adjustments = CollectionsAdjustments::query()
-            ->where('campus_id', $campusId)
-            ->whereBetween('adjustment_month', [
-                $dateFrom->copy()->startOfMonth(),
-                $dateTo->copy()->startOfMonth(),
-            ])
-            ->get();
-    
-    
-        foreach ($adjustments as $adjustment) {
-    
-            $monthKey = strtolower(
-                Carbon::parse($adjustment->adjustment_month)->format('F Y')
-            );
-    
-            /*
-             * Ignore adjustments outside the initialized report
-             * months.
-             */
-            if (!isset($months[$monthKey])) {
-                continue;
-            }
-    
-            $amount = (float) $adjustment->amount;
-    
-    
-            /*
-             * -----------------------------------------------------
-             * MONTHLY ADJUSTMENT
-             * -----------------------------------------------------
-             */
-    
-            $collectionAdjustments[$monthKey] +=
-                $amount;
-    
-    
-            /*
-             * -----------------------------------------------------
-             * GRAND TOTAL ADJUSTMENT
-             * -----------------------------------------------------
-             */
-    
-            $collectionAdjustments['total'] +=
-                $amount;
 
                 /*
-                * ---------------------------------------------------------
-                * Detailed adjustment information used by the Blade view.
-                * ---------------------------------------------------------
-                */
-               $collectionAdjustmentDetails[$monthKey][] = [
-                   'id' => $adjustment->id,
-           
-                   'amount' => $amount,
-           
-                   'type' => $adjustment->adjustment_type,
-           
-                   'description' => $adjustment->description,
-           
-                   'reference_month' => $adjustment->reference_month
-                       ? Carbon::parse($adjustment->reference_month)
-                           ->format('F Y')
-                       : null,
-               ];                
+                 * ---------------------------------------------
+                 * B. MISSED EXPECTED MONTH
+                 * ---------------------------------------------
+                 *
+                 * The expected month remains 0 for this member.
+                 *
+                 * The expected deduction moves to the November
+                 * unpaid-deductions column.
+                 */
+                $addNovemberTarget(
+                    $memberId,
+                    $expectedAmount
+                );
+
+                /*
+                 * ---------------------------------------------
+                 * C. ACTUALLY PAID IN NOVEMBER
+                 * ---------------------------------------------
+                 *
+                 * November is the ONLY valid settlement month
+                 * for a missed deduction.
+                 */
+                if (
+                    $paidAt
+                    && $paidAt->between(
+                        $settlementMonth,
+                        $settlementMonthEnd,
+                        true
+                    )
+                ) {
+                    $addNovemberActual(
+                        $actualAmount
+                    );
+                }
+
+                /*
+                 * Payments in another normal month are not moved
+                 * to that month because the business rule says a
+                 * missed deduction may only be settled during
+                 * November.
+                 */
+            }
+        }
+    }
+
+    /*
+     * =========================================================
+     * 14. CALCULATE CNA / ANNUAL BALANCES
+     * =========================================================
+     */
+
+    $cnaTarget =
+        $totalCNAShareCollectionTarget
+            [$shareYear]['total'];
+
+    $cnaActual =
+        $actualCNAShareCollectionTarget
+            [$shareYear]['total'];
+
+    $balanceCollectible
+        ['cna_share']
+        [$shareYear]
+        ['total'] =
+            $cnaTarget - $cnaActual;
+
+    $annualTarget =
+        $totalAnnualDueCollectionTarget
+            [$shareYear]['total'];
+
+    $annualActual =
+        $actualAnnualDueCollectionTarget
+            [$shareYear]['total'];
+
+    $balanceCollectible
+        ['annual_due']
+        [$shareYear]
+        ['total'] =
+            $annualTarget - $annualActual;
+
+    /*
+     * =========================================================
+     * 15. CALCULATE HEADER GRAND TOTAL
+     * =========================================================
+     *
+     * This represents the normal per-member deduction schedule.
+     *
+     * November is excluded because it contains carry-forward
+     * amounts, not a new contribution requirement.
+     */
+
+    $headerGrandTotal =
+        (float) $reportCnaShare['amount']
+        +
+        (float) $reportAnnualDues['amount'];
+
+    foreach (
+        $headerMonthLabel
+        as $monthKey
+    ) {
+        if (
+            $monthKey ===
+            $settlementMonthKey
+        ) {
+            continue;
         }
 
+        $headerGrandTotal +=
+            (float) (
+                $headerMonthsAmount
+                    [$monthKey]
+                ?? 0
+            );
+    }
+
+    $headerMonthsAmount['total'] =
+        $headerGrandTotal;
+
+    /*
+     * =========================================================
+     * 16. GET COLLECTION ADJUSTMENTS
+     * =========================================================
+     *
+     * Visible adjustment months:
+     *
+     * February -> November of report year.
+     */
+
+    $adjustmentDateFrom = Carbon::create(
+        $reportYear,
+        2,
+        1
+    )->startOfMonth();
+
+    $adjustmentDateTo = $settlementMonth
+        ->copy()
+        ->startOfMonth();
+
+    $adjustments = CollectionsAdjustments::query()
+        ->when(
+            $campusId,
+            function (
+                $query,
+                $campusId
+            ) {
+                $query->where(
+                    'campus_id',
+                    $campusId
+                );
+            }
+        )
+        ->whereBetween(
+            'adjustment_month',
+            [
+                $adjustmentDateFrom,
+                $adjustmentDateTo,
+            ]
+        )
+        ->get();
+
+    foreach ($adjustments as $adjustment) {
+        $monthKey = strtolower(
+            Carbon::parse(
+                $adjustment->adjustment_month
+            )->format('F Y')
+        );
+
         /*
-         * ---------------------------------------------------------
-         * 6. APPLY COLLECTION ADJUSTMENTS
-         * ---------------------------------------------------------
-         *
-         * Adjusted actual =
-         *
-         * Raw actual + adjustment
+         * Ignore adjustment months that are not visible in
+         * this manual report format.
          */
-    
-        foreach ($months as $monthKey => $unused) {
-    
-            $adjustedMonthlyCollection[$monthKey] =
-                $actualMonthlyCollection[$monthKey]
-                + $collectionAdjustments[$monthKey];
+        if (
+            !array_key_exists(
+                $monthKey,
+                $months
+            )
+        ) {
+            continue;
         }
-    
-    
-        /*
-         * Grand total adjusted collection.
-         */
-    
-        $adjustedMonthlyCollection['total'] =
-            $actualMonthlyCollection['total']
-            + $collectionAdjustments['total'];
-    
-    
-        /*
-         * ---------------------------------------------------------
-         * 7. CALCULATE COLLECTIBLE BALANCE
-         * ---------------------------------------------------------
-         *
-         * Balance =
-         *
-         * Collection Target - Adjusted Actual Collection
-         */
-    
-        foreach ($months as $monthKey => $unused) {
-    
-            $balanceCollectible[$monthKey] =
-                $totalMonthlyCollectionTarget[$monthKey]
-                - $adjustedMonthlyCollection[$monthKey];
-        }
-    
-    
-        /*
-         * Grand total balance.
-         */
-    
-        $balanceCollectible['total'] =
-            $totalMonthlyCollectionTarget['total']
-            - $adjustedMonthlyCollection['total'];
-    
-    
-        /*
-         * ---------------------------------------------------------
-         * 8. RETURN REPORT-READY DATA
-         * ---------------------------------------------------------
-         */
-    
-        return [
-    
-            /*
-             * Total claim required amount per month.
-             */
-            'header_months_amount' =>
-                $headerMonthsAmount,
-    
-    
-            /*
-             * Month labels.
-             */
-            'header_month_label' =>
-                $headerMonthLabel,
-    
-    
-            /*
-             * Expected collection target.
-             */
-            'total_monthly_collection_target' =>
-                $totalMonthlyCollectionTarget,
-    
-    
-            /*
-             * Raw actual collection BEFORE adjustments.
-             */
-            'actual_monthly_collection' =>
-                $actualMonthlyCollection,
 
-            /**
-             * Raw Expected CNA Share Collection
-             */
-            'total_cna_share_collection_target' =>
-                $totalCNAShareCollectionTarget,
+        $amount = (float)
+            $adjustment->amount;
 
-            /**
-             * Raw actual CNS share collection before adjustment
-             */
-            'actual_cna_share_collection' => 
-                $actualCNAShareCollectionTarget,
-    
-            /**
-             * Raw Expected Annual Due Collection
-             */
-            'total_annual_due_collection_target' =>
-                $totalAnnualDueCollectionTarget,
-    
-            /**
-             * Raw actual annual due collection before adjustment. 
-             */
-            'actual_annual_due_collection' =>
-                $actualAnnualDueCollectionTarget,
+        $collectionAdjustments
+            [$monthKey] += $amount;
 
-            /*
-             * Collection adjustments from database.
-             */
-            'collection_adjustments' =>
-                $collectionAdjustments,
+        $collectionAdjustments
+            ['total'] += $amount;
 
-            /**
-             * Collection adjustemnts details
-            */    
-            'collection_adjustment_details' =>
+        $collectionAdjustmentDetails
+            [$monthKey][] = [
+                'id' =>
+                    $adjustment->id,
+
+                'amount' =>
+                    $amount,
+
+                'type' =>
+                    $adjustment->adjustment_type,
+
+                'description' =>
+                    $adjustment->description,
+
+                'reference_month' =>
+                    $adjustment->reference_month
+                        ? Carbon::parse(
+                            $adjustment
+                                ->reference_month
+                        )->format('F Y')
+                        : null,
+            ];
+    }
+
+    /*
+     * =========================================================
+     * 17. APPLY COLLECTION ADJUSTMENTS
+     * =========================================================
+     */
+
+    foreach (
+        $months
+        as $monthKey => $unused
+    ) {
+        $adjustedMonthlyCollection
+            [$monthKey] =
+                (
+                    $actualMonthlyCollection
+                        [$monthKey]
+                    ?? 0
+                )
+                +
+                (
+                    $collectionAdjustments
+                        [$monthKey]
+                    ?? 0
+                );
+    }
+
+    $adjustedMonthlyCollection['total'] =
+        $actualMonthlyCollection['total']
+        +
+        $collectionAdjustments['total'];
+
+    /*
+     * =========================================================
+     * 18. MONTHLY BALANCE COLLECTIBLE
+     * =========================================================
+     */
+
+    foreach (
+        $months
+        as $monthKey => $unused
+    ) {
+        $target =
+            $totalMonthlyCollectionTarget
+                [$monthKey]
+            ?? 0;
+
+        $actual =
+            $adjustedMonthlyCollection
+                [$monthKey]
+            ?? 0;
+
+        $balanceCollectible[$monthKey] =
+            $target - $actual;
+    }
+
+    /*
+     * =========================================================
+     * 19. GRAND BALANCE
+     * =========================================================
+     *
+     * November target is intentionally NOT included in the
+     * original grand collection target because it represents
+     * obligations already counted in earlier columns.
+     *
+     * November ACTUAL payments, however, reduce the outstanding
+     * fiscal-year balance.
+     */
+
+    $balanceCollectible['total'] =
+        $totalMonthlyCollectionTarget['total']
+        -
+        $adjustedMonthlyCollection['total'];
+
+    /*
+     * =========================================================
+     * 20. FINAL MEMBER TOTAL
+     * =========================================================
+     *
+     * This now follows the manual "Deduction per Member" total.
+     *
+     * If a normal deduction was missed, its amount appears only
+     * in November for the member row and is therefore not counted
+     * twice.
+     */
+
+    foreach (
+        $memberData
+        as $memberId => &$row
+    ) {
+        $cnaTotal = array_sum(
+            $row['cna_share']
+        );
+
+        $annualTotal = array_sum(
+            $row['annual_due']
+        );
+
+        $monthlyTotal = array_sum(
+            $row['months']
+        );
+
+        $row['total_contributed'] =
+            $cnaTotal
+            +
+            $annualTotal
+            +
+            $monthlyTotal;
+    }
+
+    unset($row);
+
+    /*
+     * =========================================================
+     * 21. RETURN REPORT-READY STRUCTURE
+     * =========================================================
+     *
+     * Existing output keys are retained for backward
+     * compatibility with the Blade/report implementation.
+     */
+
+    return [
+        'header_months_amount' =>
+            $headerMonthsAmount,
+
+        'header_month_label' =>
+            $headerMonthLabel,
+
+        'total_monthly_collection_target' =>
+            $totalMonthlyCollectionTarget,
+
+        'actual_monthly_collection' =>
+            $actualMonthlyCollection,
+
+        'total_cna_share_collection_target' =>
+            $totalCNAShareCollectionTarget,
+
+        'actual_cna_share_collection' =>
+            $actualCNAShareCollectionTarget,
+
+        'total_annual_due_collection_target' =>
+            $totalAnnualDueCollectionTarget,
+
+        'actual_annual_due_collection' =>
+            $actualAnnualDueCollectionTarget,
+
+        'collection_adjustments' =>
+            $collectionAdjustments,
+
+        'collection_adjustment_details' =>
             $collectionAdjustmentDetails,
-    
-    
-            /*
-             * Actual collection AFTER adjustments.
-             */
-            'adjusted_monthly_collection' =>
-                $adjustedMonthlyCollection,
-    
-    
-            /*
-             * Target - adjusted actual.
-             */
-            'balance_collectible' =>
-                $balanceCollectible,
-    
-            /**
-             * CNA Shares
-             */ 
-            'cna_share' => $reportCnaShare,
 
-            /**
-             * Annual Dues  
-             */ 
-            'annual_due' => $reportAnnualDues,
+        'adjusted_monthly_collection' =>
+            $adjustedMonthlyCollection,
 
-            /*
-             * Member rows.
-             *
-             * total_contributed = Y-axis / row total.
-             */
-            'members' =>
-                array_values($memberData),
-        ];
-    }    
+        'balance_collectible' =>
+            $balanceCollectible,
+
+        'cna_share' =>
+            $reportCnaShare,
+
+        'annual_due' =>
+            $reportAnnualDues,
+
+        'members' =>
+            array_values($memberData),
+    ];
+}
+
+    //Testing - working 2
+// public function getContributionPerMonth(
+//     Request $request,
+//     ?string $campusId = null
+// ): array {
+//     /*
+//      * =========================================================
+//      * 1. RESOLVE FISCAL YEAR
+//      * =========================================================
+//      *
+//      * Fiscal Year definition:
+//      *
+//      * FY 2026
+//      * October 15, 2026 00:00:00
+//      * through
+//      * October 14, 2027 23:59:59
+//      *
+//      * The fiscal year is identified by the year in which
+//      * the cycle STARTS.
+//      *
+//      * Preferred request parameters:
+//      *
+//      * fiscal_year = 2026
+//      * or
+//      * reporting_year = 2026
+//      *
+//      * date_from is retained as a backward-compatible fallback.
+//      */
+
+//     $fiscalYear = $request->input('fiscal_year')
+//         ?? $request->input('reporting_year')
+//         ?? null;
+
+//     /*
+//      * Backward compatibility with the old implementation.
+//      *
+//      * Previously date_from was used as the reporting-period
+//      * selector. If the UI still sends something such as
+//      * 2026-10-01, use its year as FY 2026.
+//      */
+//     if (!$fiscalYear && $request->filled('date_from')) {
+//         $fiscalYear = Carbon::parse(
+//             $request->input('date_from')
+//         )->year;
+//     }
+
+//     if (!$fiscalYear) {
+//         return [
+//             'header_months_amount' => [],
+//             'header_month_label' => [],
+//             'total_monthly_collection_target' => [],
+//             'actual_monthly_collection' => [],
+//             'total_cna_share_collection_target' => [],
+//             'actual_cna_share_collection' => [],
+//             'total_annual_due_collection_target' => [],
+//             'actual_annual_due_collection' => [],
+//             'collection_adjustments' => [],
+//             'collection_adjustment_details' => [],
+//             'adjusted_monthly_collection' => [],
+//             'balance_collectible' => [],
+//             'cna_share' => [
+//                 'amount' => 0,
+//                 'total' => 0,
+//             ],
+//             'annual_due' => [
+//                 'amount' => 0,
+//                 'total' => 0,
+//             ],
+//             'members' => [],
+//         ];
+//     }
+
+//     $fiscalYear = (int) $fiscalYear;
+
+//     /*
+//      * =========================================================
+//      * 2. AUTHORITATIVE FISCAL-YEAR BOUNDARIES
+//      * =========================================================
+//      */
+
+//     $dateFrom = Carbon::create(
+//         $fiscalYear,
+//         10,
+//         15
+//     )->startOfDay();
+
+//     $dateTo = Carbon::create(
+//         $fiscalYear + 1,
+//         10,
+//         14
+//     )->endOfDay();
+
+//     /*
+//      * Example:
+//      *
+//      * FY 2026:
+//      *
+//      * October 15, 2026
+//      * through
+//      * October 14, 2027
+//      *
+//      * January inside this period is January 2027.
+//      *
+//      * Therefore:
+//      *
+//      * CNA Share year = 2027
+//      * Annual Due year = 2027
+//      */
+//     $shareYear = $fiscalYear + 1;
+
+//     /*
+//      * =========================================================
+//      * 3. NOVEMBER SETTLEMENT PERIOD
+//      * =========================================================
+//      *
+//      * Missed deductions during the fiscal year are settled
+//      * during November immediately after the fiscal period.
+//      *
+//      * FY 2026 ends October 14, 2027.
+//      *
+//      * Settlement month:
+//      * November 2027
+//      */
+
+//     $settlementMonth = Carbon::create(
+//         $fiscalYear + 1,
+//         11,
+//         1
+//     )->startOfMonth();
+
+//     $settlementMonthEnd = $settlementMonth
+//         ->copy()
+//         ->endOfMonth();
+
+//     $settlementMonthKey = strtolower(
+//         $settlementMonth->format('F Y')
+//     );
+
+//     /*
+//      * =========================================================
+//      * 4. INITIALIZE REPORT ARRAYS
+//      * =========================================================
+//      */
+
+//     $headerMonthsAmount = [
+//         'total' => 0,
+//     ];
+
+//     $headerMonthLabel = [];
+
+//     $totalMonthlyCollectionTarget = [
+//         'total' => 0,
+//     ];
+
+//     $actualMonthlyCollection = [
+//         'total' => 0,
+//     ];
+
+//     $collectionAdjustments = [
+//         'total' => 0,
+//     ];
+
+//     $collectionAdjustmentDetails = [];
+
+//     $adjustedMonthlyCollection = [
+//         'total' => 0,
+//     ];
+
+//     $balanceCollectible = [
+//         'cna_share' => [],
+//         'annual_due' => [],
+//         'total' => 0,
+//     ];
+
+//     /*
+//      * =========================================================
+//      * 5. INITIALIZE MONTH COLUMNS
+//      * =========================================================
+//      *
+//      * IMPORTANT:
+//      *
+//      * Exact fiscal boundaries:
+//      *
+//      * October 15, 2026 -> October 14, 2027
+//      *
+//      * But report columns need:
+//      *
+//      * October 2026
+//      * November 2026
+//      * ...
+//      * September 2027
+//      * October 2027
+//      *
+//      * Therefore the month iterator is normalized separately
+//      * from the actual database filtering boundaries.
+//      */
+
+//     $currentMonth = $dateFrom
+//         ->copy()
+//         ->startOfMonth();
+
+//     $lastReportMonth = $dateTo
+//         ->copy()
+//         ->startOfMonth();
+
+//     $months = [];
+
+//     while ($currentMonth->lte($lastReportMonth)) {
+//         $monthKey = strtolower(
+//             $currentMonth->format('F Y')
+//         );
+
+//         $months[$monthKey] = 0;
+
+//         $headerMonthsAmount[$monthKey] = 0;
+
+//         $totalMonthlyCollectionTarget[$monthKey] = 0;
+
+//         $actualMonthlyCollection[$monthKey] = 0;
+
+//         $collectionAdjustments[$monthKey] = 0;
+
+//         $adjustedMonthlyCollection[$monthKey] = 0;
+
+//         $balanceCollectible[$monthKey] = 0;
+
+//         $collectionAdjustmentDetails[$monthKey] = [];
+
+//         $headerMonthLabel[] = $monthKey;
+
+//         $currentMonth->addMonth();
+//     }
+
+//     /*
+//      * =========================================================
+//      * 6. ADD NOVEMBER SETTLEMENT COLUMN
+//      * =========================================================
+//      *
+//      * November is outside the formal fiscal-year boundary.
+//      *
+//      * It is included in the output because it represents
+//      * accumulated missed salary deductions from the fiscal year.
+//      */
+
+//     $months[$settlementMonthKey] = 0;
+
+//     $headerMonthsAmount[$settlementMonthKey] = 0;
+
+//     $totalMonthlyCollectionTarget[$settlementMonthKey] = 0;
+
+//     $actualMonthlyCollection[$settlementMonthKey] = 0;
+
+//     $collectionAdjustments[$settlementMonthKey] = 0;
+
+//     $adjustedMonthlyCollection[$settlementMonthKey] = 0;
+
+//     $balanceCollectible[$settlementMonthKey] = 0;
+
+//     $collectionAdjustmentDetails[$settlementMonthKey] = [];
+
+//     $headerMonthLabel[] = $settlementMonthKey;
+
+//     /*
+//      * =========================================================
+//      * 7. GET MEMBERS
+//      * =========================================================
+//      */
+
+//     $members = Member::query()
+//         ->with('user')
+//         ->when(
+//             $campusId,
+//             function ($query, $campusId) {
+//                 $query
+//                     ->withoutGlobalScope(
+//                         CampusMemberScope::class
+//                     )
+//                     ->where(
+//                         'campus_id',
+//                         $campusId
+//                     );
+//             }
+//         )
+//         ->get();
+
+//     $memberIds = $members->pluck('id');
+
+//     /*
+//      * =========================================================
+//      * 8. REPORT-LEVEL CNA / ANNUAL STRUCTURES
+//      * =========================================================
+//      */
+
+//     $reportCnaShare = [
+//         'amount' => 0,
+//         'total' => 0,
+//     ];
+
+//     $reportAnnualDues = [
+//         'amount' => 0,
+//         'total' => 0,
+//     ];
+
+//     /*
+//      * Internal yearly structures are retained because the
+//      * existing report payload expects them.
+//      */
+
+//     $totalCNAShareCollectionTarget = [
+//         $shareYear => [
+//             'total' => 0,
+//         ],
+//     ];
+
+//     $actualCNAShareCollectionTarget = [
+//         $shareYear => [
+//             'total' => 0,
+//         ],
+//     ];
+
+//     $totalAnnualDueCollectionTarget = [
+//         $shareYear => [
+//             'total' => 0,
+//         ],
+//     ];
+
+//     $actualAnnualDueCollectionTarget = [
+//         $shareYear => [
+//             'total' => 0,
+//         ],
+//     ];
+
+//     $balanceCollectible['cna_share'][$shareYear] = [
+//         'total' => 0,
+//     ];
+
+//     $balanceCollectible['annual_due'][$shareYear] = [
+//         'total' => 0,
+//     ];
+
+//     /*
+//      * =========================================================
+//      * 9. LOAD CNA SHARE RECORDS
+//      * =========================================================
+//      */
+
+//     $cnaShares = CnaShare::query()
+//         ->where(
+//             'year',
+//             $shareYear
+//         )
+//         ->whereIn(
+//             'member_id',
+//             $memberIds
+//         )
+//         ->get()
+//         ->groupBy('member_id');
+
+//     /*
+//      * =========================================================
+//      * 10. LOAD ANNUAL CONTRIBUTIONS
+//      * =========================================================
+//      */
+
+//     $annualDues = AnnualContribution::query()
+//         ->where(
+//             'contribution_year',
+//             $shareYear
+//         )
+//         ->whereIn(
+//             'member_id',
+//             $memberIds
+//         )
+//         ->get()
+//         ->groupBy('member_id');
+
+//     /*
+//      * =========================================================
+//      * 11. BUILD MEMBER DATA
+//      * =========================================================
+//      */
+
+//     $memberData = [];
+
+//     foreach ($members as $member) {
+//         $memberCnaShares = $cnaShares->get(
+//             $member->id,
+//             collect()
+//         );
+
+//         $memberAnnualDues = $annualDues->get(
+//             $member->id,
+//             collect()
+//         );
+
+//         $cnaShare = [
+//             $shareYear => 0,
+//         ];
+
+//         $annualDue = [
+//             $shareYear => 0,
+//         ];
+
+//         /*
+//          * -----------------------------------------------------
+//          * CNA SHARE
+//          * -----------------------------------------------------
+//          */
+
+//         foreach ($memberCnaShares as $share) {
+//             $amount = (float) $share->paid_amount;
+//             $dueAmount = (float) $share->due_amount;
+
+//             $cnaShare[$shareYear] += $amount;
+
+//             $reportCnaShare['amount'] += $dueAmount;
+//             $reportCnaShare['total'] += $dueAmount;
+
+//             $totalCNAShareCollectionTarget
+//                 [$shareYear]['total'] += $dueAmount;
+
+//             $actualCNAShareCollectionTarget
+//                 [$shareYear]['total'] += $amount;
+//         }
+
+//         /*
+//          * -----------------------------------------------------
+//          * ANNUAL CONTRIBUTION
+//          * -----------------------------------------------------
+//          */
+
+//         foreach ($memberAnnualDues as $due) {
+//             $amount = (float) $due->amount_paid;
+
+//             $annualDue[$shareYear] += $amount;
+
+//             $reportAnnualDues['amount'] += $amount;
+//             $reportAnnualDues['total'] += $amount;
+
+//             $totalAnnualDueCollectionTarget
+//                 [$shareYear]['total'] += $amount;
+
+//             if (
+//                 $due->status ===
+//                 ContributionStatus::Paid->value
+//             ) {
+//                 $actualAnnualDueCollectionTarget
+//                     [$shareYear]['total'] += $amount;
+//             }
+//         }
+
+//         /*
+//          * -----------------------------------------------------
+//          * MEMBER ROW
+//          * -----------------------------------------------------
+//          */
+
+//         $memberData[$member->id] = [
+//             'member_id' => $member->id,
+
+//             'name' => $member->user->name ?? '',
+
+//             'months' => $months,
+
+//             /*
+//              * Initially contains CNA + Annual.
+//              *
+//              * Monthly salary deductions are added later.
+//              */
+//             'total_contributed' =>
+//                 array_sum($annualDue)
+//                 + array_sum($cnaShare),
+
+//             'cna_share' => $cnaShare,
+
+//             'annual_due' => $annualDue,
+//         ];
+//     }
+
+//     /*
+//      * =========================================================
+//      * 12. CNA / ANNUAL BALANCES
+//      * =========================================================
+//      */
+
+//     foreach (
+//         $totalCNAShareCollectionTarget
+//         as $year => $targetData
+//     ) {
+//         $target = (float) (
+//             $targetData['total'] ?? 0
+//         );
+
+//         $actual = (float) (
+//             $actualCNAShareCollectionTarget
+//                 [$year]['total']
+//             ?? 0
+//         );
+
+//         $balanceCollectible
+//             ['cna_share']
+//             [$year]
+//             ['total'] = $target - $actual;
+//     }
+
+//     foreach (
+//         $totalAnnualDueCollectionTarget
+//         as $year => $targetData
+//     ) {
+//         $target = (float) (
+//             $targetData['total'] ?? 0
+//         );
+
+//         $actual = (float) (
+//             $actualAnnualDueCollectionTarget
+//                 [$year]['total']
+//             ?? 0
+//         );
+
+//         $balanceCollectible
+//             ['annual_due']
+//             [$year]
+//             ['total'] = $target - $actual;
+//     }
+
+//     /*
+//      * CNA / Annual are included in the report-level totals.
+//      */
+
+//     $headerMonthsAmount['total'] =
+//         (float) $reportAnnualDues['amount']
+//         + (float) $reportCnaShare['amount'];
+
+//     $totalMonthlyCollectionTarget['total'] =
+//         array_sum(
+//             array_column(
+//                 $totalCNAShareCollectionTarget,
+//                 'total'
+//             )
+//         )
+//         +
+//         array_sum(
+//             array_column(
+//                 $totalAnnualDueCollectionTarget,
+//                 'total'
+//             )
+//         );
+
+//     $actualMonthlyCollection['total'] =
+//         array_sum(
+//             array_column(
+//                 $actualCNAShareCollectionTarget,
+//                 'total'
+//             )
+//         )
+//         +
+//         array_sum(
+//             array_column(
+//                 $actualAnnualDueCollectionTarget,
+//                 'total'
+//             )
+//         );
+
+//     /*
+//      * =========================================================
+//      * 13. GET CLAIMS INSIDE THE EXACT FISCAL YEAR
+//      * =========================================================
+//      *
+//      * FY 2026:
+//      *
+//      * INCLUDED:
+//      * October 15, 2026
+//      * through
+//      * October 14, 2027
+//      *
+//      * EXCLUDED:
+//      * October 14, 2026
+//      * October 15, 2027
+//      */
+
+//     $claims = Claim::query()
+//         ->with([
+//             'claimType',
+
+//             'contributionBatches.contributionDetails' =>
+//                 function ($query) use ($campusId) {
+//                     $query->when(
+//                         $campusId,
+//                         function (
+//                             $query,
+//                             $campusId
+//                         ) {
+//                             $query->whereHas(
+//                                 'member',
+//                                 function (
+//                                     $query
+//                                 ) use (
+//                                     $campusId
+//                                 ) {
+//                                     $query->where(
+//                                         'campus_id',
+//                                         $campusId
+//                                     );
+//                                 }
+//                             );
+//                         }
+//                     );
+//                 },
+//         ])
+//         ->whereBetween(
+//             'created_at',
+//             [
+//                 $dateFrom,
+//                 $dateTo,
+//             ]
+//         )
+//         ->get();
+
+//     /*
+//      * =========================================================
+//      * 14. PROCESS CLAIMS
+//      * =========================================================
+//      */
+
+//     foreach ($claims as $claim) {
+//         $claimDate = Carbon::parse(
+//             $claim->created_at
+//         );
+
+//         /*
+//          * Additional defensive condition.
+//          *
+//          * The query already applies the fiscal boundary,
+//          * but this guarantees no out-of-cycle claim can
+//          * accidentally enter the calculation.
+//          */
+//         if (
+//             !$claimDate->between(
+//                 $dateFrom,
+//                 $dateTo,
+//                 true
+//             )
+//         ) {
+//             continue;
+//         }
+
+//         $monthKey = strtolower(
+//             $claimDate->format('F Y')
+//         );
+
+//         if (!array_key_exists(
+//             $monthKey,
+//             $months
+//         )) {
+//             continue;
+//         }
+
+//         /*
+//          * -----------------------------------------------------
+//          * A. CLAIM REQUIRED AMOUNT
+//          * -----------------------------------------------------
+//          */
+
+//         if ($claim->claimType) {
+//             $claimAmount = (float)
+//                 $claim->claimType->required_amount;
+
+//             $headerMonthsAmount[$monthKey] +=
+//                 $claimAmount;
+
+//             $headerMonthsAmount['total'] +=
+//                 $claimAmount;
+//         }
+
+//         /*
+//          * -----------------------------------------------------
+//          * B. CONTRIBUTION BATCHES
+//          * -----------------------------------------------------
+//          */
+
+//         foreach (
+//             $claim->contributionBatches
+//             as $batch
+//         ) {
+//             $amountPerMember = (float)
+//                 $batch->amount_per_member;
+
+//             $memberCount = (int)
+//                 $batch->total_members;
+
+//             $batchTarget =
+//                 $amountPerMember
+//                 * $memberCount;
+
+//             /*
+//              * Expected collection for the month.
+//              */
+
+//             $totalMonthlyCollectionTarget
+//                 [$monthKey] += $batchTarget;
+
+//             $totalMonthlyCollectionTarget
+//                 ['total'] += $batchTarget;
+
+//             /*
+//              * -------------------------------------------------
+//              * C. CONTRIBUTION DETAILS
+//              * -------------------------------------------------
+//              */
+
+//             foreach (
+//                 $batch->contributionDetails
+//                 as $detail
+//             ) {
+//                 $memberId = $detail->member_id;
+
+//                 if (!isset(
+//                     $memberData[$memberId]
+//                 )) {
+//                     continue;
+//                 }
+
+//                 /*
+//                  * Without paid_at there was no actual
+//                  * salary deduction.
+//                  */
+//                 if (!$detail->paid_at) {
+//                     continue;
+//                 }
+
+//                 $actualAmount = (float)
+//                     $detail->amount;
+
+//                 $paidAt = Carbon::parse(
+//                     $detail->paid_at
+//                 );
+
+//                 $paidMonthKey = strtolower(
+//                     $paidAt->format('F Y')
+//                 );
+
+//                 /*
+//                  * ---------------------------------------------
+//                  * NOVEMBER SETTLEMENT
+//                  * ---------------------------------------------
+//                  *
+//                  * A payment made during the settlement
+//                  * November belongs only to the November
+//                  * lump-sum column.
+//                  */
+
+//                 if (
+//                     $paidAt->between(
+//                         $settlementMonth,
+//                         $settlementMonthEnd,
+//                         true
+//                     )
+//                 ) {
+//                     $actualMonthlyCollection
+//                         [$settlementMonthKey] +=
+//                             $actualAmount;
+
+//                     $actualMonthlyCollection
+//                         ['total'] +=
+//                             $actualAmount;
+
+//                     $memberData
+//                         [$memberId]
+//                         ['months']
+//                         [$settlementMonthKey] +=
+//                             $actualAmount;
+
+//                     $memberData
+//                         [$memberId]
+//                         ['total_contributed'] +=
+//                             $actualAmount;
+
+//                     continue;
+//                 }
+
+//                 /*
+//                  * ---------------------------------------------
+//                  * NORMAL FISCAL-YEAR DEDUCTION
+//                  * ---------------------------------------------
+//                  *
+//                  * This exact-date condition is essential.
+//                  *
+//                  * For FY 2026:
+//                  *
+//                  * Oct 10, 2026 = EXCLUDED
+//                  * Oct 15, 2026 = INCLUDED
+//                  *
+//                  * Oct 14, 2027 = INCLUDED
+//                  * Oct 15, 2027 = EXCLUDED
+//                  *
+//                  * Checking only the month name is not enough,
+//                  * because both boundary months are partial.
+//                  */
+
+//                 if (
+//                     !$paidAt->between(
+//                         $dateFrom,
+//                         $dateTo,
+//                         true
+//                     )
+//                 ) {
+//                     continue;
+//                 }
+
+//                 if (
+//                     !isset(
+//                         $memberData
+//                             [$memberId]
+//                             ['months']
+//                             [$paidMonthKey]
+//                     )
+//                 ) {
+//                     continue;
+//                 }
+
+//                 $actualMonthlyCollection
+//                     [$paidMonthKey] +=
+//                         $actualAmount;
+
+//                 $actualMonthlyCollection
+//                     ['total'] +=
+//                         $actualAmount;
+
+//                 $memberData
+//                     [$memberId]
+//                     ['months']
+//                     [$paidMonthKey] +=
+//                         $actualAmount;
+
+//                 $memberData
+//                     [$memberId]
+//                     ['total_contributed'] +=
+//                         $actualAmount;
+//             }
+//         }
+//     }
+
+//     /*
+//      * =========================================================
+//      * 15. GET COLLECTION ADJUSTMENTS
+//      * =========================================================
+//      *
+//      * adjustment_month appears to represent the reporting
+//      * MONTH rather than an exact transaction timestamp.
+//      *
+//      * Therefore:
+//      *
+//      * October 2026 adjustment = 2026-10-01
+//      *
+//      * It should still be included in the October 2026 column
+//      * even though the exact fiscal start is October 15.
+//      *
+//      * This is why startOfMonth() is intentionally used here.
+//      */
+
+//     $adjustmentDateFrom = $dateFrom
+//         ->copy()
+//         ->startOfMonth();
+
+//     $adjustmentDateTo = $dateTo
+//         ->copy()
+//         ->startOfMonth();
+
+//     $adjustments = CollectionsAdjustments::query()
+//         ->when(
+//             $campusId,
+//             function (
+//                 $query,
+//                 $campusId
+//             ) {
+//                 $query->where(
+//                     'campus_id',
+//                     $campusId
+//                 );
+//             }
+//         )
+//         ->whereBetween(
+//             'adjustment_month',
+//             [
+//                 $adjustmentDateFrom,
+//                 $adjustmentDateTo,
+//             ]
+//         )
+//         ->get();
+
+//     /*
+//      * =========================================================
+//      * 16. PROCESS COLLECTION ADJUSTMENTS
+//      * =========================================================
+//      */
+
+//     foreach ($adjustments as $adjustment) {
+//         $adjustmentMonth = Carbon::parse(
+//             $adjustment->adjustment_month
+//         );
+
+//         $monthKey = strtolower(
+//             $adjustmentMonth->format('F Y')
+//         );
+
+//         if (
+//             !array_key_exists(
+//                 $monthKey,
+//                 $months
+//             )
+//         ) {
+//             continue;
+//         }
+
+//         $amount = (float)
+//             $adjustment->amount;
+
+//         $collectionAdjustments
+//             [$monthKey] += $amount;
+
+//         $collectionAdjustments
+//             ['total'] += $amount;
+
+//         $collectionAdjustmentDetails
+//             [$monthKey][] = [
+//                 'id' =>
+//                     $adjustment->id,
+
+//                 'amount' =>
+//                     $amount,
+
+//                 'type' =>
+//                     $adjustment->adjustment_type,
+
+//                 'description' =>
+//                     $adjustment->description,
+
+//                 'reference_month' =>
+//                     $adjustment->reference_month
+//                         ? Carbon::parse(
+//                             $adjustment
+//                                 ->reference_month
+//                         )->format('F Y')
+//                         : null,
+//             ];
+//     }
+
+//     /*
+//      * =========================================================
+//      * 17. APPLY COLLECTION ADJUSTMENTS
+//      * =========================================================
+//      *
+//      * Adjusted collection:
+//      *
+//      * actual collection + manual adjustment
+//      */
+
+//     foreach (
+//         $months
+//         as $monthKey => $unused
+//     ) {
+//         $adjustedMonthlyCollection
+//             [$monthKey] =
+//                 $actualMonthlyCollection
+//                     [$monthKey]
+//                 +
+//                 $collectionAdjustments
+//                     [$monthKey];
+//     }
+
+//     $adjustedMonthlyCollection['total'] =
+//         $actualMonthlyCollection['total']
+//         +
+//         $collectionAdjustments['total'];
+
+//     /*
+//      * =========================================================
+//      * 18. CALCULATE MONTHLY BALANCE
+//      * =========================================================
+//      *
+//      * Balance:
+//      *
+//      * collection target
+//      * -
+//      * adjusted actual collection
+//      */
+
+//     foreach (
+//         $months
+//         as $monthKey => $unused
+//     ) {
+//         $balanceCollectible
+//             [$monthKey] =
+//                 $totalMonthlyCollectionTarget
+//                     [$monthKey]
+//                 -
+//                 $adjustedMonthlyCollection
+//                     [$monthKey];
+//     }
+
+//     /*
+//      * =========================================================
+//      * 19. GRAND TOTAL BALANCE
+//      * =========================================================
+//      */
+
+//     $balanceCollectible['total'] =
+//         $totalMonthlyCollectionTarget['total']
+//         -
+//         $adjustedMonthlyCollection['total'];
+
+//     /*
+//      * =========================================================
+//      * 20. RETURN REPORT DATA
+//      * =========================================================
+//      */
+
+//     return [
+//         /*
+//          * Required claim amount by month.
+//          */
+//         'header_months_amount' =>
+//             $headerMonthsAmount,
+
+//         /*
+//          * Report column labels.
+//          *
+//          * Example FY 2026:
+//          *
+//          * october 2026
+//          * november 2026
+//          * ...
+//          * october 2027
+//          * november 2027 settlement
+//          */
+//         'header_month_label' =>
+//             $headerMonthLabel,
+
+//         /*
+//          * Expected collection target.
+//          */
+//         'total_monthly_collection_target' =>
+//             $totalMonthlyCollectionTarget,
+
+//         /*
+//          * Raw actual collection.
+//          */
+//         'actual_monthly_collection' =>
+//             $actualMonthlyCollection,
+
+//         /*
+//          * Expected CNA Share collection.
+//          */
+//         'total_cna_share_collection_target' =>
+//             $totalCNAShareCollectionTarget,
+
+//         /*
+//          * Actual CNA Share collection.
+//          */
+//         'actual_cna_share_collection' =>
+//             $actualCNAShareCollectionTarget,
+
+//         /*
+//          * Expected Annual Due collection.
+//          */
+//         'total_annual_due_collection_target' =>
+//             $totalAnnualDueCollectionTarget,
+
+//         /*
+//          * Actual Annual Due collection.
+//          */
+//         'actual_annual_due_collection' =>
+//             $actualAnnualDueCollectionTarget,
+
+//         /*
+//          * Monthly adjustment totals.
+//          */
+//         'collection_adjustments' =>
+//             $collectionAdjustments,
+
+//         /*
+//          * Adjustment record details.
+//          */
+//         'collection_adjustment_details' =>
+//             $collectionAdjustmentDetails,
+
+//         /*
+//          * Actual collection after adjustments.
+//          */
+//         'adjusted_monthly_collection' =>
+//             $adjustedMonthlyCollection,
+
+//         /*
+//          * Target minus adjusted actual.
+//          */
+//         'balance_collectible' =>
+//             $balanceCollectible,
+
+//         /*
+//          * Report-level CNA Share.
+//          */
+//         'cna_share' =>
+//             $reportCnaShare,
+
+//         /*
+//          * Report-level Annual Due.
+//          */
+//         'annual_due' =>
+//             $reportAnnualDues,
+
+//         /*
+//          * Member rows.
+//          */
+//         'members' =>
+//             array_values($memberData),
+//     ];
+// }   
 
     //--------WORKING-------------------------
     // public function getContributionPerMonth(Request $request, ?string $campusId = null): array

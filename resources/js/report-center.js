@@ -517,12 +517,15 @@ window.reportCenter = function(options)
 
             const params = new URLSearchParams();
 
-            if (this.filters.date_from) {
-                params.set('date_from', this.filters.date_from);
-            }
+            // if (this.filters.date_from) {
+            //     params.set('date_from', this.filters.date_from);
+            // }
 
-            if (this.filters.date_to) {
-                params.set('date_to', this.filters.date_to);
+            // if (this.filters.date_to) {
+            //     params.set('date_to', this.filters.date_to);
+            // }
+            if (this.filters.reporting_year) {
+                params.set('reporting_year', this.filters.reporting_year);
             }
 
             if (this.filters.campus_id) {

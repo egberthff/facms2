@@ -184,7 +184,6 @@ class ContributionDetailsController extends Controller
                         ] : null,
                     ];
                 });
-                \Log::error(print_r($formattedData, true));
             break;
             
             default:

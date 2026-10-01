@@ -201,7 +201,6 @@
 
         <!-- START OF MAIN LEDGER PRINT AREA -->
         <div class="print">
-
             <!-- Center Headings -->
             <div class="header">
                 <h1> {{ $campus ?? "" }} </h1>
@@ -260,7 +259,7 @@
                         @endforeach
 
                         {{-- 3. Correctly output the grand total at the end --}}
-                        <td class="border p-1">{{ $table_data['header_months_amount']['total'] }}</td>
+                        <td class="border p-1">{{ $table_data['header_months_amount']['total'] ?? 0.00 }}</td>
                     </tr>
 
                 </thead>
@@ -310,7 +309,7 @@
                             @endif
                         @endforeach
 
-                        <td class="text-right">{{ $table_data['total_monthly_collection_target']['total'] }}</td>
+                        <td class="text-right">{{ $table_data['total_monthly_collection_target']['total'] ?? 0.00 }}</td>
                     </tr>
 
                     <!-- 2. ACTUAL MONTHLY COLLECTION -->
@@ -328,7 +327,7 @@
                             @endif
                         @endforeach
 
-                        <td class="text-right">{{ $table_data['actual_monthly_collection']['total'] }}</td>
+                        <td class="text-right">{{ $table_data['actual_monthly_collection']['total'] ?? 0.00 }}</td>
                     </tr>
 
                     <!-- 3. BALANCE COLLECTIBLE -->

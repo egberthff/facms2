@@ -270,8 +270,8 @@ return [
             'handler' => ReportService::class,
 
             'filters' => [
-
-                'date_range',
+                'year_range',
+                // 'date_range',
 
                 'campus',
  
