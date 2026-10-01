@@ -620,20 +620,26 @@ class ContributionService
      * 1. RESOLVE FISCAL YEAR
      * =========================================================
      *
+     * FY N is named after the year in which it ENDS:
+     *
      * FY 2026:
      *
-     * October 15, 2026 00:00:00
+     * October 15, 2025 00:00:00
      * through
-     * October 14, 2027 23:59:59
+     * October 14, 2026 23:59:59
      *
-     * January 2027:
+     * October 15 - December 31, 2025:
+     * - Claim deductions (early-FY columns)
+     *
+     * January 2026:
      * - CNA Share
      * - Annual Dues
+     * - Claim deductions
      *
-     * February - October 2027:
+     * February - October 2026:
      * - Normal claim deductions
      *
-     * November 2027:
+     * November 2026:
      * - Missed / unpaid deductions
      */
 
@@ -644,28 +650,29 @@ class ContributionService
     /*
      * Backward compatibility for the previous UI.
      *
-     * If date_from is still being sent as an October selector,
-     * October belongs to the fiscal year beginning in that year.
-     *
-     * January - September belong to the fiscal year that began
-     * during the previous calendar year.
+     * A date on or after October 15 belongs to the fiscal year
+     * ending in the following calendar year. Anything up to and
+     * including October 14 belongs to the fiscal year ending in
+     * that same calendar year.
      */
     if (!$fiscalYear && $request->filled('date_from')) {
         $selectedDate = Carbon::parse(
             $request->input('date_from')
         );
 
-        if ($selectedDate->month >= 10) {
-            $fiscalYear = $selectedDate->year;
-        } else {
-            $fiscalYear = $selectedDate->year - 1;
-        }
+        $fiscalYear = $selectedDate->gte(
+            Carbon::create($selectedDate->year, 10, 15)->startOfDay()
+        )
+            ? $selectedDate->year + 1
+            : $selectedDate->year;
     }
 
     if (!$fiscalYear) {
         return [
+            'period' => '',
             'header_months_amount' => [],
             'header_month_label' => [],
+            'pre_january_month_label' => [],
             'total_monthly_collection_target' => [],
             'actual_monthly_collection' => [],
             'total_cna_share_collection_target' => [],
@@ -694,27 +701,39 @@ class ContributionService
      * =========================================================
      * 2. EXACT FISCAL-YEAR BOUNDARIES
      * =========================================================
+     *
+     * Edge cases:
+     *
+     * - Leap years cannot move the boundary. October 14 and 15
+     *   exist in every year, and February 29 always falls inside
+     *   the fiscal year, so no date math crosses it.
+     * - startOfDay()/endOfDay() make both ends inclusive:
+     *   Oct 15 00:00:00 is the first instant and Oct 14 23:59:59
+     *   the last. A record at Oct 15 00:00:00 of FY's year belongs
+     *   to FY + 1.
+     * - Both bounds use the app timezone, the same as the
+     *   timestamps Eloquent stores.
      */
 
     $dateFrom = Carbon::create(
-        $fiscalYear,
+        $fiscalYear - 1,
         10,
         15
     )->startOfDay();
 
     $dateTo = Carbon::create(
-        $fiscalYear + 1,
+        $fiscalYear,
         10,
         14
     )->endOfDay();
 
     /*
-     * The visible deduction report belongs primarily to the
-     * following calendar year.
+     * January (CNA / Annual), February - October and the
+     * settlement November all fall in the FY's own year.
      *
-     * FY 2026 => report year 2027.
+     * FY 2026 => report year 2026.
      */
-    $reportYear = $fiscalYear + 1;
+    $reportYear = $fiscalYear;
 
     /*
      * CNA Share / Annual Dues are January obligations.
@@ -789,32 +808,52 @@ class ContributionService
      * 4. BUILD VISIBLE CLAIM-DEDUCTION MONTHS
      * =========================================================
      *
-     * Based on the manual report:
+     * Based on the manual report, extended to cover the whole
+     * fiscal year:
      *
-     * January  = CNA Share
-     * January  = Annual Dues
+     * Oct - Dec (FY-1) = Claim deductions from Oct 15 onward
+     * January  = CNA Share / Annual Dues (own columns)
+     * January  = Claim deductions
      * February = Claim deductions
-     * March    = Claim deductions
      * ...
-     * October  = Claim deductions
+     * October  = Claim deductions up to Oct 14
      * November = Unpaid deductions
      *
-     * January is therefore NOT inserted into $months because
-     * CNA and Annual Dues already have their own report columns.
+     * The FY-1 months are also exposed as
+     * pre_january_month_label so the view can render them
+     * before the January CNA / Annual Dues columns.
      */
 
     $months = [];
 
-    for ($monthNumber = 2; $monthNumber <= 10; $monthNumber++) {
-        $monthDate = Carbon::create(
+    $preJanuaryMonthLabel = [];
+
+    $claimMonthDates = [];
+
+    for ($monthNumber = 10; $monthNumber <= 12; $monthNumber++) {
+        $claimMonthDates[] = Carbon::create(
+            $reportYear - 1,
+            $monthNumber,
+            1
+        );
+    }
+
+    for ($monthNumber = 1; $monthNumber <= 10; $monthNumber++) {
+        $claimMonthDates[] = Carbon::create(
             $reportYear,
             $monthNumber,
             1
         );
+    }
 
+    foreach ($claimMonthDates as $monthDate) {
         $monthKey = strtolower(
             $monthDate->format('F Y')
         );
+
+        if ($monthDate->year < $reportYear) {
+            $preJanuaryMonthLabel[] = $monthKey;
+        }
 
         $months[$monthKey] = 0;
 
@@ -1000,7 +1039,6 @@ class ContributionService
         float $amount
     ) use (
         &$memberData,
-        &$totalMonthlyCollectionTarget,
         $settlementMonthKey
     ): void {
         if ($amount <= 0) {
@@ -1016,13 +1054,15 @@ class ContributionService
             [$settlementMonthKey] += $amount;
 
         /*
-         * Do NOT add this amount into
-         * total_monthly_collection_target['total'].
-         *
-         * It is a rollover, not a new obligation.
+         * Not added to total_monthly_collection_target at all,
+         * neither the November column nor the total. It is a
+         * rollover of an obligation already counted in its
+         * original column. Leaving November's target at 0 (as
+         * the manual report does) makes every footer row
+         * cross-foot: the November actual then shows up as a
+         * negative November balance that cancels the positive
+         * balances of the months it settles.
          */
-        $totalMonthlyCollectionTarget
-            [$settlementMonthKey] += $amount;
     };
 
     /*
@@ -1181,7 +1221,9 @@ class ContributionService
 
             /*
              * If it was eventually deducted in settlement
-             * November, count the November actual collection.
+             * November, count it ONLY in the November actual
+             * collection. The January column keeps showing it as
+             * uncollected so the footer rows cross-foot.
              */
             if (
                 $paidAt
@@ -1190,10 +1232,6 @@ class ContributionService
                     $settlementMonth
                 )
             ) {
-                $actualCNAShareCollectionTarget
-                    [$shareYear]['total'] +=
-                        $paidAmount;
-
                 $addNovemberActual(
                     $paidAmount
                 );
@@ -1296,6 +1334,7 @@ class ContributionService
 
             /*
              * Actual payment made during settlement November.
+             * Counted only in the November column (see CNA above).
              */
             if (
                 $isPaid
@@ -1305,10 +1344,6 @@ class ContributionService
                     $settlementMonth
                 )
             ) {
-                $actualAnnualDueCollectionTarget
-                    [$shareYear]['total'] +=
-                        $annualAmount;
-
                 $addNovemberActual(
                     $annualAmount
                 );
@@ -1327,24 +1362,11 @@ class ContributionService
             'claimType',
 
             /*
-             * Contribution batches themselves should also be
-             * campus-scoped.
+             * contribution_batches has no campus_id column; batches
+             * span all campuses, so campus scoping happens on the
+             * details (members) below.
              */
-            'contributionBatches' =>
-                function ($query) use ($campusId) {
-                    $query->when(
-                        $campusId,
-                        function (
-                            $query,
-                            $campusId
-                        ) {
-                            $query->where(
-                                'campus_id',
-                                $campusId
-                            );
-                        }
-                    );
-                },
+            'contributionBatches',
 
             'contributionBatches.contributionDetails' =>
                 function ($query) use ($campusId) {
@@ -1424,12 +1446,9 @@ class ContributionService
         );
 
         /*
-         * The manual deduction report contains claim columns
-         * only from February through October of the report year.
-         *
-         * Claims elsewhere in the fiscal query are retained by
-         * the query scope but have no visible claim column in
-         * this particular report format.
+         * Every month of the fiscal year has a claim column
+         * (October FY-1 through October FY), so this guard only
+         * protects against unexpected dates.
          */
         if (
             !array_key_exists(
@@ -1450,8 +1469,14 @@ class ContributionService
             $amountPerMember = (float)
                 $batch->amount_per_member;
 
-            $memberCount = (int)
-                $batch->total_members;
+            /*
+             * Batches cover every campus, so total_members would
+             * overstate a single campus's target. Count only the
+             * (campus-filtered) members who were billed.
+             */
+            $memberCount = $batch->contributionDetails
+                ->filter(fn ($detail) => isset($memberData[$detail->member_id]))
+                ->count();
 
             /*
              * -------------------------------------------------
@@ -1531,13 +1556,14 @@ class ContributionService
                  * ---------------------------------------------
                  */
 
+                /*
+                 * Only the calendar month matters here, not the
+                 * fiscal boundary: a claim filed Oct 10 and
+                 * deducted on the Oct 30 payroll is still an
+                 * on-time October deduction.
+                 */
                 if (
                     $paidAt
-                    && $paidAt->between(
-                        $dateFrom,
-                        $dateTo,
-                        true
-                    )
                     && $paidAt->year ===
                         $claimDate->year
                     && $paidAt->month ===
@@ -1705,12 +1731,12 @@ class ContributionService
      *
      * Visible adjustment months:
      *
-     * February -> November of report year.
+     * October FY-1 -> November FY.
      */
 
     $adjustmentDateFrom = Carbon::create(
-        $reportYear,
-        2,
+        $reportYear - 1,
+        10,
         1
     )->startOfMonth();
 
@@ -1913,11 +1939,19 @@ class ContributionService
      */
 
     return [
+        'period' =>
+            $dateFrom->format('F Y')
+            . ' to '
+            . $settlementMonth->format('F Y'),
+
         'header_months_amount' =>
             $headerMonthsAmount,
 
         'header_month_label' =>
             $headerMonthLabel,
+
+        'pre_january_month_label' =>
+            $preJanuaryMonthLabel,
 
         'total_monthly_collection_target' =>
             $totalMonthlyCollectionTarget,
