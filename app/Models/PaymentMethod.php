@@ -46,4 +46,10 @@ class PaymentMethod extends Model
     {
         return $this->hasMany(ClaimPayment::class);
     }
+
+
+    public function membershipFees()
+    {
+        return $this->hasMany(membershipFees::class);
+    }
 }

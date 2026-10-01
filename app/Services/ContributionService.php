@@ -13,6 +13,7 @@ use App\Models\AnnualContribution;
 use App\Models\SystemSetting;
 use App\Models\CollectionsAdjustments;
 use App\Models\CNAShare;
+use App\Models\MembershipFee;
 use App\Services\TreasuryLedgerService;
 USE App\Enums\ContributionStatus;
 use Illuminate\Support\Facades\DB;
@@ -256,6 +257,7 @@ class ContributionService
                 'claims' => ContributionDetail::findOrFail($id),
                 'annual' => AnnualContribution::findOrFail($id),
                 'cna_share' => CNAShare::findOrFail($id),
+                'membership_fee' =>MembershipFee::findOrFail($id),
                 default  => throw new InvalidArgumentException("Invalid contribution tag: {$tag}"),
             };
 
@@ -264,6 +266,13 @@ class ContributionService
                     'paid_amount'  => $detail->due_amount,
                     'status'  => ContributionStatus::Paid->value,
                     'paid_at' => now(),
+                ]);
+            } else if ($tag == 'membership_fee') {
+                $detail->update([
+                    'status'  => ContributionStatus::Paid->value,
+                    'paid_at' => now(),
+                    'payment_method_id' => $data['payment_method_id'],
+                    'reference_number' => $data['reference_number']
                 ]);
             } else {
                 $detail->update([
@@ -276,6 +285,7 @@ class ContributionService
                 'claims' => 'Claims',
                 'cna_share' => 'CNA Share',
                 'annual' => 'Annual',
+                'membership_fee' => 'Membership Fee',
                 default => 'Standard'
             };
             $description = "Receipt for {$name} Contribution - Member ID: " . $detail->member_id;
@@ -484,6 +494,55 @@ class ContributionService
                             'amount'          => (float) $cnaShare->due_amount,
                             'status'          => $status,
                             'paid_at'         => $cnaShare->paid_at ? Carbon::parse($cnaShare->paid_at)->format('M d, Y h:i A') : '—',
+                        ],
+                    ],
+                ];
+            });   
+
+        return [
+            'isPresident'      => $hasFullAccess,
+            'selectedCampusId' => $selectedCampusId,
+            'allCampuses'      => Campus::where('is_active', true)->get(), 
+            'batches'          => $batches->values()->all(),
+        ];
+    }
+
+    public function getMembershipFeeData(?string $selectedCampusId = null): array
+    {
+        $hasFullAccess = Auth::user()->can('view all campus data') || Auth::user()->hasAnyRole(['President', 'Treasurer']);
+
+        $batches = MembershipFee::with(['member.campus'])
+            ->when($hasFullAccess && $selectedCampusId, function ($query) use ($selectedCampusId) {
+                $query->whereHas('member', function ($q) use ($selectedCampusId) {
+                    $q->where('campus_id', $selectedCampusId);
+                });
+            })
+            ->latest('created_at')
+            ->get()
+            ->map(function (MembershipFee $membershipFee) {
+                $member = $membershipFee->member;
+                $status = strtolower((string) $membershipFee->status);
+
+                return [
+                    'id'                  => $membershipFee->id,
+                    'claim_id'            => date('Y', strtotime($membershipFee->created_at) ?? ''), // No claim association for CNA Share
+                    'claim_number'        => $membershipFee->reference_code,
+                    'claimant'            => trim(sprintf('%s %s %s', $member?->first_name, $member?->middle_name, $member?->last_name)),
+                    'claim_type'          => 'Membership Fee',
+                    'campus_acronym'      => $member?->campus?->acronym ?? 'SYS',
+                    'collectible_amount'  => (float) $membershipFee->amount,
+                    'collected_amount'    => ($status === 'paid') ? (float) $membershipFee->amount : 0.00,
+                    'generated_at'        => $membershipFee->created_at ? Carbon::parse($membershipFee->created_at)->format('M d, Y h:i A') : '—',
+                    'total_members'       => 1,
+                    'details'             => [
+                        [
+                            'id'              => $membershipFee->id,
+                            'member_name'     => trim(sprintf('%s %s %s', $member?->first_name, $member?->middle_name, $member?->last_name)),
+                            'employee_number' => $member?->employee_number ?? 'N/A',
+                            'department'      => $member?->department ?? 'N/A',
+                            'amount'          => (float) $membershipFee->amount,
+                            'status'          => $status,
+                            'paid_at'         => $membershipFee->paid_at ? Carbon::parse($membershipFee->paid_at)->format('M d, Y h:i A') : '—',
                         ],
                     ],
                 ];

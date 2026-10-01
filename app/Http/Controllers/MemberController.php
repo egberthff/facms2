@@ -15,6 +15,7 @@ use App\Enums\MembershipStatus;
 use Illuminate\Support\Facades\Log;
 use App\Services\MemberService;
 use App\Services\EmailService;
+use App\Services\ContributionService;
 use Illuminate\Http\JsonResponse;
 use App\Services\DashboardService;
 
@@ -31,17 +32,20 @@ class MemberController extends Controller
     private MemberService $memberService;
     private EmailService $emailService;
     private DashboardService $dashboardService;
+    private ContributionService $contributionService;
 
     public function __construct(
         MemberService $memberService, 
         EmailService $emailService,
-        DashboardService $dashboardService
+        DashboardService $dashboardService,
+        ContributionService $contributionService
         )
     {
         // $this->authorizeResource(Member::class, 'member');
         $this->memberService = $memberService;
         $this->emailService = $emailService;
         $this->dashboardService = $dashboardService;
+        $this->contributionService = $contributionService;
     }
 
     /**
@@ -321,4 +325,74 @@ class MemberController extends Controller
         return view('profile.index', compact('member')); 
     }
 
+    public function searchMembers(Request $request)
+    {
+        $search = trim($request->input('search', ''));
+        
+        if (mb_strlen($search) < 2) {
+            return response()->json([]);
+        }
+        
+        $members = Member::query()
+            ->with('campus:id,acronym')
+            ->where(function ($query) use ($search) {
+                $query->where('employee_number', 'like', "%{$search}%")
+                    ->orWhere('first_name', 'like', "%{$search}%")
+                    ->orWhere('middle_name', 'like', "%{$search}%")
+                    ->orWhere('last_name', 'like', "%{$search}%");
+            })
+            ->limit(10)
+            ->get()
+            ->map(function ($member) {
+                return [
+                    'id' => $member->id,
+        
+                    'employee_number' => $member->employee_number,
+        
+                    'name' => collect([
+                        $member->first_name,
+                        $member->middle_name,
+                        $member->last_name,
+                        $member->suffix,
+                    ])->filter()->implode(' '),
+        
+                    'department' => $member->department,
+                    'position' => $member->position,
+                    'membership_status' => $member->membership_status,
+        
+                    'campus' => $member->campus
+                        ? $member->campus->acronym
+                        : null,
+                ];
+            });
+        
+        return response()->json($members);
+    }
+
+    public function membershipFee(Request $request){ 
+        $result = $this->memberService->membershipFee($request);
+        return response()->json(
+            $result,
+            $result['success'] ? 201 : 500
+        );
+    }
+
+    public function pay(string $id, Request $request): JsonResponse  
+    {
+        $data = $request->all();
+        try {
+            $updatedDetail = $this->contributionService->markAsPaid($id, 'membership_fee', $data);
+ 
+            return response()->json([
+                'success' => true,
+                 'message' => 'Membership fee has been marked as paid successfully.',
+                'data'    => $updatedDetail
+            ]);
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unable to record payment line item assignment.'
+            ], 404);
+        }
+    }
 }

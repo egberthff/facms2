@@ -23,7 +23,10 @@ Route::middleware(['auth', 'active'])
         Route::post('/notifications/mark-all-read', function () {
             auth()->user()->unreadNotifications->markAsRead();
             return back();
-        })->name('notifications.markAllRead');        
+        })->name('notifications.markAllRead');  
+        
+        Route::post('members/membership-fees', [MemberController::class, 'membershipFee'])->name('members.membership-fees-store');
+        Route::get('members/membership-fees/members/search', [MemberController::class, 'searchMembers'])->name('members.membership-fees-search');
         });
 
       

@@ -111,6 +111,11 @@ class Member extends Model
         return $this->hasMany(CNAShare::class, 'member_id', 'id');
     }
 
+    public function membershipFees()
+    {
+        return $this->hasMany(MembershipFee::class, 'member_id', 'id');
+    }
+
     /*
     |--------------------------------------------------------------------------
     | Accessors

@@ -33,12 +33,15 @@ class PaymentMethodSeeder extends Seeder
         $ids = [
             '019f32cb-c172-72d3-97bd-b1b888fe3611',
             '019f32cb-c177-7193-a110-d5cc8aeb9c60',
-            '019f32cb-c17d-7362-94af-09d027798fca'
+            '019f32cb-c17d-7362-94af-09d027798fca',
+            '019f32cb-c17d-7362-94af-09d027798fb2',
+            '019f32cb-c17d-7362-94af-09d027798fb3',
+            '019f32cb-c17d-7362-94af-09d027798fb4',
         ];
         
         $counter = 0;
         
-        foreach (['GCash', 'Check', 'Bank Transfer'] as $method) {
+        foreach (['GCash', 'Check', 'Bank Transfer', 'Payroll Deduction', 'Others'] as $method) {
 
             // Find an existing record by ID, or instantiate a new model instance
             $paymentMethod = PaymentMethod::firstOrNew([
