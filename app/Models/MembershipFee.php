@@ -24,7 +24,7 @@ class MembershipFee extends Model
         'status',
         'paid_at',
         'reference_number',
-        'payment_method',
+        'payment_method_id',
         'remarks',
         'created_by',
     ];

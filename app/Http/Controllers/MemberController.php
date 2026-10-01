@@ -380,6 +380,7 @@ class MemberController extends Controller
     public function pay(string $id, Request $request): JsonResponse  
     {
         $data = $request->all();
+        \Log::error(print_r($data, true));
         try {
             $updatedDetail = $this->contributionService->markAsPaid($id, 'membership_fee', $data);
  

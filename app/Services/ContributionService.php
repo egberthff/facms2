@@ -581,6 +581,15 @@ class ContributionService
         return AnnualContribution::with('member.user')->where('member_id', $member->id)->get();
     }
 
+    public function getMemberMembershipFee(User $user, string $status = null): Collection 
+    {
+        $member = $user->member;
+        if(!$member){
+            return new Collection();
+        }
+        return MembershipFee::with('member.user')->where('member_id', $member->id)->get();
+    }
+
      /**
      * Get the total paid contributions sum, filtered by optional campus.
      */

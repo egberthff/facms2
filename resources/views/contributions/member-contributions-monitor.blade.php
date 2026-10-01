@@ -47,6 +47,10 @@
                 <!-- CLAIMS TABLE (Original Layout) -->
                 {{-- @include('contributions.partials.member.cna-share-table') --}}
                 @include('contributions.partials.member.annual-table')
+            @elseif($contribution_type === 'membership fee')
+                <!-- CLAIMS TABLE (Original Layout) -->
+                {{-- @include('contributions.partials.member.cna-share-table') --}}
+                @include('contributions.partials.member.annual-table')    
             @endif
         </div>
     </div>
