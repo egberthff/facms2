@@ -189,6 +189,9 @@
                 size: letter landscape;
                 margin: 0.4in;
             }
+            /* Every fiscal-year month is always printed, so tighten the grid to fit one page width. */
+            table { font-size: 6.5pt; }
+            th, td { padding: 2px 1px; }
             tr { page-break-inside: avoid; }
             thead { display: table-header-group; }
             
@@ -227,21 +230,16 @@
             @php
                 /*
                  * Column order follows the fiscal year:
-                 * [Oct-Dec FY-1, only when used] | January CNA Share | January Annual Dues
+                 * Oct-Dec FY-1 Medical Assistance | January CNA Share | January Annual Dues
                  * | January-October Medical Assistance | November Unpaid Deductions | Total
                  */
                 $allMonths     = $table_data['header_month_label'] ?? [];
                 $settlementKey = end($allMonths) ?: null;
 
-                // Early fiscal-year months (Oct 15 - Dec 31) are printed only when they carry an amount,
-                // so a normal year prints exactly like the manual report.
-                $hasActivity = fn ($label) =>
-                    (float) ($table_data['header_months_amount'][$label] ?? 0) != 0
-                    || (float) ($table_data['actual_monthly_collection'][$label] ?? 0) != 0
-                    || (float) ($table_data['collection_adjustments'][$label] ?? 0) != 0;
-
-                $preMonths  = array_values(array_filter($table_data['pre_january_month_label'] ?? [], $hasActivity));
-                $postMonths = array_values(array_diff($allMonths, $table_data['pre_january_month_label'] ?? []));
+                // Every month of the fiscal year is printed, including the early months
+                // (Oct 15 - Dec 31 of FY-1), even when they carry no amount.
+                $preMonths  = array_values($table_data['pre_january_month_label'] ?? []);
+                $postMonths = array_values(array_diff($allMonths, $preMonths));
                 $shownMonths = array_merge($preMonths, $postMonths);
 
                 $cnaYears    = collect($table_data['total_cna_share_collection_target'] ?? [])->except('total')->keys();
@@ -303,7 +301,7 @@
                     <tr>
                         <th rowspan="3" style="width: 3%;">No.</th>
                         <th rowspan="3" style="width: 16%;">Faculty Association Member</th>
-
+                       
                         @foreach ($preMonths as $label)
                             <th>{{ $monthName($label) }}</th>
                         @endforeach

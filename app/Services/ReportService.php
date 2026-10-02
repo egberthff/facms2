@@ -803,8 +803,7 @@ class ReportService
     
         $contributionPerMonth = $this->contributionService
             ->getContributionPerMonth($request, $campusId);
-    
-        /*
+            /*
          * -------------------------------------------------------------
          * SOURCE DATA
          * -------------------------------------------------------------
@@ -1836,7 +1835,7 @@ class ReportService
             ],
             'disbursement-summary', 'faculty-deduction-summary' => [
                 // ['label' => 'Campus', 'value' => $campusName],
-                ['label' => 'Date Range', 'value' => $dateRange],
+                // ['label' => 'Date Range', 'value' => $dateRange],
             ],
             'collection-summary' => [
                 // ['label' => 'Campus', 'value' => $campusName],
