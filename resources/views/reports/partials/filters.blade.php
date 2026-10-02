@@ -182,8 +182,8 @@
                             class="block w-full px-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand shadow-xs placeholder:text-body">
                             <option value="">--Select Year--</option>
 
-                            <!-- Pure Alpine way to loop from 2026 down to 1900 -->
-                            <template x-for="year in Array.from({length: new Date().getFullYear() - 2010 + 1}, (_, i) => new Date().getFullYear() - i)">
+                            <!-- Fiscal years (FY N = Oct 15, N-1 to Oct 14, N); from Oct 15 onward the next FY is already running -->
+                            <template x-for="year in (() => { const d = new Date(); const top = d.getFullYear() + ((d.getMonth() > 9 || (d.getMonth() === 9 && d.getDate() >= 15)) ? 1 : 0); return Array.from({length: top - 2010 + 1}, (_, i) => top - i); })()">
                                 <option :value="year" x-text="year"></option>
                             </template>
                         </select>

@@ -803,8 +803,7 @@ class ReportService
     
         $contributionPerMonth = $this->contributionService
             ->getContributionPerMonth($request, $campusId);
-    
-        /*
+            /*
          * -------------------------------------------------------------
          * SOURCE DATA
          * -------------------------------------------------------------
@@ -1049,11 +1048,24 @@ class ReportService
          * Order:
          *
          * Member
-         * Monthly contributions
+         * Oct - Dec of the previous year (early fiscal-year months)
          * CNA Share
          * Annual Due
+         * January onward
          * Total Contributed
          */
+        $preJanuaryKeys = $contributionPerMonth['pre_january_month_label'] ?? [];
+
+        $preJanuaryColumns = array_values(array_filter(
+            $monthColumns,
+            fn ($column) => in_array($column['key'], $preJanuaryKeys, true)
+        ));
+
+        $remainingMonthColumns = array_values(array_filter(
+            $monthColumns,
+            fn ($column) => !in_array($column['key'], $preJanuaryKeys, true)
+        ));
+
         $columns = array_merge(
             [
                 [
@@ -1062,9 +1074,10 @@ class ReportService
                     'type' => 'text',
                 ],
             ],
+            $preJanuaryColumns,
             $cnaShareColumns,
             $annualDueColumns,
-            $monthColumns,
+            $remainingMonthColumns,
             [
                 [
                     'key' => 'total_contributed',
@@ -1169,10 +1182,11 @@ class ReportService
              * Existing frontend code continues to receive the complete
              * original contributionPerMonth structure.
              */
-            'campus' => $campus?->campus_name ?? '',
+            // getCampus() returns a Collection when no campus is selected.
+            'campus' => $campus instanceof \App\Models\Campus ? $campus->campus_name : '',
     
-            'period' => $period,
-    
+            'period' => $period ?: ($contributionPerMonth['period'] ?? ''),
+
             'table_data' => $contributionPerMonth,
     
             'signatories' => [
@@ -1821,7 +1835,7 @@ class ReportService
             ],
             'disbursement-summary', 'faculty-deduction-summary' => [
                 // ['label' => 'Campus', 'value' => $campusName],
-                ['label' => 'Date Range', 'value' => $dateRange],
+                // ['label' => 'Date Range', 'value' => $dateRange],
             ],
             'collection-summary' => [
                 // ['label' => 'Campus', 'value' => $campusName],

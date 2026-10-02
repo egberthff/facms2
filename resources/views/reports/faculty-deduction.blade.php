@@ -75,6 +75,21 @@
         .header h1 { font-size: 11pt; margin: 0; font-weight: bold; color: #111; }
         .header h2 { font-size: 10pt; margin: 2px 0; font-weight: bold; }
         .header p { font-size: 9pt; margin: 2px 0; font-weight: normal; text-transform: none; font-style: italic; }
+        .header p.period { font-weight: bold; font-style: normal; }
+        .header h1 { font-weight: normal; }
+
+        td.no-border { border: none !important; }
+        .text-left { text-align: left !important; }
+        .adjustment-note {
+            background-color: #f4cccc;
+            border: 1px solid #000;
+            font-size: 6pt;
+            font-weight: bold;
+            padding: 2px;
+            margin-top: 2px;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
 
         /* --- Comprehensive Master Ledger Matrix Grid --- */
         table {
@@ -174,6 +189,9 @@
                 size: letter landscape;
                 margin: 0.4in;
             }
+            /* Every fiscal-year month is always printed, so tighten the grid to fit one page width. */
+            table { font-size: 6.5pt; }
+            th, td { padding: 2px 1px; }
             tr { page-break-inside: avoid; }
             thead { display: table-header-group; }
             
@@ -201,217 +219,245 @@
 
         <!-- START OF MAIN LEDGER PRINT AREA -->
         <div class="print">
-            <!-- Center Headings -->
+            <!-- Center Headings (same three lines as the manual report) -->
             <div class="header">
-                <h1> {{ $campus ?? "" }} </h1>
+                <h1>{{ str_replace(' - ', ' ', $campus ?? '') }}</h1>
                 <h2>Faculty Association - Faculty Deductions</h2>
-                <p> {{ $period ?? "" }} </p>
+                <p class="period">{{ $period ?? '' }}</p>
             </div>
 
             <!-- Master Data Matrix Grid -->
+            @php
+                /*
+                 * Column order follows the fiscal year:
+                 * Oct-Dec FY-1 Medical Assistance | January CNA Share | January Annual Dues
+                 * | January-October Medical Assistance | November Unpaid Deductions | Total
+                 */
+                $allMonths     = $table_data['header_month_label'] ?? [];
+                $settlementKey = end($allMonths) ?: null;
+
+                // Every month of the fiscal year is printed, including the early months
+                // (Oct 15 - Dec 31 of FY-1), even when they carry no amount.
+                $preMonths  = array_values($table_data['pre_january_month_label'] ?? []);
+                $postMonths = array_values(array_diff($allMonths, $preMonths));
+                $shownMonths = array_merge($preMonths, $postMonths);
+
+                $cnaYears    = collect($table_data['total_cna_share_collection_target'] ?? [])->except('total')->keys();
+                $annualYears = collect($table_data['total_annual_due_collection_target'] ?? [])->except('total')->keys();
+                $columnCount = 3 + count($shownMonths) + $cnaYears->count() + $annualYears->count();
+
+                $hasAdjustments = (float) ($table_data['collection_adjustments']['total'] ?? 0) != 0
+                    || collect($table_data['collection_adjustment_details'] ?? [])->flatten(1)->isNotEmpty();
+
+                // Whole pesos print like the manual (12500); centavos are never rounded away.
+                $fmt = function ($value) {
+                    $value = round((float) $value, 2);
+                    return floor($value) == $value
+                        ? number_format($value, 0, '.', '')
+                        : number_format($value, 2, '.', '');
+                };
+
+                // "June" for months in the fiscal year's own year, "October 2025" for the early months.
+                $monthName = fn ($label) => in_array($label, $preMonths, true)
+                    ? ucwords($label)
+                    : ucfirst(strtok($label, ' '));
+
+                // Footer cells for one summary row, in the same order as the columns.
+                $footerCells = function (string $monthlyKey, string $cnaKey, string $annualKey) use ($table_data, $preMonths, $postMonths) {
+                    $cells = [];
+                    foreach ($preMonths as $label) {
+                        $cells[] = $table_data[$monthlyKey][$label] ?? 0;
+                    }
+                    foreach (collect($table_data[$cnaKey] ?? [])->except('total') as $data) {
+                        $cells[] = $data['total'] ?? 0;
+                    }
+                    foreach (collect($table_data[$annualKey] ?? [])->except('total') as $data) {
+                        $cells[] = $data['total'] ?? 0;
+                    }
+                    foreach ($postMonths as $label) {
+                        $cells[] = $table_data[$monthlyKey][$label] ?? 0;
+                    }
+                    return $cells;
+                };
+
+                $balanceCells = [];
+                foreach ($preMonths as $label) {
+                    $balanceCells[] = $table_data['balance_collectible'][$label] ?? 0;
+                }
+                foreach (collect($table_data['balance_collectible']['cna_share'] ?? [])->except('total') as $data) {
+                    $balanceCells[] = $data['total'] ?? 0;
+                }
+                foreach (collect($table_data['balance_collectible']['annual_due'] ?? [])->except('total') as $data) {
+                    $balanceCells[] = $data['total'] ?? 0;
+                }
+                foreach ($postMonths as $label) {
+                    $balanceCells[] = $table_data['balance_collectible'][$label] ?? 0;
+                }
+            @endphp
+
             <table>
                 <thead>
-                    <!-- Row 1: High Level Calendar Periods & System Categories -->
+                    <!-- Row 1: Month names -->
                     <tr>
-                        <th rowspan="3" style="width: 3%;">No</th>
-                        <th rowspan="3" style="width: 15%;">Faculty Association
-                            Member</th>
-                        <th colspan="{{ count($table_data['cna_share']) - 1 }}">CNA Share</th>
-                        <th colspan="{{ count($table_data['annual_due']) - 1 }}">Annual Due</th>
-                        @foreach ($table_data['header_month_label'] as $label )
-                            <th>{{ ucwords($label) }}</th>
+                        <th rowspan="3" style="width: 3%;">No.</th>
+                        <th rowspan="3" style="width: 16%;">Faculty Association Member</th>
+                       
+                        @foreach ($preMonths as $label)
+                            <th>{{ $monthName($label) }}</th>
                         @endforeach
-                         
-                        <th rowspan="2" style="width: 7%;">Total</th>
+
+                        @foreach ($cnaYears as $year)
+                            <th>January</th>
+                        @endforeach
+                        @foreach ($annualYears as $year)
+                            <th>January</th>
+                        @endforeach
+
+                        @foreach ($postMonths as $label)
+                            <th>{{ $monthName($label) }}</th>
+                        @endforeach
+
+                        <th style="width: 7%;">Total</th>
                     </tr>
-                    <!-- Row 2: Inner Local Purpose Metadata Subheadings -->
+
+                    <!-- Row 2: Deduction type -->
                     <tr>
-                        {{-- @var_dump($table_data['cna_share']) --}}
-                        {{-- @dd($table_data['annual_due']) --}}
-                        {{-- @var_dump($table_data['annual_due']) --}}
-                        @foreach (collect($table_data['cna_share'])->except('total')->keys() as $year)
-                            <th><span class="sub-header-title">{{ $year }}</span></th>
+                        @foreach ($preMonths as $label)
+                            <th><span class="sub-header-title">Medical Assistance</span></th>
                         @endforeach
 
-                        @foreach (collect($table_data['annual_due'])->except('total')->keys() as $year)
-                            <th><span class="sub-header-title">{{ $year }}</span></th>
+                        @foreach ($cnaYears as $year)
+                            <th><span class="sub-header-title">CNA Share</span></th>
+                        @endforeach
+                        @foreach ($annualYears as $year)
+                            <th><span class="sub-header-title">Annual Dues</span></th>
                         @endforeach
 
-                        @for ($i = 0; $i<count($table_data['header_month_label']); $i++)
-                        <th><span class="sub-header-title">Medical
-                            Assistance</span></th>
-                        @endfor
-                        {{-- <th><span class="sub-header-title">Unpaid
-                                Deductions</span></th> --}}
-                    </tr>
-                    <tr class="bg-yellow font-bold text-center">
-                        @foreach (collect($table_data['cna_share'])->except('total') as $amount)
-                            <td class="border p-1">{{ $amount }}</td>
+                        @foreach ($postMonths as $label)
+                            <th>
+                                <span class="sub-header-title">
+                                    {{ $label === $settlementKey ? 'Unpaid Deductions' : 'Medical Assistance' }}
+                                </span>
+                            </th>
                         @endforeach
 
-                        @foreach (collect($table_data['annual_due'])->except('total') as $amount)
-                            <td class="border p-1">{{ $amount }}</td>
-                        @endforeach
-
-                        {{-- 1. Grab both the $month key and the $amount value --}}
-                        @foreach (collect($table_data['header_months_amount'])->except('total') as $amount)
-                                <td class="border p-1">{{ $amount }}</td>
-                        @endforeach
-
-                        {{-- 3. Correctly output the grand total at the end --}}
-                        <td class="border p-1">{{ $table_data['header_months_amount']['total'] ?? 0.00 }}</td>
+                        <th><span class="sub-header-title">Deductions per Member</span></th>
                     </tr>
 
+                    <!-- Row 3: Scheduled amount per member (yellow band) -->
+                    <tr class="font-bold text-center">
+                        @foreach ($preMonths as $label)
+                            <td class="bg-yellow">{{ $fmt($table_data['header_months_amount'][$label] ?? 0) }}</td>
+                        @endforeach
+
+                        @foreach ($cnaYears as $year)
+                            <td class="bg-yellow">{{ $fmt($table_data['cna_share']['amount'] ?? 0) }}</td>
+                        @endforeach
+                        @foreach ($annualYears as $year)
+                            <td class="bg-yellow">{{ $fmt($table_data['annual_due']['amount'] ?? 0) }}</td>
+                        @endforeach
+
+                        @foreach ($postMonths as $label)
+                            <td class="bg-yellow">{{ $label === $settlementKey ? '' : $fmt($table_data['header_months_amount'][$label] ?? 0) }}</td>
+                        @endforeach
+
+                        <td>{{ $fmt($table_data['header_months_amount']['total'] ?? 0) }}</td>
+                    </tr>
                 </thead>
+
                 <tbody>
-                    <!-- Entry row structural layout example based on first ledger item -->
                     @forelse ($table_data['members'] as $index => $member)
                         <tr>
                             <td class="text-center">{{ $index + 1 }}</td>
-                            <td>{{ ucwords($member['name']) }}</td>
+                            <td style="text-align: left;">{{ ucwords($member['name']) }}</td>
 
-                            @foreach ($member['cna_share'] as $cna_share)
-                                <td class="text-right font-bold">{{ $cna_share }}</td>
+                            @foreach ($preMonths as $label)
+                                <td class="text-right">{{ $fmt($member['months'][$label] ?? 0) }}</td>
                             @endforeach
 
-                            @foreach ($member['annual_due'] as $due)
-                                <td class="text-right font-bold">{{ $due }}</td>
+                            @foreach ($cnaYears as $year)
+                                <td class="text-right">{{ $fmt($member['cna_share'][$year] ?? 0) }}</td>
+                            @endforeach
+                            @foreach ($annualYears as $year)
+                                <td class="text-right">{{ $fmt($member['annual_due'][$year] ?? 0) }}</td>
                             @endforeach
 
-                            {{-- Loop safely directly through the 12 clean months array --}}
-                            @foreach ($member['months'] as $month => $amount)
-                                <td class="text-right">{{ $amount }}</td>
+                            @foreach ($postMonths as $label)
+                                @php $amount = $member['months'][$label] ?? 0; @endphp
+                                <td class="text-right {{ $label === $settlementKey && $amount > 0 ? 'bg-orange' : '' }}">{{ $fmt($amount) }}</td>
                             @endforeach
 
-                            <td class="text-right font-bold">{{ $member['total_contributed'] }}</td>
+                            <td class="text-right">{{ $fmt($member['total_contributed']) }}</td>
                         </tr>
                     @empty
                         <tr>
-                            {{-- Fixed the closing tag here --}}
-                            <td colspan="16" class="text-center text-gray-500 py-4">No records found!</td>
+                            <td colspan="{{ $columnCount }}" class="text-center">No records found!</td>
                         </tr>
                     @endforelse
 
-                    <!-- Calculation Matrix Summary Footers -->
-                    <!-- 1. TOTAL MONTHLY COLLECTION TARGET -->
-                    <tr class="font-bold" style="background-color: #fafafa;">
-                        <td colspan="2" class="text-right">TOTAL MONTHLY COLLECTION TARGET</td>
-                        @foreach (collect($table_data['total_cna_share_collection_target'])->except('total') as $amount)
-                            <td class="text-right">{{ $amount['total'] ?? 0 }}</td>
-                        @endforeach
-                        @foreach (collect($table_data['total_annual_due_collection_target'])->except('total') as $amount)
-                            <td class="text-right">{{ $amount['total'] ?? 0 }}</td>
-                        @endforeach
-
-                        @foreach ($table_data['total_monthly_collection_target'] as $month => $amount)
-                            @if ($month !== 'total')
-                                <td class="text-right">{{ $amount }}</td>
-                            @endif
-                        @endforeach
-
-                        <td class="text-right">{{ $table_data['total_monthly_collection_target']['total'] ?? 0.00 }}</td>
-                    </tr>
-
-                    <!-- 2. ACTUAL MONTHLY COLLECTION -->
+                    {{--
+                        Footer rows cross-foot: each row's Total equals the sum of its cells, and
+                        BALANCE COLLECTIBLE = TOTAL MONTHLY COLLECTION - ACTUAL MONTHLY COLLECTION (- ADJUSTMENTS).
+                        November has no new target; its actual collection settles earlier balances,
+                        so it shows as a negative November balance.
+                    --}}
                     <tr class="font-bold">
-                        <td colspan="2" class="text-right">ACTUAL MONTHLY COLLECTION</td>
-                        @foreach (collect($table_data['actual_cna_share_collection'])->except('total') as $amount)
-                            <td class="text-right">{{ $amount['total'] ?? 0 }}</td>
+                        <td colspan="2" class="text-left">TOTAL MONTHLY COLLECTION</td>
+                        @foreach ($footerCells('total_monthly_collection_target', 'total_cna_share_collection_target', 'total_annual_due_collection_target') as $amount)
+                            <td class="text-right">{{ $fmt($amount) }}</td>
                         @endforeach
-                        @foreach (collect($table_data['actual_annual_due_collection'])->except('total') as $amount)
-                            <td class="text-right">{{ $amount['total'] ?? 0 }}</td>
-                        @endforeach
-                        @foreach ($table_data['actual_monthly_collection'] as $month => $amount)
-                            @if ($month !== 'total')
-                                <td class="text-right">{{ $amount }}</td>
-                            @endif
-                        @endforeach
-
-                        <td class="text-right">{{ $table_data['actual_monthly_collection']['total'] ?? 0.00 }}</td>
+                        <td class="text-right">{{ $fmt($table_data['total_monthly_collection_target']['total'] ?? 0) }}</td>
                     </tr>
 
-                    <!-- 3. BALANCE COLLECTIBLE -->
                     <tr class="font-bold">
-                        <td colspan="2" class="text-right">BALANCE COLLECTIBLE</td>
-                    
-                        {{-- 1. CNA Share Loop --}}
-                        @foreach (collect($table_data['balance_collectible']['cna_share'] ?? [])->except(['total']) as $year => $data)
-                            <td class="text-right">{{ $data['total'] ?? 0 }}</td>
+                        <td colspan="2" class="text-left">ACTUAL MONTHLY COLLECTION</td>
+                        @foreach ($footerCells('actual_monthly_collection', 'actual_cna_share_collection', 'actual_annual_due_collection') as $amount)
+                            <td class="text-right">{{ $fmt($amount) }}</td>
                         @endforeach
-                    
-                        {{-- 2. Annual Due Loop (Fixed: Excluded 'total' key) --}}
-                        @foreach (collect($table_data['balance_collectible']['annual_due'] ?? [])->except(['total']) as $year => $data)
-                            <td class="text-right">{{ $data['total'] ?? 0 }}</td>
-                        @endforeach
-                    
-                        {{-- 3. Monthly Breakdown Loop --}}
-                        @foreach (collect($table_data['balance_collectible'] ?? [])->except(['total', 'cna_share', 'annual_due']) as $monthName => $amount)
-                            @php
-                                $displayAmount = is_array($amount) ? ($amount['total'] ?? 0) : ($amount ?? 0);
-                            @endphp
-                            <td class="border p-1 text-right">{{ $displayAmount }}</td>
-                        @endforeach
-                    
-                        {{-- 4. Final Total Column --}}
-                        <td class="text-right">{{ $table_data['balance_collectible']['total'] ?? 0 }}</td>
+                        <td class="text-right">{{ $fmt($table_data['actual_monthly_collection']['total'] ?? 0) }}</td>
                     </tr>
 
-                    <!-- 4. COLLECTION ADJUSTMENT -->
+                    @if ($hasAdjustments)
+                        <tr class="font-bold">
+                            <td colspan="2" class="text-left">COLLECTION ADJUSTMENTS</td>
+                            @foreach ($preMonths as $label)
+                                <td class="text-right">{{ $fmt($table_data['collection_adjustments'][$label] ?? 0) }}</td>
+                            @endforeach
+                            @foreach ($cnaYears as $year)
+                                <td class="text-right">0</td>
+                            @endforeach
+                            @foreach ($annualYears as $year)
+                                <td class="text-right">0</td>
+                            @endforeach
+                            @foreach ($postMonths as $label)
+                                <td class="text-right">{{ $fmt($table_data['collection_adjustments'][$label] ?? 0) }}</td>
+                            @endforeach
+                            <td class="text-right">{{ $fmt($table_data['collection_adjustments']['total'] ?? 0) }}</td>
+                        </tr>
+                    @endif
+
                     <tr class="font-bold">
-                        <td colspan="2" class="text-right" style="border: none !important;">
-                            {{-- COLLECTION ADJUSTMENT --}}
-                        </td>
-                        @php
-                           $cnaShare = ($table_data['collection_adjustment_details']['cna_share'] ?? 0) === 0 ? '' : $table_data['collection_adjustment_details']['cna_share'];
-                           $annualDue = ($table_data['collection_adjustment_details']['annual_due'] ?? 0) === 0 ? '' : $table_data['collection_adjustment_details']['annual_due'];
-                        @endphp
-                    
-                        <td 
-                            colspan="{{ count($table_data['cna_share']) - 1 }}"
-                            class="text-right" style="border: none !important;">{{ $cnaShare }}</td>
-                        
-                        <td 
-                            colspan="{{ count($table_data['annual_due']) - 1 }}"
-                            class="text-right" style="border: none !important;">{{ $annualDue }}</td>
-                         
-                    
-                        @foreach ($table_data['header_month_label'] as $month)
-                    
-                            @php
-                                $adjustments =
-                                    $table_data['collection_adjustment_details'][$month] ?? [];
-                                $cnaShare  =  $table_data['collection_adjustment_details']['cna_share'] ?? 0;
-                            @endphp
-                    
-                            <!-- Merged the custom background color logic with the border reset -->
-                            <td class="text-center"
-                                style="border: none !important; {{ count($adjustments) ? 'background-color: #f4cccc;' : '' }}">
-                                @foreach ($adjustments as $adjustment)
-                    
-                                    <div style="font-size: 10px;">
-                                        {{ ucwords(str_replace('_', ' ', $adjustment['type'])) }}
-                                    </div>
-                    
-                                    <div>
-                                        <strong>
-                                            {{ number_format($adjustment['amount'], 2) }}
-                                        </strong>
-                                    </div>
-                    
-                                @endforeach
-                    
-                            </td>
-                    
+                        <td colspan="2" class="text-left">BALANCE COLLECTIBLE:</td>
+                        @foreach ($balanceCells as $amount)
+                            <td class="text-right">{{ $fmt($amount) }}</td>
                         @endforeach
-                    
-                        {{-- <td class="text-right" style="border: none !important;">
-                            {{ number_format(
-                                $table_data['collection_adjustments']['total'],
-                                2
-                            ) }}
-                        </td> --}}
+                        <td class="text-right">{{ $fmt($table_data['balance_collectible']['total'] ?? 0) }}</td>
                     </tr>
-                    
+
+                    @if ($hasAdjustments)
+                        <!-- Adjustment notes under their month (e.g. "Overdeduction P100") -->
+                        <tr>
+                            <td colspan="2" class="no-border"></td>
+                            @foreach ($preMonths as $label)
+                                @include('reports.partials.faculty-deduction-adjustment-note', ['adjustments' => $table_data['collection_adjustment_details'][$label] ?? []])
+                            @endforeach
+                            <td colspan="{{ $cnaYears->count() + $annualYears->count() }}" class="no-border"></td>
+                            @foreach ($postMonths as $label)
+                                @include('reports.partials.faculty-deduction-adjustment-note', ['adjustments' => $table_data['collection_adjustment_details'][$label] ?? []])
+                            @endforeach
+                            <td class="no-border"></td>
+                        </tr>
+                    @endif
                 </tbody>
             </table>
 
