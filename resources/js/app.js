@@ -143,7 +143,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // 2. SweetAlert2 Confirmation Dialog
         const confirmation = await Swal.fire({
             title: 'Save changes?',
-            text: 'Are you sure you want to update this specific setting value?',
+            text: form.dataset.confirmText || 'Are you sure you want to update this specific setting value?',
             icon: 'question',
             showCancelButton: true,
             confirmButtonColor: '#2563eb',

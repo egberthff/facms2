@@ -128,6 +128,10 @@
                 </section>
             @endif
         @endif
+
+        @if($isPresident)
+            @include('settings.partials.claim-types-card', ['claimTypes' => $claimTypes])
+        @endif
         </div>
     </div>
 </x-app-layout>
