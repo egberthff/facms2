@@ -5,7 +5,7 @@
     <div class="bg-white rounded-2xl border border-blue-700 shadow-sm p-6">
         <div class="mb-6">
             <h2 class="text-xl font-bold">
-                Payment Information
+                Disbursement Information
             </h2>
             <p class="text-sm text-gray-500 mt-1">
                 Select how you would like to receive your approved claim.
@@ -173,10 +173,22 @@
                         Account Number
                         <span class="text-red-500">*</span>
                     </label>
-                    <input
+                   <input
+                        type="text"
+                        inputmode="numeric"
                         name="accountNumber"
                         x-model="accountNumber"
-                        class="w-full rounded-xl border border-gray-300 px-4 py-3">
+                        minlength="8"
+                        maxlength="20"
+                        x-on:input="
+                            $event.target.value = $event.target.value.replace(/[^0-9]/g, '');
+                            accountNumber = $event.target.value;
+                        "
+                        autocomplete="off"
+                        class="w-full rounded-xl border border-gray-300 px-4 py-3"
+                        placeholder="Enter account number"
+                    >
+
                 </div>
                 <div>
                     <label class="block text-sm font-medium mb-2">
@@ -184,17 +196,47 @@
                         <span class="text-red-500">*</span>
                     </label>
                     <input
+                        type="text"
                         name="accountName"
                         x-model="accountName"
-                        class="w-full rounded-xl border border-gray-300 px-4 py-3">
+                         x-on:input="
+                            let value = $event.target.value;                    
+
+                            // Allow letters and spaces only
+                            value = value.replace(/[^a-zA-Z\s.]/g, '');                  
+
+                            // Prevent multiple consecutive spaces
+                            value = value.replace(/\s+/g, ' ');                 
+
+                            // Convert to Title Case
+                            value = value
+                                .toLowerCase()
+                                .replace(/\b[a-z]/g, char => char.toUpperCase());                   
+
+                            $event.target.value = value;
+                            accountName = value;
+                        "    
+                        class="w-full rounded-xl border border-gray-300 px-4 py-3"
+                        placeholder="Enter account name"
+                    >
                 </div>
                 <div>
                     <label class="block text-sm font-medium mb-2">
-                        Branch
+                        Branch (Optional)
                     </label>
                     <input
                         name="branch"
                         x-model="branch"
+                        x-on:input="
+                            let value = $event.target.value;
+
+                            value = value
+                                .toLowerCase()
+                                .replace(/\b\w/g, char => char.toUpperCase());
+
+                            $event.target.value = value;
+                            branch = value;
+                        "
                         class="w-full rounded-xl border border-gray-300 px-4 py-3">
                 </div>
             </div>
@@ -215,9 +257,35 @@
                     <input
                         name="gcashNumber"
                         type="text"
+                        inputmode="numeric"
                         x-model="gcashNumber"
+                        maxlength="11"
+                        minlength="11"
+                        pattern="09[0-9]{9}"
                         placeholder="09XXXXXXXXX"
-                        class="w-full rounded-xl border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-orange-300">
+
+                        x-on:input="
+                            let value = $event.target.value.replace(/[^0-9]/g, '');
+
+                            // First digit must be 0
+                            if (value.length >= 1 && value[0] !== '0') {
+                                value = '';
+                            }
+
+                            // Second digit must be 9
+                            if (value.length >= 2 && value[1] !== '9') {
+                                value = '0';
+                            }
+
+                            // Maximum 11 digits
+                            value = value.slice(0, 11);
+
+                            $event.target.value = value;
+                            gcashNumber = value;
+                        "
+
+                        class="w-full rounded-xl border border-gray-300 px-4 py-3"
+                    >
                 </div>
                 <div>
                     <label class="block text-sm font-medium mb-2">
@@ -227,9 +295,29 @@
                     <input
                         name="gcashName"
                         type="text"
-                        x-model="gcashName"
+                        x-model="gcashName"                 
+
+                        x-on:input="
+                            let value = $event.target.value;                    
+
+                            // Allow letters and spaces only
+                            value = value.replace(/[^a-zA-Z\s.]/g, '');                  
+
+                            // Prevent multiple consecutive spaces
+                            value = value.replace(/\s+/g, ' ');                 
+
+                            // Convert to Title Case
+                            value = value
+                                .toLowerCase()
+                                .replace(/\b[a-z]/g, char => char.toUpperCase());                   
+
+                            $event.target.value = value;
+                            gcashName = value;
+                        "                   
+
                         placeholder="Juan Dela Cruz"
-                        class="w-full rounded-xl border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-orange-300">
+                        class="w-full rounded-xl border border-gray-300 px-4 py-3"
+                    >
                 </div>
             </div>
         </div>
@@ -260,7 +348,7 @@
                     </div>
                     <div>
                         <h3 class="font-semibold text-yellow-800">
-                            Check Payment Selected
+                            Check Disbursement Selected
                         </h3>
                         <p class="mt-2 text-sm text-yellow-700 leading-relaxed">
                             Your approved claim will be released through
@@ -284,13 +372,13 @@
             type="button"
             @click="previousStep()"
             class="px-8 py-3 rounded-xl bg-gray-300 hover:bg-gray-400 font-medium transition">
-            ← Back
+                Back
         </button>
         <button
             type="button"
             @click="nextStep()"
             class="px-8 py-3 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-semibold transition">
-            Continue →
+            Continue
         </button>
     </div>
 </section>

@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Member;
 use App\Models\User;
 use App\Models\Campus;
+use App\Models\MembershipFee;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -12,12 +13,19 @@ use Illuminate\Support\Str;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 use App\Enums\MembershipStatus;
+use App\Enums\MembershipFeeStatus;
+use App\Services\TreasuryLedgerService;
+use Illuminate\Validation\Rule;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator; 
 use Exception;
 
 class MemberService
-
 {
+    private TreasuryLedgerService $ledgerService;
+
+    public function __construct(TreasuryLedgerService $ledgerService){
+        $this->ledgerService = $ledgerService;
+    }
     public function getMembers(Request $request, ?string $selectedCampusId = null)
     {
         $search = $request->search;
@@ -239,5 +247,86 @@ class MemberService
 
         return User::role('Federated Auditor')->with('member')->first();
     } 
+
+    public function membershipFee(Request $request)
+    {
+        $data = $request->all();
+         
+        $validated = $request->validate([
+            'member_id' => ['required', 'uuid', 'exists:members,id'],
+            'amount' => ['required', 'regex:/^\d{1,3}(,\d{3})*(\.\d+)?$/', 'min:0'], 
+            'status' => ['required', Rule::enum(MembershipFeeStatus::class)],
+            'payment_method_id' => [Rule::requiredIf($data['status'] === MembershipFeeStatus::Paid->value),'nullable','uuid','exists:payment_methods,id'],
+            'paid_at' => [Rule::requiredIf($data['status'] === MembershipFeeStatus::Paid->value), 'nullable', 'date'],
+            'reference_number' => [Rule::requiredIf($data['status'] === MembershipFeeStatus::Paid->value),'nullable','string','max:255','unique:membership_fees,reference_number'],
+            'remarks' => ['nullable','string','max:1000'],
+        ]);
+
+       
+        try {
+            $membershipFee = DB::transaction(function () use ($validated) {
+                $member = Member::query()
+                    ->findOrFail($validated['member_id']);
+                    $reference_code = 'BMRF-' . now()->format('Ymd') . '-' . strtoupper(Str::random(6));
+                $membershipFee = MembershipFee::create([
+                    'reference_code' => $reference_code,
+                    'member_id' => $member->id,
+                    'amount' => str_replace(',','', $validated['amount']),
+                    'status' => $validated['status'],
+                    'paid_at' => $validated['paid_at'] ?? null,
+                    'reference_number' => $validated['reference_number'] ?? null,
+                    'payment_method_id' => $validated['payment_method_id'] ?? null,
+                    'remarks' => $validated['remarks'] ?? null,
+                    'created_by' => Auth::id(),
+                ]);
+
+                if ($membershipFee->status === MembershipFeeStatus::Paid) {
+
+                    $this->ledgerEntryService->recordTransaction([
+                        'campus_id' => $member->campus_id,
+
+                        'sourceable_type' => MembershipFee::class,
+                        'sourceable_id' => $membershipFee->id,
+
+                        'reference_number' => $membershipFee->reference_number,
+
+                        'description' => sprintf(
+                            'Membership registration fee - %s %s',
+                            $member->first_name,
+                            $member->last_name
+                        ),
+
+                        'type' => 'Credit',
+
+                        'amount' => (float) $membershipFee->amount,
+                    ]);
+                }
+
+                return $membershipFee;
+            });
+
+            return [
+                'success' => true,
+                'message' => 'Membership fee successfully recorded.',
+                'data' => $membershipFee->fresh(),
+            ];
+
+        } catch (Throwable $e) {
+
+            Log::error('Membership fee transaction failed.', [
+                'member_id' => $validated['member_id'] ?? null,
+                'reference_number' => $validated['reference_number'] ?? null,
+                'error' => $e->getMessage(),
+                'exception' => $e,
+            ]);
+
+            return [
+                'success' => false,
+                'message' => 'Unable to record the membership fee.',
+                'data' => null,
+            ];
+        }
+    
+    }
 
 }

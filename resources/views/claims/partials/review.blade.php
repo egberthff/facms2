@@ -48,10 +48,7 @@
 
                             </label>
 
-                            <p
-                                class="font-semibold mt-1"
-                                x-text="claimType || '-'">
-                            </p>
+                        <p class="font-semibold mt-1" x-text="claimTypeText || '-'"></p>
 
                         </div>
 
@@ -225,7 +222,7 @@
 
                         <h3 class="font-semibold">
 
-                            Payment Information
+                            Disbursement Information
 
                         </h3>
 
@@ -238,7 +235,7 @@
                             <label
                                 class="text-sm text-gray-500">
 
-                                Payment Method
+                                Disbursement Method
 
                             </label>
 
@@ -378,7 +375,7 @@
 
                                 <h4 class="font-semibold text-yellow-700">
 
-                                    Check Payment
+                                    Check Disbursement
 
                                 </h4>
 

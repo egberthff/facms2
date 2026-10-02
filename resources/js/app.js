@@ -143,7 +143,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // 2. SweetAlert2 Confirmation Dialog
         const confirmation = await Swal.fire({
             title: 'Save changes?',
-            text: 'Are you sure you want to update this specific setting value?',
+            text: form.dataset.confirmText || 'Are you sure you want to update this specific setting value?',
             icon: 'question',
             showCancelButton: true,
             confirmButtonColor: '#2563eb',
@@ -344,64 +344,280 @@ window.updateClaimStatus = function(claimId, status, claimData = {}) {
                     });
                 }
             });
-         }
+         };
 
-window.markContributionAsPaid = function(id, tag) {
-    if (!id) return;
-
-    let postUrl = "";
-    switch (tag) {
-        case 'claims' : {
-            postUrl = `/contributions/details/${id}/mark-paid`;
-            break;
-        }
-        case 'annual' : {
-            postUrl = `/contributions/annual-contributions/${id}/mark-paid`;
-            break;
-        }
-        case 'cna share' : {
-            postUrl = `/contributions/cna-share/${id}/mark-paid`;
-            console.log(postUrl);
-            break;
-        }
+         window.markContributionAsPaid = async function(id, tag, paymentMethods = []) {
+            if (!id) return;
+        console.log(paymentMethods);
+            let postUrl = "";
+            switch (tag) {
+                case 'claims':
+                    postUrl = `/contributions/details/${id}/mark-paid`;
+                    break;
         
-    }
-
-    Swal.fire({
-        title: 'Mark as paid?',
-        text: 'This will mark the selected contribution detail to Paid.',
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#2563eb',
-        cancelButtonColor: '#d33',
-        confirmButtonText: 'Yes, mark as paid'
-    }).then((result) => {
-        if (!result.isConfirmed) return;
-        fetch(postUrl, {
-            method: 'POST',
-            headers: {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                case 'annual':
+                    postUrl = `/contributions/annual-contributions/${id}/mark-paid`;
+                    break;
+        
+                case 'cna share':
+                    postUrl = `/contributions/cna-share/${id}/mark-paid`;
+                    break;
+        
+                case 'membership fee':
+                    postUrl = `/contributions/membership-fee/${id}/mark-paid`;
+                    break;
+        
+                default:
+                    Swal.fire(
+                        'Error',
+                        'Invalid contribution type.',
+                        'error'
+                    );
+                    return;
             }
-        })
-        .then((response) => response.json().then((payload) => ({ ok: response.ok, payload })))
-        .then(({ ok, payload }) => {
-            if (!ok || !payload.success) {
-                throw new Error(payload.message || 'Unable to update contribution status.');
+        
+            let requestData = {};
+            if (tag === 'membership fee') {
+                const paymentMethodOptions = paymentMethods
+                    .map(method => `
+                        <option value="${method.id}">
+                            ${method.name}
+                        </option>
+                    `)
+                    .join('');
+        
+                const result = await Swal.fire({
+                    title: 'Mark Membership Fee as Paid',
+        
+                    html: `
+                        <div class="text-left">
+        
+                            <div class="mb-4">
+                                <label
+                                    for="swal-payment-method"
+                                    class="block text-sm font-medium text-gray-700 mb-1"
+                                >
+                                    Payment Method
+                                </label>
+        
+                                <select
+                                    id="swal-payment-method"
+                                    class="swal2-input"
+                                    style="width: 100%; margin: 0;"
+                                >
+                                    <option value="">
+                                        -- Select Payment Method --
+                                    </option>
+        
+                                    ${paymentMethodOptions}
+                                </select>
+                            </div>
+        
+                            <div>
+                                <label
+                                    for="swal-reference-number"
+                                    class="block text-sm font-medium text-gray-700 mb-1"
+                                >
+                                    Reference Number
+                                </label>
+        
+                                <input
+                                    id="swal-reference-number"
+                                    type="text"
+                                    class="swal2-input"
+                                    placeholder="Enter reference number"
+                                    style="width: 100%; margin: 0;"
+                                >
+                            </div>
+        
+                        </div>
+                    `,
+        
+                    icon: 'warning',
+        
+                    showCancelButton: true,
+        
+                    confirmButtonColor: '#2563eb',
+                    cancelButtonColor: '#d33',
+        
+                    confirmButtonText: 'Yes, mark as paid',
+        
+                    focusConfirm: false,
+        
+                    preConfirm: () => {
+                        const paymentMethodId = document
+                            .getElementById('swal-payment-method')
+                            .value;
+        
+                        const referenceNumber = document
+                            .getElementById('swal-reference-number')
+                            .value
+                            .trim();
+        
+                        if (!paymentMethodId) {
+                            Swal.showValidationMessage(
+                                'Please select a payment method.'
+                            );
+        
+                            return false;
+                        }
+        
+                        if (!referenceNumber) {
+                            Swal.showValidationMessage(
+                                'Please enter a reference number.'
+                            );
+        
+                            return false;
+                        }
+        
+                        return {
+                            payment_method_id: paymentMethodId,
+                            reference_number: referenceNumber
+                        };
+                    }
+                });
+        
+                if (!result.isConfirmed) {
+                    return;
+                }
+        
+                requestData = result.value;
+        
+            } else {
+        
+                /*
+                 * ---------------------------------------------------------
+                 * Other Contribution Types
+                 * ---------------------------------------------------------
+                 */
+                const result = await Swal.fire({
+                    title: 'Mark as paid?',
+                    text: 'This will mark the selected contribution detail to Paid.',
+                    icon: 'warning',
+        
+                    showCancelButton: true,
+        
+                    confirmButtonColor: '#2563eb',
+                    cancelButtonColor: '#d33',
+        
+                    confirmButtonText: 'Yes, mark as paid'
+                });
+        
+                if (!result.isConfirmed) {
+                    return;
+                }
             }
+        
+            /*
+             * ---------------------------------------------------------
+             * Submit Request
+             * ---------------------------------------------------------
+             */
+            try {
+        
+                const response = await fetch(postUrl, {
+                    method: 'POST',
+        
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+        
+                        'X-CSRF-TOKEN': document
+                            .querySelector('meta[name="csrf-token"]')
+                            .getAttribute('content')
+                    },
+        
+                    body: JSON.stringify(requestData)
+                });
+        
+                const payload = await response.json();
+        
+                if (!response.ok || !payload.success) {
+                    throw new Error(
+                        payload.message ||
+                        'Unable to update contribution status.'
+                    );
+                }
+        
+                await Swal.fire({
+                    title: 'Success',
+                    text: payload.message || 'Contribution marked as paid.',
+                    icon: 'success'
+                });
+        
+                window.location.reload();
+        
+            } catch (error) {
+        
+                Swal.fire(
+                    'Error',
+                    error.message ||
+                        'Unable to update contribution status.',
+                    'error'
+                );
+            }
+        };
 
-            Swal.fire({
-                title: 'Success',
-                text: payload.message || 'Contribution marked as paid.',
-                icon: 'success'
-            }).then(() => window.location.reload());
-        })
-        .catch((error) => {
-            Swal.fire('Error', error.message || 'Unable to update contribution status.', 'error');
-        });
-    });
-};
+
+// window.markContributionAsPaid = function(id, tag) {
+//     if (!id) return;
+
+//     let postUrl = "";
+//     switch (tag) {
+//         case 'claims' : {
+//             postUrl = `/contributions/details/${id}/mark-paid`;
+//             break;
+//         }
+//         case 'annual' : {
+//             postUrl = `/contributions/annual-contributions/${id}/mark-paid`;
+//             break;
+//         }
+//         case 'cna share' : {
+//             postUrl = `/contributions/cna-share/${id}/mark-paid`;
+//             break;
+//         }
+//         case 'membership fee' : {
+//             postUrl = `/contributions/membership-fee/${id}/mark-paid`;
+//             break;
+//         } 
+        
+//     }
+
+//     Swal.fire({
+//         title: 'Mark as paid?',
+//         text: 'This will mark the selected contribution detail to Paid.',
+//         icon: 'warning',
+//         showCancelButton: true,
+//         confirmButtonColor: '#2563eb',
+//         cancelButtonColor: '#d33',
+//         confirmButtonText: 'Yes, mark as paid'
+//     }).then((result) => {
+//         if (!result.isConfirmed) return;
+//         fetch(postUrl, {
+//             method: 'POST',
+//             headers: {
+//                 'Accept': 'application/json',
+//                 'Content-Type': 'application/json',
+//                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+//             }
+//         })
+//         .then((response) => response.json().then((payload) => ({ ok: response.ok, payload })))
+//         .then(({ ok, payload }) => {
+//             if (!ok || !payload.success) {
+//                 throw new Error(payload.message || 'Unable to update contribution status.');
+//             }
+
+//             Swal.fire({
+//                 title: 'Success',
+//                 text: payload.message || 'Contribution marked as paid.',
+//                 icon: 'success'
+//             }).then(() => window.location.reload());
+//         })
+//         .catch((error) => {
+//             Swal.fire('Error', error.message || 'Unable to update contribution status.', 'error');
+//         });
+//     });
+// };
 
  window.sendStatusRequest = function(claimId, status, extraData = {}) {
             const normalizedStatus = String(status || '').trim();
@@ -987,10 +1203,119 @@ window.saveCycleConfig = function (event, formElement) {
                     confirmButtonColor: '#dc2626'
                 });
             });
-
-
         });
+};
+
+window.submitMembershipFee = async function submitMembershipFee(event) {
+    event.preventDefault();
+
+    if (this.submittingMembershipFee) {
+        return;
+    }
+
     
+
+    // if (!this.selectedMember) {
+    if ($('[name="member_id"]').value == '') {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Selection Required',
+            text: 'Please select a member first.'
+        });
+        return;
+    }
+
+    // 1. Show the Confirmation Popup
+    const confirmation = await Swal.fire({
+        title: 'Are you sure?',
+        text: "You are about to record this membership fee.",
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Yes, submit it!',
+        cancelButtonText: 'Cancel'
+    });
+
+    // 2. If the user cancels, stop execution immediately
+    if (!confirmation.isConfirmed) {
+        return;
+    }
+
+    const form = event.target;
+    const formData = new FormData(form);
+    this.submittingMembershipFee = true;
+
+    try {
+        const response = await fetch(form.action, {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            body: formData,
+        });
+
+        const data = await response.json();
+
+        /*
+         * Laravel validation errors (422)
+         */
+        if (response.status === 422) {
+            const errors = data.errors ?? {};
+            const messages = Object.values(errors)
+                .flat()
+                .join('\n');
+            
+            Swal.fire({
+                icon: 'error',
+                title: 'Validation Error',
+                text: messages || 'Please check the information provided.'
+            });
+            return;
+        }
+
+        /*
+         * Other server errors
+         */
+        if (!response.ok) {
+            throw new Error(data.message || 'Unable to save the membership fee.');
+        }
+
+        /*
+         * Success
+         */
+        await Swal.fire({
+            icon: 'success',
+            title: 'Success!',
+            text: data.message || 'Membership fee successfully recorded.',
+            timer: 2000
+        });
+
+        // if (typeof Alpine !== 'undefined') { 
+        //     const alpineContainer = formElement.closest('[x-data]'); 
+        //     if (alpineContainer) { 
+        //         const dataStore = alpineContainer.__x ? alpineContainer.__x.$data : Alpine.$data(alpineContainer); 
+        //         if (dataStore) { 
+        //             dataStore.openCNAShareSetupModal = false; 
+        //             dataStore.contributionYear = ''; 
+        //             dataStore.closeMembershipModal();
+        //         } 
+        //     } 
+        // } 
+
+        window.dispatchEvent(new CustomEvent('close-fee-modal'));
+
+    } catch (error) {
+        console.error('Membership fee submission error:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: error.message || 'Something went wrong while saving the membership fee.'
+        });
+    } finally {
+        this.submittingMembershipFee = false;
+    }
 };
 
 

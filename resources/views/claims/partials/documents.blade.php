@@ -50,11 +50,53 @@
                         multiple
                         accept=".pdf,.jpg,.jpeg,.png"
                         class="hidden"
+
                         @change="
-                            Array.from($event.target.files).forEach(file=>{
-                                files.push(file)
-                            })
-                        ">
+                            const allowedTypes = [
+                                'application/pdf',
+                                'image/jpeg',
+                                'image/png'
+                            ];
+
+                            const allowedExtensions = [
+                                'pdf',
+                                'jpg',
+                                'jpeg',
+                                'png'
+                            ];
+
+                            const maxSize = 10 * 1024 * 1024; // 10 MB
+
+                            Array.from($event.target.files).forEach(file => {
+                            
+                                const extension = file.name
+                                    .split('.')
+                                    .pop()
+                                    .toLowerCase();
+                            
+                                const validExtension = allowedExtensions.includes(extension);
+                                const validType = allowedTypes.includes(file.type);
+                            
+                                if (!validExtension || !validType) {
+                                    
+                                    Swal.fire({
+                                        html: `${file.name} is not supported.</br>Only PDF, JPG, JPEG, and PNG files are allowed.`
+                                    });
+                                    return;
+                                }
+                            
+                                if (file.size > maxSize) {
+                                    
+                                    Swal.fire(`${file.name} exceeds the maximum file size of 10 MB.`);
+                                    return;
+                                }
+                            
+                                files.push(file);
+                            });
+                        
+                            $event.target.value = '';
+                        "
+                    >
                 </label>
 
                 <!-- ================================================= -->
@@ -159,7 +201,7 @@
                     type="button"
                     @click="previousStep()"
                     class="px-7 py-3 rounded-xl bg-gray-300 hover:bg-gray-400 transition">
-                    Back
+                        Back  
                 </button>
                 <button
                     type="button"

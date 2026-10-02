@@ -1,6 +1,6 @@
 <x-app-layout>
     <div class="min-h-screen bg-slate-50 p-4 text-slate-800 sm:p-6">
-        <div class="mx-auto max-w-7xl space-y-6">
+        <div class="mx-auto space-y-6">
         <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
             <div class="flex flex-col gap-5 border-b border-slate-200 px-6 py-6 lg:flex-row lg:items-end lg:justify-between">
                 <div>
@@ -127,6 +127,10 @@
                     </div>
                 </section>
             @endif
+        @endif
+
+        @if($isPresident)
+            @include('settings.partials.claim-types-card', ['claimTypes' => $claimTypes])
         @endif
         </div>
     </div>

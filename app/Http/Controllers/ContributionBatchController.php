@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\ContributionBatch;
 use App\Models\Campus;
+use App\Models\PaymentMethod;
 use App\Http\Requests\StoreContributionBatchRequest;
 use App\Http\Requests\UpdateContributionBatchRequest;
 use Illuminate\Http\Request;
@@ -87,12 +88,14 @@ class ContributionBatchController extends Controller
         } else if ($contributionType === 'cna share') {
             // Falls back to your original presidential metrics pipeline
             $data = $this->contributionService->getCNAShareContributionData($selectedCampusId);
+        } else if ($contributionType === 'membership fee') {
+            $data = $this->contributionService->getMembershipFeeData($selectedCampusId);
         } else {
             //Falls back to the default claims metrics
             $data = $this->contributionService->getClaimsContributionData($selectedCampusId);
         }
         $data['contribution_type'] = $contributionType;
-
+        $data['paymentMethods'] = PaymentMethod::where('is_active', true)->get();
         return view('contributions.admin-contributions-monitor', $data);
     }
 

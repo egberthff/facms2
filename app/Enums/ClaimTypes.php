@@ -7,6 +7,7 @@ enum ClaimTypes: string
     case Claims = 'Claims';
     case Annual = 'Annual Due';
     case CNAShare = 'CNA Share';
+    case MembershipFee = 'Membership Fee';
     // case AnnualDue = 'Annual Due';
 }
 

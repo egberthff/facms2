@@ -13,4 +13,20 @@ Route::middleware(['auth', 'active'])
         Route::get('members/my-contributions/{user}', [ContributionDetailsController::class, 'myOwedContributions'])->middleware('can:view own contribution')->name('member.my-contributions');
         Route::get('members/{member}/{type}', [MemberController::class, 'getHistory'])->name('members.history');
         Route::get('profile', [MemberController::class, 'getProfilePage'])->name('members.profile');
+        
+        Route::get('/notifications/{id}/read', function ($id) {
+            $notification = auth()->user()->notifications()->findOrFail($id);
+            $notification->markAsRead();
+            return redirect($notification->data['url'] ?? '/dashboard');
+            })->name('notifications.read');
+            
+        Route::post('/notifications/mark-all-read', function () {
+            auth()->user()->unreadNotifications->markAsRead();
+            return back();
+        })->name('notifications.markAllRead');  
+        
+        Route::post('members/membership-fees', [MemberController::class, 'membershipFee'])->name('members.membership-fees-store');
+        Route::get('members/membership-fees/members/search', [MemberController::class, 'searchMembers'])->name('members.membership-fees-search');
         });
+
+      

@@ -29,7 +29,19 @@ class ClaimTypeController extends Controller
      */
     public function store(StoreClaimTypeRequest $request)
     {
-        //
+        $claimType = ClaimType::create($request->safe()->except('campus_filter'));
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => "Claim type '{$claimType->name}' has been added successfully.",
+                'redirect' => route('settings.index', ['campus_filter' => $request->input('campus_filter')]),
+            ]);
+        }
+
+        return redirect()
+            ->route('settings.index', ['campus_filter' => $request->input('campus_filter')])
+            ->with('success', "Claim type '{$claimType->name}' has been added successfully.");
     }
 
     /**
@@ -53,7 +65,19 @@ class ClaimTypeController extends Controller
      */
     public function update(UpdateClaimTypeRequest $request, ClaimType $claimType)
     {
-        //
+        $claimType->update($request->safe()->except('campus_filter'));
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => "Claim type '{$claimType->name}' has been updated successfully.",
+                'redirect' => route('settings.index', ['campus_filter' => $request->input('campus_filter')]),
+            ]);
+        }
+
+        return redirect()
+            ->route('settings.index', ['campus_filter' => $request->input('campus_filter')])
+            ->with('success', "Claim type '{$claimType->name}' has been updated successfully.");
     }
 
     /**

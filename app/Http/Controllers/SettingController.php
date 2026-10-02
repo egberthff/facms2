@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Campus;
+use App\Models\ClaimType;
 use App\Models\ClaimsCycle;
 use App\Models\SystemSetting;
 use App\Services\TreasuryLedgerService;
@@ -39,8 +40,9 @@ class SettingController extends Controller
             ->get();
 
         $cyclesByCampus = collect();
+        $claimTypes = $isPresident ? ClaimType::orderBy('name')->get() : collect();
 
-        return view('settings.index', compact('settings', 'allCampuses', 'selectedCampusId', 'isPresident', 'cyclesByCampus'));
+        return view('settings.index', compact('settings', 'allCampuses', 'selectedCampusId', 'isPresident', 'cyclesByCampus', 'claimTypes'));
     }
 
     /**

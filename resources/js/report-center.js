@@ -31,6 +31,8 @@ window.reportCenter = function(options)
         monthlyClaimsSummaryReport: options.monthlyClaimsSummary,
 
         unifiedReportLinkAggregator: options.unifiedReportUrl,
+        // unifiedReportModalOpen: false,
+        // unifiedReportPreviewUrl: '',
 
         /*
         |--------------------------------------------------------------------------
@@ -455,7 +457,15 @@ window.reportCenter = function(options)
                 }
             });
 
-            window.open(`${this.payrollPrintUrl}?${params.toString()}`, '_blank');
+            const printWindow = `${this.payrollPrintUrl}?${params.toString()}`;
+            window.dispatchEvent(
+                new CustomEvent('open-file-preview', {
+                    detail: {
+                    url: printWindow,
+                    name: 'Report Preview'
+                  }
+              })
+            );
 
         },
 
@@ -479,12 +489,20 @@ window.reportCenter = function(options)
                 params.set('to', this.filters.date_to);
             }
 
-            params.set('auto_print', '1');
+            params.set('auto_print', '0');
 
-            const printWindow = window.open(`${this.collectionSummaryPrintUrl}?${params.toString()}`, '_blank');
-            if (printWindow) {
-                printWindow.focus();
-            }
+            const printWindow = `${this.collectionSummaryPrintUrl}?${params.toString()}`;
+            window.dispatchEvent(
+                  new CustomEvent('open-file-preview', {
+                      detail: {
+                      url: printWindow,
+                      name: 'Report Preview'
+                  }
+              })
+            );
+            // if (printWindow) {
+            //     printWindow.focus();
+            // }
 
         },
 
@@ -499,23 +517,34 @@ window.reportCenter = function(options)
 
             const params = new URLSearchParams();
 
-            if (this.filters.date_from) {
-                params.set('date_from', this.filters.date_from);
-            }
+            // if (this.filters.date_from) {
+            //     params.set('date_from', this.filters.date_from);
+            // }
 
-            if (this.filters.date_to) {
-                params.set('date_to', this.filters.date_to);
+            // if (this.filters.date_to) {
+            //     params.set('date_to', this.filters.date_to);
+            // }
+            if (this.filters.reporting_year) {
+                params.set('reporting_year', this.filters.reporting_year);
             }
 
             if (this.filters.campus_id) {
                 params.set('campus_id', this.filters.campus_id);
             }
 
-            params.set('auto_print', '1');
-            const printWindow = window.open(`${this.facultyDeductionSummary}?${params.toString()}`, '_blank');
-            if (printWindow) {
-                printWindow.focus();
-            }
+            params.set('auto_print', '0');
+            const printWindow = `${this.facultyDeductionSummary}?${params.toString()}`;
+            window.dispatchEvent(
+                  new CustomEvent('open-file-preview', {
+                      detail: {
+                      url: printWindow,
+                      name: 'Report Preview'
+                  }
+              })
+            );
+            // if (printWindow) {
+            //     printWindow.focus();
+            // }
         },
 
         openMedicalAssistanceReport() {
@@ -536,11 +565,19 @@ window.reportCenter = function(options)
                 params.set('campus_id', this.filters.campus_id);
             }
 
-            params.set('auto_print', '1');
-            const printWindow = window.open(`${this.medicalAssistanceReport}?${params.toString()}`, '_blank');
-            if (printWindow) {
-                printWindow.focus();
-            }
+            params.set('auto_print', '0');
+            const printWindow = `${this.medicalAssistanceReport}?${params.toString()}`;
+            window.dispatchEvent(
+                  new CustomEvent('open-file-preview', {
+                      detail: {
+                      url: printWindow,
+                      name: 'Report Preview'
+                  }
+              })
+            );
+            // if (printWindow) {
+            //     printWindow.focus();
+            // }
 
         },
 
@@ -556,19 +593,55 @@ window.reportCenter = function(options)
             params.set('reporting_year', this.filters.reporting_year);
             params.set('status', this.filters.status);
 
-            params.set('auto_print', '1');
-            const printWindow = window.open(`${this.monthlyClaimsSummaryReport}?${params.toString()}`, '_blank');
-            if (printWindow) {
-                printWindow.focus();
-            }
+            params.set('auto_print', '0');
+            const printWindow = `${this.monthlyClaimsSummaryReport}?${params.toString()}`;
+             window.dispatchEvent(
+                new CustomEvent('open-file-preview', {
+                    detail: {
+                        url: printWindow,
+                        name: 'Report Preview'
+                    }
+                })
+            );
+            // if (printWindow) {
+            //     printWindow.focus();
+            // }
         },
 
+        // openUnifiedReportAggregator() {
+        //     if(!this.hasGenerated) {
+        //         return;
+        //     }
+        //     const params = new URLSearchParams();
+        //     console.log(JSON.parse(JSON.stringify(this.filters)));
+
+        //     params.set('date_from', this.filters?.date_from ?? '');
+        //     params.set('date_to', this.filters?.date_to ?? '');
+        //     params.set('claim_month', this.filters?.claim_month ?? '');
+        //     params.set('payroll_month', this.filters?.payroll_month ?? '');
+        //     params.set('reporting_year', this.filters?.reporting_year ?? '');
+        //     params.set('cycle', this.filters?.cycle ?? '');
+        //     params.set('status', this.filters?.status ?? '');
+        //     params.set('claim_type', this.filters?.claim_type ?? '');
+
+        //     params.set('report_month', this.filters?.report_month ?? '');
+        //     params.set('campus_id', this.filters?.campus_id ?? '');
+        //     params.set('member_id', this.filters?.member_id ?? '');
+        //     params.set('report_type', this.selectedReport ?? '');
+
+        //     params.set('auto_print', '1');
+        //     const printWindow = window.open(`${this.unifiedReportLinkAggregator}?${params.toString()}`, '_blank');
+        //     if(printWindow) {
+        //         printWindow.focus();
+        //     }
+
+        // },
         openUnifiedReportAggregator() {
-            if(!this.hasGenerated) {
+            if (!this.hasGenerated) {
                 return;
-            }
-            const params = new URLSearchParams();
-            console.log(JSON.parse(JSON.stringify(this.filters)));
+            }       
+
+            const params = new URLSearchParams();       
 
             params.set('date_from', this.filters?.date_from ?? '');
             params.set('date_to', this.filters?.date_to ?? '');
@@ -577,19 +650,30 @@ window.reportCenter = function(options)
             params.set('reporting_year', this.filters?.reporting_year ?? '');
             params.set('cycle', this.filters?.cycle ?? '');
             params.set('status', this.filters?.status ?? '');
-            params.set('claim_type', this.filters?.claim_type ?? '');
+            params.set('claim_type', this.filters?.claim_type ?? '');       
 
             params.set('report_month', this.filters?.report_month ?? '');
             params.set('campus_id', this.filters?.campus_id ?? '');
             params.set('member_id', this.filters?.member_id ?? '');
-            params.set('report_type', this.selectedReport ?? '');
+            params.set('report_type', this.selectedReport ?? '');       
 
-            params.set('auto_print', '1');
-            const printWindow = window.open(`${this.unifiedReportLinkAggregator}?${params.toString()}`, '_blank');
-            if(printWindow) {
-                printWindow.focus();
-            }
+            // Don't automatically trigger printing inside the modal
+            params.set('auto_print', '0');      
 
+            // this.unifiedReportPreviewUrl =
+            //     `${this.unifiedReportLinkAggregator}?${params.toString()}`;     
+
+            const reportUrl = `${this.unifiedReportLinkAggregator}?${params.toString()}`;
+
+            // this.unifiedReportModalOpen = true;
+               window.dispatchEvent(
+                    new CustomEvent('open-file-preview', {
+                        detail: {
+                            url: reportUrl,
+                            name: 'Report Preview'
+                        }
+                    })
+                );
         },
 
         /*

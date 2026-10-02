@@ -1,6 +1,7 @@
 <x-app-layout>
     <div class="p-6 mx-auto space-y-6" x-data="{
         search: '',
+        paymentMethods: @js($paymentMethods),
         batches: @js($batches),
         selectedBatch: null,
         selectedDetail: null,
@@ -71,7 +72,95 @@
                        (item.department || '').toLowerCase().includes(query);
             });
         },
-    }">
+        memberSearchUrl: '{{ route('members.membership-fees-search') }}',
+        openMembershipFeeModal: false,
+
+        memberSearch: '',
+        memberResults: [],
+        selectedMember: null,
+
+        searchingMember: false,
+        submittingMembershipFee: false,
+
+        membershipFee: {
+            amount: '',
+            status: '',
+            payment_method_id: '',
+            paid_at: '',
+            reference_number: '',
+            remarks: '',
+        },
+
+        async searchMembers() {
+            const search = this.memberSearch.trim();
+
+            if (search.length < 2) {
+                this.memberResults = [];
+                return;
+            }
+
+            this.searchingMember = true;
+
+            try {
+                const params = new URLSearchParams({
+                    search: search,
+                });
+
+                const response = await fetch(
+                    `${this.memberSearchUrl}?${params.toString()}`,
+                    {
+                        headers: {
+                            'Accept': 'application/json',
+                        },
+                    }
+                );
+
+                if (!response.ok) {
+                    throw new Error('Unable to search members.');
+                }
+
+                const data = await response.json();
+
+                this.memberResults = data.data ?? data;
+            } catch (error) {
+                console.error(error);
+
+                this.memberResults = [];
+            } finally {
+                this.searchingMember = false;
+            }
+        },
+
+        selectMember(member) {
+            this.selectedMember = member;
+            this.memberResults = [];
+
+            this.memberSearch = member.name;
+        },
+
+        clearSelectedMember() {
+            this.selectedMember = null;
+            this.memberSearch = '';
+            this.memberResults = [];
+        },
+
+        closeMembershipFeeModal() {
+            this.openMembershipFeeModal = false;
+
+            this.memberSearch = '';
+            this.memberResults = [];
+            this.selectedMember = null;
+
+            this.membershipFee = {
+                amount: '',
+                status: '',
+                payment_method_id: '',
+                paid_at: '',
+                reference_number: '',
+                remarks: '',
+            };
+        },
+    }" @close-fee-modal.window="closeMembershipFeeModal()">
 
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-gray-200 dark:border-zinc-800 pb-5" x-data="{ openActions: false }">
         <div>
@@ -114,9 +203,6 @@
                         <svg class="w-4 h-4 mr-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://w3.org"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                         Setup Annual Due
                     </button>
-                </div>
-    
-                <div class="py-1">
                     <button @click="openCNAShareSetupModal = true; openActions = false" class="flex w-full items-center px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors">
                         <svg class="w-4 h-4 mr-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://w3.org"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 10.742l4.135-4.135m0 0a3.001 3.001 0 114.243 4.243l-4.135 4.135m-4.135-4.135a3 3 0 11-4.243-4.243l4.135-4.135m0 0L8.684 10.742m4.135 4.135l-4.135 4.135m0 0a3 3 0 11-4.243-4.243l4.135-4.135m4.135 4.135l4.135 4.135m0 0a3 3 0 104.243-4.243l-4.135-4.135"></path></svg>
                         Setup CNA Share
@@ -125,6 +211,12 @@
                     <button @click="openContributionAdjustmentModal = true; openActions = false" class="flex w-full items-center px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors">
                         <svg class="w-4 h-4 mr-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://w3.org"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
                         Contribution Adjustment
+                    </button>
+                    <button 
+                    @click="openMembershipFeeModal = true; openActions = false"
+                     class="flex w-full items-center px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors">
+                        <svg class="w-4 h-4 mr-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://w3.org"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
+                        Add Membership Fee
                     </button>
                 </div>
             </div>
