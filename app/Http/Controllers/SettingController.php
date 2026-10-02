@@ -5,12 +5,14 @@ namespace App\Http\Controllers;
 use App\Models\Campus;
 use App\Models\ClaimType;
 use App\Models\ClaimsCycle;
+use App\Models\Member;
 use App\Models\SystemSetting;
 use App\Services\TreasuryLedgerService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
 class SettingController extends Controller
@@ -42,7 +44,65 @@ class SettingController extends Controller
         $cyclesByCampus = collect();
         $claimTypes = $isPresident ? ClaimType::orderBy('name')->get() : collect();
 
-        return view('settings.index', compact('settings', 'allCampuses', 'selectedCampusId', 'isPresident', 'cyclesByCampus', 'claimTypes'));
+        // Committee on Claims slots store member ids; resolve them to members for display.
+        $committeeSettings = $selectedCampusId
+            ? $settings->whereIn('setting_key', self::COMMITTEE_KEYS)->sortBy(fn ($setting) => array_search($setting->setting_key, self::COMMITTEE_KEYS))
+            : collect();
+        $committeeMembers = Member::withoutGlobalScopes()
+            ->whereIn('id', $committeeSettings->pluck('setting_value')->filter())
+            ->get()
+            ->keyBy('id');
+
+        return view('settings.index', compact('settings', 'allCampuses', 'selectedCampusId', 'isPresident', 'cyclesByCampus', 'claimTypes', 'committeeSettings', 'committeeMembers'));
+    }
+
+    /**
+     * Committee on Claims setting keys, in display order (printed on claim Forms 1 & 2).
+     */
+    public const COMMITTEE_KEYS = [
+        'claims_committee_chair',
+        'claims_committee_member_1',
+        'claims_committee_member_2',
+    ];
+
+    /**
+     * Search members of one campus for the Committee on Claims slots.
+     */
+    public function searchCommitteeMembers(Request $request)
+    {
+        $validated = $request->validate([
+            'campus_id' => ['required', 'string'],
+            'search' => ['nullable', 'string', 'max:100'],
+        ]);
+
+        $user = Auth::user();
+        $hasFullAccess = $user->can('view all campus data') || $user->hasAnyRole(['President', 'Treasurer']);
+        abort_if(!$hasFullAccess && $user->getCachedCampusId() !== $validated['campus_id'], 403);
+
+        $search = trim($validated['search'] ?? '');
+        if (mb_strlen($search) < 2) {
+            return response()->json([]);
+        }
+
+        $members = Member::withoutGlobalScopes()
+            ->where('campus_id', $validated['campus_id'])
+            ->where(function ($query) use ($search) {
+                $query->where('employee_number', 'like', "%{$search}%")
+                    ->orWhere('first_name', 'like', "%{$search}%")
+                    ->orWhere('middle_name', 'like', "%{$search}%")
+                    ->orWhere('last_name', 'like', "%{$search}%");
+            })
+            ->orderBy('last_name')
+            ->limit(10)
+            ->get()
+            ->map(fn (Member $member) => [
+                'id' => $member->id,
+                'name' => Str::squish($member->full_name),
+                'employee_number' => $member->employee_number,
+                'position' => $member->position,
+            ]);
+
+        return response()->json($members);
     }
 
     /**
@@ -100,6 +160,25 @@ class SettingController extends Controller
             'claim_cycle_start_month' => ['required', 'integer', 'between:1,12'],
             'claim_cycle_years' => ['required', 'integer', 'between:1,20'],
             'association_fund' => ['required', 'numeric', 'decimal:0,2', 'gt:0'],
+            // Empty clears the slot; otherwise it must be a member of the setting's campus
+            'claims_committee_chair', 'claims_committee_member_1', 'claims_committee_member_2' => [
+                'nullable',
+                'string',
+                Rule::exists('members', 'id')->where('campus_id', $setting->campus_id)->whereNull('deleted_at'),
+                function ($attribute, $value, $fail) use ($setting) {
+                    $alreadyAssigned = SystemSetting::query()
+                        ->where('campus_id', $setting->campus_id)
+                        ->whereIn('setting_key', self::COMMITTEE_KEYS)
+                        ->where('setting_key', '!=', $setting->setting_key)
+                        ->whereNull('cycle_label')
+                        ->where('setting_value', $value)
+                        ->exists();
+
+                    if ($alreadyAssigned) {
+                        $fail('This member is already assigned to another Committee on Claims position.');
+                    }
+                },
+            ],
             default => ['required', 'string'],
         };
 
@@ -107,6 +186,8 @@ class SettingController extends Controller
             $request->validate([
                 'setting_value' => $validationRules,
                 'campus_filter' => ['nullable', 'string'],
+            ], [
+                'setting_value.exists' => 'The selected member does not belong to this campus.',
             ]);
         }
 
@@ -245,6 +326,12 @@ class SettingController extends Controller
             $value = $request->input('setting_value');
             if ($setting->setting_key === 'association_fund') {
                 $value = number_format((float) $liveSetting->setting_value + (float) $value, 2, '.', '');
+            }
+
+            // Committee assignments are not cycle-bound: no historical snapshot, empty value clears the slot
+            if (in_array($setting->setting_key, self::COMMITTEE_KEYS, true)) {
+                $liveSetting->update(['setting_value' => $value ?? '']);
+                return;
             }
 
             $currentCycle = ClaimsCycle::query()

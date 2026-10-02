@@ -15,6 +15,9 @@ Route::middleware(['auth', 'active'])
         Route::put('settings/claim-types/{claimType}', [ClaimTypeController::class, 'update'])
             ->name('settings.claim-types.update');
 
+        Route::get('settings/committee-members/search', [SettingController::class, 'searchCommitteeMembers'])
+            ->name('settings.committee-members.search');
+
         Route::put('settings/{setting}', [SettingController::class, 'update'])
             ->name('settings.update');
     });

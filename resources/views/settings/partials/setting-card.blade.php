@@ -3,8 +3,7 @@
     $isCycleYears = $setting->setting_key === 'claim_cycle_years';
     $isCycleMonth = $setting->setting_key === 'claim_cycle_start_month';
     $isAssociationFund = $setting->setting_key === 'association_fund';
-    $isCommitteeName = str_starts_with($setting->setting_key, 'claims_committee_');
-    $inputType = ($isCycleMonth || $isCommitteeName) ? 'text' : 'number';
+    $inputType = $isCycleMonth ? 'text' : 'number';
 @endphp
 
 <div class="rounded-xl border border-slate-200 bg-slate-50/60 p-5 transition hover:border-blue-200 hover:bg-blue-50/20">
@@ -53,8 +52,6 @@
             <p class="text-xs text-slate-400">Claims cycle starts on the first day of this month.</p>
         @elseif($isAssociationFund)
             <p class="text-xs text-slate-400">Enter the additional fund amount to add to the treasury.</p>
-        @elseif($isCommitteeName)
-            <p class="text-xs text-slate-400">Full name as it should appear on the printed claim forms.</p>
         @endif
     </form>
 </div>

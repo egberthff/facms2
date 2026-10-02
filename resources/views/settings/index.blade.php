@@ -58,7 +58,8 @@
 
         @php
             $cycleSettings = $settings->whereIn('setting_key', ['claim_cycle_start_year', 'claim_cycle_start_month', 'claim_cycle_years']);
-            $generalSettings = $settings->reject(fn ($setting) => $cycleSettings->contains('id', $setting->id));
+            $generalSettings = $settings->reject(fn ($setting) => $cycleSettings->contains('id', $setting->id)
+                || in_array($setting->setting_key, \App\Http\Controllers\SettingController::COMMITTEE_KEYS, true));
             $canEdit = !$isPresident || filled($selectedCampusId);
         @endphp
 
@@ -126,6 +127,12 @@
                         @endforeach
                     </div>
                 </section>
+            @endif
+
+            @if($committeeSettings->isNotEmpty())
+                @include('settings.partials.committee-on-claims-card', ['committeeSettings' => $committeeSettings, 'committeeMembers' => $committeeMembers, 'canEdit' => $canEdit])
+            @elseif($isPresident && !$selectedCampusId)
+                <div class="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-6 text-center text-sm text-slate-500">Select a campus to assign its Committee on Claims.</div>
             @endif
         @endif
 

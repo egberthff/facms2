@@ -59,10 +59,10 @@ class ClaimFormService
             'campusTreasurer' => $this->officer('Treasurer', $campusId),
             'federatedPresident' => $this->officer('Federated President'),
             'federatedTreasurer' => $this->officer('Federated Treasurer'),
-            'committeeChair' => $this->campusSetting('claims_committee_chair', $campusId),
+            'committeeChair' => $this->committeeMember('claims_committee_chair', $campusId),
             'committeeMembers' => [
-                $this->campusSetting('claims_committee_member_1', $campusId),
-                $this->campusSetting('claims_committee_member_2', $campusId),
+                $this->committeeMember('claims_committee_member_1', $campusId),
+                $this->committeeMember('claims_committee_member_2', $campusId),
             ],
         ];
     }
@@ -97,17 +97,28 @@ class ClaimFormService
         ];
     }
 
-    private function campusSetting(string $key, ?string $campusId): string
+    /**
+     * Committee on Claims slots (assigned on the Settings page) store a member id of the claimant's campus.
+     */
+    private function committeeMember(string $key, ?string $campusId): string
     {
         if (!$campusId) {
             return '';
         }
 
-        return (string) SystemSetting::query()
+        $memberId = SystemSetting::query()
             ->where('setting_key', $key)
             ->where('campus_id', $campusId)
             ->whereNull('cycle_label')
             ->value('setting_value');
+
+        if (!$memberId) {
+            return '';
+        }
+
+        $member = Member::withoutGlobalScopes()->with('user')->find($memberId);
+
+        return $member ? $this->personName($member, $member->user) : '';
     }
 
     private function honorific(?string $gender): string
