@@ -29,6 +29,9 @@ class Claim extends Model
         'approved_amount',
         'annual_limit',
         'description',
+        'hospital_name',
+        'treatment_start_date',
+        'treatment_end_date',
         'status',
         'remarks',
         'submitted_at',
@@ -43,6 +46,9 @@ class Claim extends Model
             'requested_amount' => 'decimal:2',
             'approved_amount' => 'decimal:2',
             'annual_limit' => 'decimal:2',
+
+            'treatment_start_date' => 'date',
+            'treatment_end_date' => 'date',
 
             'submitted_at' => 'datetime',
             'approved_at' => 'datetime',

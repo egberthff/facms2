@@ -87,6 +87,11 @@ class StoreClaimRequest extends FormRequest
                 'string',
                 'max:255'
             ],
+            'treatmentEndDate' => [
+                'nullable',
+                'date',
+                'after_or_equal:incidentDate',
+            ],
             'documents' => [
                 'nullable',
                 'array',

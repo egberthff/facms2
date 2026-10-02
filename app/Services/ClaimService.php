@@ -50,6 +50,9 @@ class ClaimService
                 'annual_limit'      => $this->toMysqlDecimal($annualLimit?->setting_value ?? 23000),
                 'status'            => ClaimStatus::Pending->value,
                 'description'       => $data['description'] ?? null,
+                'hospital_name'     => $data['hospital'] ?? null,
+                'treatment_start_date' => $data['incidentDate'] ?? null,
+                'treatment_end_date'   => $data['treatmentEndDate'] ?? null,
                 'submitted_at'      => now(),
             ]);
 

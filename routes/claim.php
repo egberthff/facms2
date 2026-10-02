@@ -29,7 +29,12 @@ Route::middleware(['auth', 'active'])
             ->name('claim.list');
         
         Route::get('claims/running-balance/{user}', [ClaimController::class, 'getRunningBalance'])
-            ->name('claim.running-balance');    
+            ->name('claim.running-balance');
+
+        // 5. Printable FCFA medical claim forms (Forms 1-4)
+        Route::get('claims/{claim}/forms', [ClaimController::class, 'printForms'])
+            ->middleware('can:printForms,claim')
+            ->name('claim.forms');
 
     });
 

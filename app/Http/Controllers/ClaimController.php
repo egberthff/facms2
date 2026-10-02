@@ -20,6 +20,7 @@ use App\Models\Claim;
 use App\Models\ClaimDocument;
 use App\Models\SystemSetting;
 use App\Services\ClaimService;
+use App\Services\ClaimFormService;
 use App\Services\TreasuryLedgerService;
 use App\Services\ReportService;
 use App\Services\EmailService;
@@ -196,6 +197,11 @@ class ClaimController extends Controller
         $data['cycles'] = $this->reportService->getAllowanceCycles() ?? [];
 
         return view('claims.claims-list', $data);
+    }
+
+    public function printForms(Claim $claim, ClaimFormService $claimFormService)
+    {
+        return view('claims.forms.medical-claim-forms', $claimFormService->buildFormData($claim));
     }
 
     public function getRunningBalance(User $user)
