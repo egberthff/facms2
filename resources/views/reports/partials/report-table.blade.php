@@ -279,7 +279,7 @@
         {{-- ========================================================= --}}
         {{-- TABLE --}}
         {{-- ========================================================= --}}
-        <div class="overflow-auto">
+        <div class="w-full overflow-x-auto">
 
             <table class="min-w-full divide-y divide-gray-200 text-sm">
 
