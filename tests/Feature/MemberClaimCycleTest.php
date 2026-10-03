@@ -318,9 +318,23 @@ class MemberClaimCycleTest extends TestCase
     public function test_medical_assistance_and_payroll_coverage_use_the_claimants_cycle(): void
     {
         $member = $this->makeMember();
-        $this->submit($member, '2026-08-05', 15000);
+        $first = $this->submit($member, '2026-08-05', 15000);
+        $first->update(['status' => ClaimStatus::Disbursed->value, 'approved_amount' => '15000.00']);
         $claim = $this->submit($member, '2027-02-05', 8000);
-        $claim->update(['status' => ClaimStatus::Approved->value, 'approved_amount' => '8000.00']);
+        $claim->update(['status' => ClaimStatus::Disbursed->value, 'approved_amount' => '8000.00']);
+        // In-flight claim in the same cycle: not yet released, so not on the ledger
+        Claim::create([
+            'claim_number' => 'CLM-INFLIGHT',
+            'member_id' => $member->id,
+            'member_claim_cycle_id' => $claim->member_claim_cycle_id,
+            'claim_type_id' => $this->claimType->id,
+            'payment_method_id' => $this->paymentMethod->id,
+            'requested_amount' => '500.00',
+            'approved_amount' => '500.00',
+            'annual_limit' => '23000.00',
+            'status' => ClaimStatus::ForReviewFp->value,
+            'submitted_at' => Carbon::parse('2027-03-01 09:00:00'),
+        ]);
 
         foreach (['Federated Treasurer', 'Federated President', 'Treasurer', 'President'] as $role) {
             \Spatie\Permission\Models\Role::firstOrCreate(['name' => $role, 'guard_name' => 'web']);
@@ -331,12 +345,25 @@ class MemberClaimCycleTest extends TestCase
 
         $report = app(\App\Services\ReportService::class)->generate('medical-assistance-report', ['cycle' => 'current', 'campus_id' => $this->campus->id]);
 
-        $this->assertCount(1, $report['rows']);
-        $row = $report['rows'][0];
-        $this->assertEqualsWithDelta(8000, $row['approved_amount'], 0.001);
-        $this->assertEqualsWithDelta(0, $row['balance'], 0.001);
-        $this->assertSame('August 2028', explode('Can claim by ', $row['remarks'])[1]);
-        $this->assertEqualsWithDelta(23000, $row['max_claimable_amount'], 0.001);
+        // One ledger row per disbursed claim, oldest first
+        $this->assertCount(2, $report['rows']);
+        [$firstRow, $secondRow] = $report['rows'];
+
+        $this->assertEqualsWithDelta(15000, $firstRow['approved_amount'], 0.001);
+        $this->assertEqualsWithDelta(0, $firstRow['received_previous_claims'], 0.001);
+        $this->assertSame('N/A', $firstRow['previous_claim_month']);
+        $this->assertEqualsWithDelta(8000, $firstRow['balance'], 0.001);
+        $this->assertSame('', $firstRow['remarks']);
+
+        $this->assertEqualsWithDelta(8000, $secondRow['approved_amount'], 0.001);
+        $this->assertEqualsWithDelta(15000, $secondRow['received_previous_claims'], 0.001);
+        $this->assertSame('August 2026', $secondRow['previous_claim_month']);
+        $this->assertEqualsWithDelta(0, $secondRow['balance'], 0.001);
+        $this->assertSame('Can claim by August 2028', $secondRow['remarks']);
+        $this->assertEqualsWithDelta(23000, $secondRow['max_claimable_amount'], 0.001);
+
+        $this->assertEqualsWithDelta(23000, $report['total_approved_amount'], 0.001);
+        $this->assertTrue($report['records'][1]['is_blue_indicator']);
 
         $coverage = (new \ReflectionMethod(\App\Services\ReportService::class, 'formatPayrollCoverage'))
             ->invoke(app(\App\Services\ReportService::class), $claim->fresh('member'));

@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use Carbon\Carbon;
+use App\Enums\ClaimStatus;
 use App\Models\Claim;
 use App\Models\Campus;
 use App\Models\Member;
@@ -1223,7 +1224,6 @@ class ReportService
         // Claim cycles are per member: select each claimant's own cycle rather than a campus window
         $selector = $this->memberCycleService->normalizeSelector($cycleParam);
         $cycles = $this->memberCycleService->cyclesForSelector($selector)->keyBy('id');
-        $cycleTotals = $this->memberCycleService->totalsForCycles($cycles->keys());
 
         $cycleLabel = collect($this->memberCycleService->selectorOptions())
             ->firstWhere('value', $selector)['label'];
@@ -1234,108 +1234,86 @@ class ReportService
         |--------------------------------------------------------------------------
         */
 
+        // Disbursed claims only, oldest first so each row can look back at earlier releases
         $claims = $this->claimService->getAllClaims([], $campusId)
-            ->filter(fn (Claim $claim) => $cycles->has($claim->member_claim_cycle_id));
+            ->filter(fn (Claim $claim) => $cycles->has($claim->member_claim_cycle_id)
+                && $claim->status === ClaimStatus::Disbursed->value)
+            ->sortBy([['submitted_at', 'asc'], ['created_at', 'asc']])
+            ->values();
 
         $includedCycles = $cycles->only($claims->pluck('member_claim_cycle_id')->unique()->all());
         $startDate = $includedCycles->min('cycle_start');
         $endDate = $includedCycles->max('cycle_end');
-    
+
         /*
         |--------------------------------------------------------------------------
-        | 3. Build member-based records
+        | 3. Build ledger records: one row per disbursed claim
         |--------------------------------------------------------------------------
         |
-        | This preserves the existing medical-assistance business logic.
-        | The resulting records are also retained as the legacy `records`
+        | "Received previous claims" and the running balance only look at the
+        | member's earlier disbursements in the same claim cycle, so no amount is
+        | counted twice. The records are also retained as the legacy `records`
         | payload for backward compatibility.
         |
         */
-    
+
+        $releasedByCycle = [];
+
         $formattedRecords = $claims
-            ->groupBy('member_claim_cycle_id')
-            ->filter(function ($memberClaims) {
-                return $memberClaims->contains('status', 'Approved');
-            })
-            ->map(function ($memberClaims, $cycleId) use ($cycles, $cycleTotals) {
+            ->map(function (Claim $claim) use ($cycles, &$releasedByCycle) {
+                $cycle = $cycles->get($claim->member_claim_cycle_id);
+                $earlierClaims = collect($releasedByCycle[$cycle->id] ?? []);
 
-                $firstClaim = $memberClaims->first();
-                $cycle = $cycles->get($cycleId);
-                $totals = $cycleTotals->get($cycleId);
-    
-                $member = $firstClaim->member;
-                $user = $member?->user;
-    
-                $fullName = trim($user?->name ?? 'Unknown Member');
-    
-                /*
-                 * Approved claims currently requiring reimbursement.
-                 */
-                $approvedAmountForReimbursement = $memberClaims
-                    ->where('status', 'Approved')
-                    ->sum('approved_amount');
-    
-                /*
-                 * Disbursed claims for this member within their own claim cycle.
-                 */
-                $receivedFromPreviousClaims = $totals->disbursed ?? 0.0;
+                $member = $claim->member;
+                $campus = $member?->campus;
+                $approvedAmount = (float) $claim->approved_amount;
 
                 /*
-                 * Cycle claim limit (snapshotted when the member's cycle started).
+                 * Disbursements released to this member earlier in the same cycle.
+                 */
+                $receivedFromPreviousClaims = (float) $earlierClaims->sum('approved_amount');
+                $hasExistingPriorClaim = $receivedFromPreviousClaims > 0;
+
+                /*
+                 * Cycle claim limit (snapshotted when the member's cycle started)
+                 * less everything released up to and including this claim.
                  */
                 $maxAnnualLimit = (float) $cycle->claim_limit;
+                $remainingBalance = max(0, $maxAnnualLimit - $receivedFromPreviousClaims - $approvedAmount);
 
-                // Remaining allowance in the member's cycle; pending and approved claims reserve it
-                $remainingBalance = max(0, $maxAnnualLimit - ($totals->consumed ?? 0.0));
-    
-                /*
-                 * Existing prior-claim indicator.
-                 */
-                $hasExistingPriorClaim = $receivedFromPreviousClaims > 0;
-    
-                /*
-                 * Existing remarks rule.
-                 */
                 $remarks = (float) $remainingBalance === 0.00
                     ? 'Can claim by ' . $cycle->cycle_end->copy()->addDay()->format('F Y')
                     : '';
-    
-                /*
-                 * Campus information.
-                 */
-                $campus = $member?->campus;
-    
+
+                $releasedByCycle[$cycle->id][] = $claim;
+
                 return [
-                    'year' => Carbon::parse($firstClaim->submitted_at)->format('Y'),
-    
-                    'month' => Carbon::parse($firstClaim->submitted_at)->format('F'),
-    
+                    'year' => Carbon::parse($claim->submitted_at)->format('Y'),
+
+                    'month' => Carbon::parse($claim->submitted_at)->format('F'),
+
                     'campus' => $campus?->acronym
                         ?? $campus?->campus_name
                         ?? 'N/A',
-    
-                    'name_of_claimant' => $fullName,
-    
-                    'type_of_claim' => $memberClaims
-                        ->pluck('claimType.name')
-                        ->filter()
-                        ->unique()
-                        ->implode(', '),
-    
-                    'approved_amount_ac' => (float) $approvedAmountForReimbursement,
-    
-                    'received_previous_claims' => (float) $receivedFromPreviousClaims,
-    
+
+                    'name_of_claimant' => trim($member?->user?->name ?? 'Unknown Member'),
+
+                    'type_of_claim' => $claim->claimType?->name ?? '',
+
+                    'approved_amount_ac' => $approvedAmount,
+
+                    'received_previous_claims' => $receivedFromPreviousClaims,
+
                     'month_year_previous' => $hasExistingPriorClaim
-                        ? $cycle->cycle_start->format('F Y')
+                        ? Carbon::parse($earlierClaims->last()->submitted_at)->format('F Y')
                         : 'N/A',
 
-                    'max_claimable_amount' => $maxAnnualLimit,    
-    
+                    'max_claimable_amount' => $maxAnnualLimit,
+
                     'balance' => (float) $remainingBalance,
-    
+
                     'remarks' => $remarks,
-    
+
                     'is_blue_indicator' => $hasExistingPriorClaim,
                 ];
             })
@@ -1482,7 +1460,7 @@ class ReportService
     
             'context' => [
                 'report_title' => 'Medical Assistance Report',
-                'description' => 'Medical assistance claims within the selected cycle.',
+                'description' => 'Disbursed medical assistance claims within each member\'s claim cycle.',
                 'association' => 'CVSCAFT FACULTY ASSOCIATION',
                 'campus' => $campus?->acronym ?? '',
                 'cycle' => $cycleLabel,
