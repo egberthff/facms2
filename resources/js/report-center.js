@@ -159,6 +159,13 @@ window.reportCenter = function(options)
 
         changeReport()
         {
+            // Reports with their own page (e.g. Campus Cash Flow) are opened instead of generated here
+            if (this.currentReport?.url) {
+                window.location.href = this.currentReport.url;
+
+                return;
+            }
+
             this.resetFilters();
 
             this.hasGenerated = false;

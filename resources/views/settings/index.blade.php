@@ -59,7 +59,7 @@
         @php
             $cycleSettings = $settings->whereIn('setting_key', ['claim_cycle_start_year', 'claim_cycle_start_month', 'claim_cycle_years']);
             $generalSettings = $settings->reject(fn ($setting) => $cycleSettings->contains('id', $setting->id)
-                || in_array($setting->setting_key, \App\Http\Controllers\SettingController::COMMITTEE_KEYS, true));
+                || in_array($setting->setting_key, [...\App\Http\Controllers\SettingController::COMMITTEE_KEYS, ...\App\Http\Controllers\SettingController::SIGNATORY_KEYS], true));
             $canEdit = !$isPresident || filled($selectedCampusId);
         @endphp
 
@@ -133,6 +133,24 @@
                 @include('settings.partials.committee-on-claims-card', ['committeeSettings' => $committeeSettings, 'committeeMembers' => $committeeMembers, 'canEdit' => $canEdit])
             @elseif($isPresident && !$selectedCampusId)
                 <div class="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-6 text-center text-sm text-slate-500">Select a campus to assign its Committee on Claims.</div>
+            @endif
+
+            @if($signatorySettings->isNotEmpty())
+                @include('settings.partials.committee-on-claims-card', [
+                    'committeeSettings' => $signatorySettings,
+                    'committeeMembers' => $committeeMembers,
+                    'canEdit' => $canEdit,
+                    'cardTitle' => 'Report Signatories',
+                    'cardDescription' => "Search this campus's members to assign who signs the Campus Cash Flow report. Prepared by defaults to the campus Treasurer when left empty.",
+                    'slotLabels' => [
+                        'cash_flow_prepared_by' => 'Prepared by',
+                        'cash_flow_checked_by' => 'Checked by',
+                    ],
+                    'slotHints' => [
+                        'cash_flow_prepared_by' => 'Campus Cash Flow report. Defaults to the campus Treasurer.',
+                        'cash_flow_checked_by' => 'Campus Cash Flow report.',
+                    ],
+                ])
             @endif
         @endif
 

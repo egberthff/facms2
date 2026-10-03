@@ -1,15 +1,23 @@
+{{-- Member-picker card for settings that store a campus member id. Defaults to the Committee on Claims;
+     pass cardTitle / cardDescription / slotLabels / slotHints to reuse it (e.g. report signatories). --}}
 @php
-    $committeeLabels = [
+    $committeeLabels = $slotLabels ?? [
         'claims_committee_chair' => 'Chair, Committee on Claims',
         'claims_committee_member_1' => 'Member, Committee on Claims',
         'claims_committee_member_2' => 'Member, Committee on Claims',
     ];
+    $committeeHints = $slotHints ?? [
+        'claims_committee_chair' => 'Signs Forms 1 & 2.',
+        'claims_committee_member_1' => 'Signs Form 2.',
+        'claims_committee_member_2' => 'Signs Form 2.',
+    ];
+    $cardTitle = $cardTitle ?? 'Committee on Claims';
 @endphp
 
 <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
     <div class="border-b border-slate-200 px-6 py-5">
-        <h3 class="text-lg font-bold text-slate-950">Committee on Claims</h3>
-        <p class="mt-1 text-sm text-slate-500">Search this campus's members to assign the committee. The assigned names print as signatories on the claim forms (Forms 1 &amp; 2).</p>
+        <h3 class="text-lg font-bold text-slate-950">{{ $cardTitle }}</h3>
+        <p class="mt-1 text-sm text-slate-500">{{ $cardDescription ?? "Search this campus's members to assign the committee. The assigned names print as signatories on the claim forms (Forms 1 & 2)." }}</p>
     </div>
 
     <div class="grid gap-4 p-6 md:grid-cols-2 lg:grid-cols-3">
@@ -73,12 +81,12 @@
                 <div class="mb-4 flex items-start justify-between gap-4">
                     <div>
                         <h4 class="text-sm font-bold text-slate-900">{{ $committeeLabels[$setting->setting_key] ?? $setting->setting_key }}</h4>
-                        <p class="mt-1 text-xs leading-5 text-slate-500">{{ $setting->setting_key === 'claims_committee_chair' ? 'Signs Forms 1 & 2.' : 'Signs Form 2.' }}</p>
+                        <p class="mt-1 text-xs leading-5 text-slate-500">{{ $committeeHints[$setting->setting_key] ?? '' }}</p>
                     </div>
                     <span class="shrink-0 rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-500 shadow-sm ring-1 ring-slate-200">{{ optional($setting->campus)->acronym ?? 'Campus' }}</span>
                 </div>
 
-                <form method="POST" action="{{ route('settings.update', $setting) }}" class="setting-ajax-form space-y-3" data-can-edit="{{ $canEdit ? 'true' : 'false' }}" data-confirm-text="Save this Committee on Claims assignment?">
+                <form method="POST" action="{{ route('settings.update', $setting) }}" class="setting-ajax-form space-y-3" data-can-edit="{{ $canEdit ? 'true' : 'false' }}" data-confirm-text="Save this {{ $cardTitle }} assignment?">
                     @csrf
                     @method('PUT')
                     <input type="hidden" name="campus_filter" value="{{ $selectedCampusId ?? '' }}">

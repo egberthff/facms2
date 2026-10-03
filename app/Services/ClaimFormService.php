@@ -59,10 +59,10 @@ class ClaimFormService
             'campusTreasurer' => $this->officer('Treasurer', $campusId),
             'federatedPresident' => $this->officer('Federated President'),
             'federatedTreasurer' => $this->officer('Federated Treasurer'),
-            'committeeChair' => $this->committeeMember('claims_committee_chair', $campusId),
+            'committeeChair' => $this->assignedMember('claims_committee_chair', $campusId),
             'committeeMembers' => [
-                $this->committeeMember('claims_committee_member_1', $campusId),
-                $this->committeeMember('claims_committee_member_2', $campusId),
+                $this->assignedMember('claims_committee_member_1', $campusId),
+                $this->assignedMember('claims_committee_member_2', $campusId),
             ],
         ];
     }
@@ -70,7 +70,7 @@ class ClaimFormService
     /**
      * Resolve the current holder of a role. Campus roles are matched against the claimant's campus.
      */
-    private function officer(string $role, ?string $campusId = null): array
+    public function officer(string $role, ?string $campusId = null): array
     {
         $user = User::role($role)
             ->when($campusId, fn ($query) => $query->whereHas(
@@ -98,9 +98,9 @@ class ClaimFormService
     }
 
     /**
-     * Committee on Claims slots (assigned on the Settings page) store a member id of the claimant's campus.
+     * Member-picker settings (Committee on Claims, report signatories) store a member id of the campus.
      */
-    private function committeeMember(string $key, ?string $campusId): string
+    public function assignedMember(string $key, ?string $campusId): string
     {
         if (!$campusId) {
             return '';
@@ -139,7 +139,7 @@ class ClaimFormService
     /**
      * "Bohol Island State University - Balilihan Campus" -> "Balilihan"; used where the forms read "Balilihan Campus".
      */
-    private function campusShortName(?string $campusName): string
+    public function campusShortName(?string $campusName): string
     {
         $name = str((string) $campusName)->afterLast(' - ');
 
