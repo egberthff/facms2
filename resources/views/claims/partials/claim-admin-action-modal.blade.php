@@ -64,14 +64,15 @@
                         {{-- <span class="text-xl font-black" :class="activeClaim.approved_amount && activeClaim.approved_amount !== 'N/A' ? 'text-emerald-900' : 'text-slate-400'" x-text="activeClaim.approved_amount && activeClaim.approved_amount !== 'N/A' ? '₱' + activeClaim.approved_amount : '—'"></span> --}}
                         <span class="text-xl font-black" :class="activeClaim.approved_amount && activeClaim.approved_amount !== 'N/A' ? 'text-emerald-900' : 'text-slate-400'" x-text="activeClaim.approved_amount && activeClaim.approved_amount !== 'N/A' ? '₱' + Number(activeClaim.approved_amount).toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '—'"></span>
                     </div>
-                     <div class="p-4 rounded-xl border border-slate-100" :class="activeClaim.approved_amount && activeClaim.approved_amount !== 'N/A' ? 'bg-emerald-70/70 border-emerald-700' : 'bg-slate-50/50'">
-                        <span class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1" :class="activeClaim.approved_amount && activeClaim.approved_amount !== 'N/A' ? 'text-emerald-700' : ''">Running Balance</span>
-                        <span class="text-xl font-black" :class="activeClaim.approved_amount && activeClaim.approved_amount !== 'N/A' ? 'text-emerald-600' : 'text-slate-300'" x-text="activeClaim.approved_amount && activeClaim.approved_amount !== 'N/A' ? '₱' + Number(activeClaim.annual_limit - activeClaim.approved_amount).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—'"></span>
+                    {{-- Remaining allowance across all of the member's claims in this claim's cycle --}}
+                    <div class="p-4 rounded-xl border border-slate-100" :class="activeClaim.cycle_summary ? 'bg-emerald-70/70 border-emerald-700' : 'bg-slate-50/50'">
+                        <span class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1" :class="activeClaim.cycle_summary ? 'text-emerald-700' : ''">Cycle Remaining</span>
+                        <span class="text-xl font-black" :class="activeClaim.cycle_summary ? 'text-emerald-600' : 'text-slate-300'" x-text="activeClaim.cycle_summary ? '₱' + Number(activeClaim.cycle_summary.remaining).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—'"></span>
                     </div>
                     <div class="bg-slate-50/50 border border-slate-100 p-4 rounded-xl">
-                        <span class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Annual Available Limit</span>
-                        {{-- <span class="text-xl font-bold text-slate-700" x-text="'₱' + activeClaim.annual_limit"></span> --}}
-                        <span class="text-xl font-bold text-slate-700" x-text="'₱' + Number(activeClaim.annual_limit).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })"></span>
+                        <span class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Cycle Limit</span>
+                        <span class="text-xl font-bold text-slate-700" x-text="'₱' + Number(activeClaim.cycle_summary?.limit ?? activeClaim.annual_limit).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })"></span>
+                        <span class="mt-1 block text-[11px] text-slate-500" x-text="activeClaim.cycle_summary ? activeClaim.cycle_summary.label + (activeClaim.cycle_summary.is_active ? '' : ' (ended)') : 'No claim cycle'"></span>
                     </div>
                 </div>
 

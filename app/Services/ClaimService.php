@@ -24,8 +24,10 @@ use Exception;
 class ClaimService
 {
     private TreasuryLedgerService $ledgerService;
-    public function __construct(TreasuryLedgerService $ledgerService){
+    private MemberClaimCycleService $cycleService;
+    public function __construct(TreasuryLedgerService $ledgerService, MemberClaimCycleService $cycleService){
         $this->ledgerService = $ledgerService;
+        $this->cycleService = $cycleService;
     }
     /**
      * Handle the full claim creation business logic.
@@ -36,24 +38,34 @@ class ClaimService
         try {
             DB::beginTransaction();
             $claimNumber = 'CLM-' . now()->format('Ymd') . '-' . strtoupper(Str::random(6));
-            $member = Auth::user()->member;
-            $annualLimit = SystemSetting::annualLimit($member->campus_id)->first();
+            $submittedAt = now();
+
+            // Lock the member row so concurrent submissions resolve the same cycle and balance in turn
+            $member = Member::withoutGlobalScopes()
+                ->whereKey(Auth::user()->member->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            // Authoritative eligibility check: the form request check ran without the lock
+            $this->cycleService->assertEligible($member, (float) $data['amount'], $submittedAt);
+            $cycle = $this->cycleService->resolveCycleForClaim($member, $submittedAt);
 
             // 1. Create the Claim record
             $claim = Claim::create([
                 'claim_number'      => $claimNumber,
                 'member_id'         => $member->id,
+                'member_claim_cycle_id' => $cycle->id,
                 'claim_type_id'     => $data['claimType'],
                 'payment_method_id' => $data['paymentMethod'],
                 'requested_amount'  => $data['amount'],
                 'approved_amount'   => null,
-                'annual_limit'      => $this->toMysqlDecimal($annualLimit?->setting_value ?? 23000),
+                'annual_limit'      => $this->toMysqlDecimal($cycle->claim_limit),
                 'status'            => ClaimStatus::Pending->value,
                 'description'       => $data['description'] ?? null,
                 'hospital_name'     => $data['hospital'] ?? null,
                 'treatment_start_date' => $data['incidentDate'] ?? null,
                 'treatment_end_date'   => $data['treatmentEndDate'] ?? null,
-                'submitted_at'      => now(),
+                'submitted_at'      => $submittedAt,
             ]);
 
             // 2. Handle File Uploads if present
@@ -118,10 +130,14 @@ class ClaimService
             return new Collection();
         }
 
-        return Claim::forMember($member->id)
-            ->with(['claimType', 'paymentMethod', 'reviewer', 'documents','member.campus'])
+        $claims = Claim::forMember($member->id)
+            ->with(['claimType', 'paymentMethod', 'reviewer', 'documents', 'member.campus', 'memberClaimCycle'])
             ->latest('submitted_at')
             ->get();
+
+        $this->cycleService->attachCycleSummaries($claims);
+
+        return $claims;
     }
 
     /**
@@ -139,7 +155,7 @@ class ClaimService
 
     public function getAllClaims( array $userRoles = [], ?string $selectedCampusId = null, ?array $cycle = []): Collection
     {
-        $query = Claim::with(['claimType', 'paymentMethod', 'reviewer', 'documents', 'member'])
+        $query = Claim::with(['claimType', 'paymentMethod', 'reviewer', 'documents', 'member', 'memberClaimCycle'])
             ->withoutGlobalScope(CampusMemberScope::class);
     
         // 1. Filter by Campus if selected
@@ -177,8 +193,10 @@ class ClaimService
     //         });
     //     }
     
-        return $query->latest('submitted_at')->get();
+        $claims = $query->latest('submitted_at')->get();
+        $this->cycleService->attachCycleSummaries($claims);
 
+        return $claims;
     }
 
     public function updateStatus(Claim $claim, array $data): Claim
@@ -239,7 +257,12 @@ class ClaimService
             }
     
             $claim->update($claimUpdateData);
-    
+
+            // A cycle that only held rejected claims is released so the next claim starts a fresh one
+            if ($statusEnum === ClaimStatus::Rejected) {
+                $this->cycleService->releaseIfEmpty($claim->memberClaimCycle);
+            }
+
             DB::commit();
             return $claim;
     

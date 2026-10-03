@@ -49,7 +49,7 @@ document.addEventListener('alpine:init', () => {
                 }
 
                 // 2. Handle Cycle Date-Range filtering logic
-                if (this.selectedCycle && this.selectedCycle !== 'current') {
+                if (/^\d{4}-\d{4}$/.test(this.selectedCycle ?? '')) { // legacy year-range values only; member cycle options don't map to years
                     // Parse start and end years out of string formatting "2025-2027"
                     const [startYear, endYear] = this.selectedCycle.split('-').map(Number);
                     

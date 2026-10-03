@@ -26,6 +26,7 @@ use App\Services\ReportService;
 use App\Services\EmailService;
 use App\Services\DashboardService;
 use App\Services\NotificationService;
+use Illuminate\Validation\ValidationException;
 
 use Exception;
 class ClaimController extends Controller
@@ -111,6 +112,9 @@ class ClaimController extends Controller
                 'message' => 'Claim submitted successfully.',
             ], 200);
 
+        } catch (ValidationException $e) {
+            // Cycle allowance re-check under lock failed; surface it as a normal 422
+            throw $e;
         } catch (Exception $e) {
             // Log the actual error here for debugging: 
             DB::rollback();

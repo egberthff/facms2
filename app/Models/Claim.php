@@ -23,6 +23,7 @@ class Claim extends Model
     protected $fillable = [
         'claim_number',
         'member_id',
+        'member_claim_cycle_id',
         'claim_type_id',
         'payment_method_id',
         'requested_amount',
@@ -75,6 +76,11 @@ class Claim extends Model
     public function member()
     {
         return $this->belongsTo(Member::class, 'member_id', 'id');
+    }
+
+    public function memberClaimCycle()
+    {
+        return $this->belongsTo(MemberClaimCycle::class, 'member_claim_cycle_id');
     }
 
     public function claimType()

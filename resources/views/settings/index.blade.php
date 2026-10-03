@@ -119,7 +119,7 @@
                 <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
                     <div class="border-b border-slate-200 px-6 py-5">
                         <h3 class="text-lg font-bold text-slate-950">Campus settings</h3>
-                        <p class="mt-1 text-sm text-slate-500">Edit each live setting independently. Claims cycle values are used immediately by claims, dashboard balances, and reports.</p>
+                        <p class="mt-1 text-sm text-slate-500">Edit each live setting independently. Cycle duration and claim limit apply to member claim cycles started after the change; existing member cycles keep their original dates and limit.</p>
                     </div>
                     <div class="grid gap-4 p-6 md:grid-cols-2 lg:grid-cols-3">
                         @foreach($generalSettings as $setting)

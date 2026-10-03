@@ -397,7 +397,7 @@ return [
 
             'title' => 'Allowance Forfeiture',
 
-            'description' => 'Unused allowance forfeited after the cycle.',
+            'description' => 'Unused allowance forfeited when each member\'s own claim cycle expired.',
 
             'category' => 'allowance',
 

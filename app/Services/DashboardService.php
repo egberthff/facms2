@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\ClaimStatus;
 use App\Models\User;
 use App\Models\Member;
 use App\Models\Claim;
@@ -12,7 +13,7 @@ use Illuminate\Support\Facades\Auth;
 
 class DashboardService
 {
-    public function __construct(private CycleService $cycleService)
+    public function __construct(private MemberClaimCycleService $memberCycleService)
     {
     }
 
@@ -83,47 +84,55 @@ class DashboardService
                 'totalApprovedCycle'  => 0.00,
                 'totalDisbursedCycle' => 0.00,
                 'cycleStartDate'      => null,
+                'cycleEndDate'        => null,
+                'cycleYears'          => SystemSetting::getCycleYears(),
+                'remainingAllowance'  => 0.00,
                 'baseLimit'           => 0.00,
             ];
         }
 
-        [$currentCycleStart] = $this->cycleService->current($member->campus_id);
+        // The member's own claim cycle; none exists until their next qualifying claim
+        $cycle = $this->memberCycleService->getActiveCycleForMember($member);
 
-        // --- STEP 4: FETCH THE CORRECT RELEVANT LIMIT ---
-        // Look for a claim submitted *inside* this specific cycle window
-        $latestClaimInCycle = $member->claims()
-            ->where('submitted_at', '>=', $currentCycleStart)
-            ->latest('submitted_at')
-            ->first();
+        if (!$cycle) {
+            $baseLimit = (float) SystemSetting::getGlobalLimit($member->campus_id);
 
-        // If they have a claim this cycle, use its limit snapshot. 
-        // Otherwise, dynamically pull the current active System Setting limit!
-        // $baseLimit = $latestClaimInCycle 
-        //     ? (float) $latestClaimInCycle->annual_limit 
-        //     : SystemSetting::getGlobalLimit();
-        $baseLimit = (float) SystemSetting::getGlobalLimit($user->member->campus_id);
+            return [
+                'approvedBalance'     => $baseLimit,
+                'actualBalance'       => $baseLimit,
+                'remainingAllowance'  => $baseLimit,
+                'totalApprovedCycle'  => 0.00,
+                'totalDisbursedCycle' => 0.00,
+                'cycleStartDate'      => null,
+                'cycleEndDate'        => null,
+                'cycleYears'          => SystemSetting::getCycleYears($member->campus_id),
+                'baseLimit'           => $baseLimit,
+            ];
+        }
 
-        // --- STEP 5: AGGREGATE CLAIMS WITHIN THIS SPECIFIC LIFECYCLE WINDOW ---
-        $claimsQuery = $member->claims()->where('submitted_at', '>=', $currentCycleStart);
+        $baseLimit = (float) $cycle->claim_limit;
+        $claimsQuery = $member->claims()->where('member_claim_cycle_id', $cycle->id);
 
         $totalApprovedCycle = (float) (clone $claimsQuery)
-            ->whereIn('status', ['approved', 'disbursed']) 
+            ->whereIn('status', MemberClaimCycleService::approvedStatuses())
             ->sum('approved_amount');
 
         $totalDisbursedCycle = (float) (clone $claimsQuery)
-            ->where('status', 'disbursed')
+            ->where('status', ClaimStatus::Disbursed->value)
             ->sum('approved_amount');
 
-        // --- STEP 6: COMPUTE BALANCES ---
-        $approvedBalance = max(0, $baseLimit - $totalApprovedCycle);
-        $actualBalance   = max(0, $baseLimit - $totalDisbursedCycle);
+        // Remaining allowance reserves in-flight claims; this is what claim submission validates against
+        $remainingAllowance = $this->memberCycleService->remainingForCycle($cycle);
 
         return [
-            'approvedBalance'     => $approvedBalance,
-            'actualBalance'       => $actualBalance,
+            'approvedBalance'     => max(0, $baseLimit - $totalApprovedCycle),
+            'actualBalance'       => $remainingAllowance,
+            'remainingAllowance'  => $remainingAllowance,
             'totalApprovedCycle'  => $totalApprovedCycle,
             'totalDisbursedCycle' => $totalDisbursedCycle,
-            'cycleStartDate'      => $currentCycleStart->toDateString(),
+            'cycleStartDate'      => $cycle->cycle_start->toDateString(),
+            'cycleEndDate'        => $cycle->cycle_end->toDateString(),
+            'cycleYears'          => $cycle->duration_years,
             'baseLimit'           => $baseLimit, // Passed out so your view can display: "Limit: P23,000"
         ];
     }

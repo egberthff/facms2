@@ -84,6 +84,11 @@ class Member extends Model
         return $this->hasMany(Claim::class, 'member_id', 'id');
     }
 
+    public function claimCycles()
+    {
+        return $this->hasMany(MemberClaimCycle::class, 'member_id', 'id');
+    }
+
 
     public function contributions()
     {

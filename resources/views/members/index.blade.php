@@ -182,7 +182,9 @@
                 document.getElementById('balance-base-limit').textContent = currencyFormatter.format(balance?.baseLimit ?? 0);
                 document.getElementById('balance-approved-cycle').textContent = currencyFormatter.format(balance?.totalApprovedCycle ?? 0);
                 document.getElementById('balance-disbursed-cycle').textContent = currencyFormatter.format(balance?.totalDisbursedCycle ?? 0);
-                document.getElementById('balance-cycle-start').textContent = balance?.cycleStartDate ?? '-';
+                document.getElementById('balance-cycle-start').textContent = balance?.cycleStartDate
+                    ? `${balance.cycleStartDate} to ${balance.cycleEndDate}`
+                    : 'No active cycle';
             
                 // 2. Extract records array from response structure
                 const claims = data.records || [];

@@ -49,6 +49,7 @@
             <div>
                 <h4 class="text-sm font-bold text-slate-900">Claims cycle configuration</h4>
                 <p class="mt-1 text-xs leading-5 text-slate-500">Set the cycle start year, start month, and duration together. The end month and year are calculated automatically.</p>
+                <p class="mt-1 text-xs leading-5 text-slate-500">Start year and month define the campus treasury reporting period. Each member's claim cycle starts with their own first claim and uses the duration and claim limit in force at that moment; changes apply to new member cycles only.</p>
             </div>
             <span class="shrink-0 rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-500 shadow-sm ring-1 ring-slate-200">{{ optional($cycleSetting->campus)->acronym ?? 'Campus' }}</span>
         </div>

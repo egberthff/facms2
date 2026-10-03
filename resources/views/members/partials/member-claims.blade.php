@@ -55,9 +55,9 @@
                     </p>
                 </div>
             
-                <!-- Card: Cycle Start Date -->
+                <!-- Card: Member's own claim cycle -->
                 <div class="p-4 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl shadow-sm">
-                    <p class="text-xs font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Cycle Start Date</p>
+                    <p class="text-xs font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Claim Cycle</p>
                     <p id="balance-cycle-start" class="mt-2 text-xl font-semibold text-gray-900 dark:text-white">
                         -
                     </p>

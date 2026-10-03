@@ -5,6 +5,7 @@ namespace App\Http\Requests;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\ValidationException;
 // use App\Services\DashboardService;
 
 class StoreClaimRequest extends FormRequest
@@ -59,17 +60,12 @@ class StoreClaimRequest extends FormRequest
                         return $fail('No active member profile linked to your user account.');
                     }
 
-                    // Resolve your service class directly from Laravel's Container
-                    // Replace MemberClaimService with the actual name of your service class
-                    $balanceService = app(\App\Services\DashboardService::class);
-
-                    // Calculate the balance data using your new logic
-                    $balanceData = $balanceService->calculateMemberBalanceData($user);
-                    $actualBalance = $balanceData['actualBalance'];
-
-                    // Enforce actualBalance limit constraint
-                    if ($value > $actualBalance) {
-                        $fail("The requested amount exceeds your remaining cycle allowance balance (₱" . number_format($actualBalance, 2) . ").");
+                    // Early feedback against the member's own claim cycle; ClaimService re-checks under a row lock
+                    try {
+                        app(\App\Services\MemberClaimCycleService::class)
+                            ->assertEligible($user->member, (float) $value, now());
+                    } catch (ValidationException $e) {
+                        $fail(collect($e->errors())->flatten()->first());
                     }
                 },
             ],
