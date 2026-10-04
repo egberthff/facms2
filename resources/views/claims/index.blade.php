@@ -131,6 +131,7 @@
                 amount: '',
                 description: '',
                 incidentDate: '',
+                treatmentEndDate: '',
                 hospital: '',
 
                 // STEP 2
@@ -185,6 +186,13 @@
             },
             set incidentDate(value) {
                 this.form.incidentDate = value;
+            },
+
+            get treatmentEndDate() {
+                return this.form.treatmentEndDate;
+            },
+            set treatmentEndDate(value) {
+                this.form.treatmentEndDate = value;
             },
 
             get hospital() {
@@ -270,6 +278,7 @@
                         formData.append('description', this.form.description);
                         formData.append('incidentDate', this.form.incidentDate);
                         formData.append('hospital', this.form.hospital);
+                        formData.append('treatmentEndDate', this.form.treatmentEndDate || '');
 
                          const paymentMethodMap = {
                             'check': '019f32cb-c177-7193-a110-d5cc8aeb9c60',
@@ -643,6 +652,7 @@
                     amount: '',
                     description: '',
                     incidentDate: '',
+                    treatmentEndDate: '',
                     hospital: '',
 
                     files: [],

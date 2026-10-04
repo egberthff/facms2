@@ -56,7 +56,8 @@ class AppServiceProvider extends ServiceProvider
         // bypass policy model checks for that permission.
         Gate::after(function ($user, $ability, $result) {
             if ($result === false || $result === null) {
-                return $user->hasPermissionTo($ability) ? true : $result;
+                // checkPermissionTo returns false (instead of throwing) for abilities that aren't permission names
+                return $user->checkPermissionTo($ability) ? true : $result;
             }
         });
     }

@@ -213,6 +213,33 @@ return [
 
         ],
 
+        /*
+        |--------------------------------------------------------------------------
+        | Campus Cash Flow
+        |--------------------------------------------------------------------------
+        |
+        | Saved per-campus periods with their own page (reports.cash-flow.index);
+        | selecting it in the Report Center navigates there instead of generating.
+        |
+        */
+        'campus-cash-flow' => [
+
+            'title' => 'Campus Cash Flow',
+
+            'description' => 'Forwarded balance, funds received from the FFA, campus disbursements and cash on hand per period.',
+
+            'category' => 'financial',
+
+            'route' => 'reports.cash-flow.index',
+
+            'filters' => [],
+
+            'cards' => [],
+
+            'table' => null,
+
+        ],
+
 
         /*
         |--------------------------------------------------------------------------
@@ -370,7 +397,7 @@ return [
 
             'title' => 'Allowance Forfeiture',
 
-            'description' => 'Unused allowance forfeited after the cycle.',
+            'description' => 'Unused allowance forfeited when each member\'s own claim cycle expired.',
 
             'category' => 'allowance',
 

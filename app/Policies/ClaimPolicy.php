@@ -3,6 +3,7 @@
 namespace App\Policies;
 
 use App\Models\Claim;
+use App\Models\Member;
 use App\Models\User;
 use Illuminate\Auth\Access\Response;
 use Illuminate\Support\Facades\Auth;
@@ -34,6 +35,18 @@ class ClaimPolicy
             'Treasurer',
             'Federated Treasurer'
         ]);
+    }
+
+    /**
+     * Determine whether the user can print the claim forms (claimant or claim officers).
+     */
+    public function printForms(User $user, Claim $claim): bool
+    {
+        $ownerUserId = Member::withoutGlobalScopes()
+            ->whereKey($claim->member_id)
+            ->value('user_id');
+
+        return $ownerUserId === $user->user_id || $this->view($user, $claim);
     }
 
     /**

@@ -27,6 +27,25 @@ Route::middleware(['auth', 'active'])
     Route::post('reports/fund-transfers/{transfer}/approve', [\App\Http\Controllers\CollectionSummaryController::class, 'approve'])
         ->middleware('can:view reports')
         ->name('reports.fund-transfers.approve');
+
+    // Campus Cash Flow (saved per-campus periods)
+    Route::middleware('can:view reports')
+        ->prefix('reports/cash-flow')
+        ->name('reports.cash-flow.')
+        ->controller(\App\Http\Controllers\CashFlowController::class)
+        ->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::post('/', 'store')->name('store');
+            Route::put('items/{item}', 'updateItem')->name('items.update');
+            Route::delete('items/{item}', 'destroyItem')->name('items.destroy');
+            Route::get('{period}', 'show')->name('show');
+            Route::delete('{period}', 'destroy')->name('destroy');
+            Route::get('{period}/print', 'print')->name('print');
+            Route::post('{period}/refresh', 'refresh')->name('refresh');
+            Route::put('{period}/opening-balance', 'updateOpeningBalance')->name('opening-balance');
+            Route::post('{period}/finalize', 'finalize')->name('finalize');
+            Route::post('{period}/items', 'storeItem')->name('items.store');
+        });
     });
 
     Route::get('reports/faculty-deductions-summary', [ReportController::class, 'facultyDeductionsSummaryView'])

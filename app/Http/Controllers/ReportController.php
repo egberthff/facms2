@@ -43,6 +43,13 @@ class ReportController extends Controller
     {
         $reportConfiguration = config('reports');
 
+        // Reports with their own page: resolve the route name to a URL for the Report Center to navigate to
+        foreach ($reportConfiguration['types'] as $key => $type) {
+            if (isset($type['route'])) {
+                $reportConfiguration['types'][$key]['url'] = route($type['route']);
+            }
+        }
+
         // if (!Auth::user()->hasRole('Federated Treasurer')) {
         //     unset($reportConfiguration['types']['payroll-deduction-request']);
         // }

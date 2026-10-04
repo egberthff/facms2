@@ -76,13 +76,13 @@
 
                             <label class="text-sm text-gray-500">
 
-                                Incident Date
+                                Treatment Date
 
                             </label>
 
                             <p
                                 class="font-semibold mt-1"
-                                x-text="incidentDate || '-'">
+                                x-text="(incidentDate || '-') + (treatmentEndDate ? ' to ' + treatmentEndDate : '')">
                             </p>
 
                         </div>

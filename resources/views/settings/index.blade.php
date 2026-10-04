@@ -58,7 +58,8 @@
 
         @php
             $cycleSettings = $settings->whereIn('setting_key', ['claim_cycle_start_year', 'claim_cycle_start_month', 'claim_cycle_years']);
-            $generalSettings = $settings->reject(fn ($setting) => $cycleSettings->contains('id', $setting->id));
+            $generalSettings = $settings->reject(fn ($setting) => $cycleSettings->contains('id', $setting->id)
+                || in_array($setting->setting_key, [...\App\Http\Controllers\SettingController::COMMITTEE_KEYS, ...\App\Http\Controllers\SettingController::SIGNATORY_KEYS], true));
             $canEdit = !$isPresident || filled($selectedCampusId);
         @endphp
 
@@ -118,7 +119,7 @@
                 <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
                     <div class="border-b border-slate-200 px-6 py-5">
                         <h3 class="text-lg font-bold text-slate-950">Campus settings</h3>
-                        <p class="mt-1 text-sm text-slate-500">Edit each live setting independently. Claims cycle values are used immediately by claims, dashboard balances, and reports.</p>
+                        <p class="mt-1 text-sm text-slate-500">Edit each live setting independently. Cycle duration and claim limit apply to member claim cycles started after the change; existing member cycles keep their original dates and limit.</p>
                     </div>
                     <div class="grid gap-4 p-6 md:grid-cols-2 lg:grid-cols-3">
                         @foreach($generalSettings as $setting)
@@ -126,6 +127,30 @@
                         @endforeach
                     </div>
                 </section>
+            @endif
+
+            @if($committeeSettings->isNotEmpty())
+                @include('settings.partials.committee-on-claims-card', ['committeeSettings' => $committeeSettings, 'committeeMembers' => $committeeMembers, 'canEdit' => $canEdit])
+            @elseif($isPresident && !$selectedCampusId)
+                <div class="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-6 text-center text-sm text-slate-500">Select a campus to assign its Committee on Claims.</div>
+            @endif
+
+            @if($signatorySettings->isNotEmpty())
+                @include('settings.partials.committee-on-claims-card', [
+                    'committeeSettings' => $signatorySettings,
+                    'committeeMembers' => $committeeMembers,
+                    'canEdit' => $canEdit,
+                    'cardTitle' => 'Report Signatories',
+                    'cardDescription' => "Search this campus's members to assign who signs the Campus Cash Flow report. Prepared by defaults to the campus Treasurer when left empty.",
+                    'slotLabels' => [
+                        'cash_flow_prepared_by' => 'Prepared by',
+                        'cash_flow_checked_by' => 'Checked by',
+                    ],
+                    'slotHints' => [
+                        'cash_flow_prepared_by' => 'Campus Cash Flow report. Defaults to the campus Treasurer.',
+                        'cash_flow_checked_by' => 'Campus Cash Flow report.',
+                    ],
+                ])
             @endif
         @endif
 

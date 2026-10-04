@@ -109,10 +109,10 @@
                         placeholder="Provide a brief description of your claim..."></textarea>
                 </div>
                 <!-- Bottom -->
-                <div class="grid lg:grid-cols-2 gap-6 mt-6">
+                <div class="grid lg:grid-cols-3 gap-6 mt-6">
                     <div>
                         <label class="block text-sm font-medium mb-2">
-                            Incident Date
+                            Treatment Start Date
                             <span class="text-red-500">*</span>
                         </label>
                         <input
@@ -121,6 +121,18 @@
                             type="date"
                             required
                             x-model="incidentDate"
+                            class="w-full rounded-xl border border-gray-300 px-4 py-3">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">
+                            Treatment End Date
+                        </label>
+                        <input
+                            id="claim-treatment-end-date-input"
+                            name="treatmentEndDate"
+                            type="date"
+                            x-model="treatmentEndDate"
+                            :min="incidentDate"
                             class="w-full rounded-xl border border-gray-300 px-4 py-3">
                     </div>
                     <div>

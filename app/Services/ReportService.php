@@ -3,17 +3,18 @@
 namespace App\Services;
 
 use Carbon\Carbon;
+use App\Enums\ClaimStatus;
 use App\Models\Claim;
 use App\Models\Campus;
 use App\Models\Member;
 use App\Models\ContributionBatch;
 use App\Models\SystemSetting;
-use App\Models\ClaimsCycle;
+use App\Models\MemberClaimCycle;
 use App\Models\ClaimType;
 use App\Models\Scopes\CampusMemberScope;
 use App\Services\MemberService;
 use App\Services\ContributionService;
-use App\Services\CycleService;
+use App\Services\MemberClaimCycleService;
 use App\Services\ClaimService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -21,17 +22,17 @@ use InvalidArgumentException;
 
 class ReportService
 {
-    private CycleService $cycleService;
+    private MemberClaimCycleService $memberCycleService;
     private MemberService $memberService;
     private ContributionService $contributionService;
     private ClaimService $claimService;
     public function __construct(
-        CycleService $cycleService, 
-        MemberService $memberService, 
+        MemberClaimCycleService $memberCycleService,
+        MemberService $memberService,
         ContributionService $contributionService,
         ClaimService $claimService)
     {
-        $this->cycleService = $cycleService;
+        $this->memberCycleService = $memberCycleService;
         $this->memberService = $memberService;
         $this->contributionService = $contributionService;
         $this->claimService = $claimService;
@@ -253,6 +254,11 @@ class ReportService
         $totalClaims = 0;
         $totalAmount = 0;
 
+        // Claim cycles are per member, so the cycle filter selects claims by their member cycle
+        $cycleIds = !empty($filters['cycle'])
+            ? $this->memberCycleService->cyclesForSelector($filters['cycle'])->pluck('id')
+            : null;
+
         // 2. Loop through each campus to aggregate values dynamically
         foreach ($campuses as $campus) {
 
@@ -276,12 +282,8 @@ class ReportService
                 ->when(!empty($filters['status']), function ($query) use ($filters) {
                     return $query->where('status', $filters['status']);
                 })
-               ->when(!empty($filters['cycle']), function ($query) use ($filters, $campus) {
-                    $resolvedCycle = $this->cycleService->resolve($filters['cycle'],$campus->id);
-                    return $query->whereBetween('submitted_at', [
-                        $resolvedCycle[0], // Start date
-                        $resolvedCycle[1]  // End date
-                    ]);
+               ->when($cycleIds !== null, function ($query) use ($cycleIds) {
+                    return $query->whereIn('member_claim_cycle_id', $cycleIds->all());
                 });
 
 
@@ -503,44 +505,54 @@ class ReportService
             ->when(!empty($filters['campus_id']), fn($query) => $query->where('campus_id', $filters['campus_id']))
             ->when(!empty($filters['member_id']), fn($query) => $query->where('id', $filters['member_id']))
             ->with('campus')
-            ->get();
+            ->get()
+            ->keyBy('id');
 
-        $rows = $members->map(function (Member $member) use ($filters) {
-            [$cycleStart, $cycleEnd, $cycleLabel] = $this->resolveCycleBounds(
-                $filters['cycle'] ?? 'current',
-                $member->campus_id
+        // Each member is measured against their own claim cycle(s), not a shared campus window
+        $selector = $this->memberCycleService->normalizeSelector($filters['cycle'] ?? null);
+        $cycles = $this->memberCycleService->cyclesForSelector($selector, $members->keys());
+        $totals = $this->memberCycleService->totalsForCycles($cycles->pluck('id'));
+
+        $rows = $cycles
+            ->filter(fn (MemberClaimCycle $cycle) => $members->has($cycle->member_id))
+            ->map(function (MemberClaimCycle $cycle) use ($members, $totals) {
+                $member = $members->get($cycle->member_id);
+                $cycleTotals = $totals->get($cycle->id);
+                $baseLimit = (float) $cycle->claim_limit;
+
+                return [
+                    'member' => $member->full_name,
+                    'campus' => $member->campus?->acronym ?? 'Unassigned',
+                    'allowance' => $baseLimit,
+                    'approved' => $cycleTotals->approved ?? 0.0,
+                    'disbursed' => $cycleTotals->disbursed ?? 0.0,
+                    'remaining' => max(0, $baseLimit - ($cycleTotals->consumed ?? 0.0)),
+                    'cycle' => $cycle->label(),
+                ];
+            });
+
+        // With no active cycle the member's next claim opens a fresh one at the full campus limit
+        if ($selector === MemberClaimCycleService::SELECTOR_CURRENT) {
+            $withCycle = $cycles->pluck('member_id')->flip();
+            $rows = $rows->concat(
+                $members->reject(fn (Member $member) => $withCycle->has($member->id))
+                    ->map(function (Member $member) {
+                        $baseLimit = (float) SystemSetting::getGlobalLimit($member->campus_id);
+
+                        return [
+                            'member' => $member->full_name,
+                            'campus' => $member->campus?->acronym ?? 'Unassigned',
+                            'allowance' => $baseLimit,
+                            'approved' => 0.0,
+                            'disbursed' => 0.0,
+                            'remaining' => $baseLimit,
+                            'cycle' => 'No active cycle',
+                        ];
+                    })
             );
-            $cycleClaims = $member->claims()
-                ->whereBetween('submitted_at', [$cycleStart, $cycleEnd]);
+        }
 
-            $latestClaim = (clone $cycleClaims)
-                ->latest('submitted_at')
-                ->first();
-
-            $baseLimit = $latestClaim && $latestClaim->annual_limit
-                ? (float) $latestClaim->annual_limit
-                : (float) SystemSetting::annualLimit($member->campus_id)->first()?->setting_value ?? 23000.00;
-
-            $approvedAmount = (float) (clone $cycleClaims)
-                ->whereIn('status', ['Approved', 'Disbursed'])
-                ->sum('approved_amount');
-
-            $disbursedAmount = (float) (clone $cycleClaims)
-                ->where('status', 'Disbursed')
-                ->sum('approved_amount');
-
-            $remaining = max(0, $baseLimit - $disbursedAmount);
-
-            return [
-                'member' => $member->full_name,
-                'campus' => $member->campus?->acronym ?? 'Unassigned',
-                'allowance' => $baseLimit,
-                'approved' => $approvedAmount,
-                'disbursed' => $disbursedAmount,
-                'remaining' => $remaining,
-                'cycle' => $cycleLabel,
-            ];
-        })->toArray();
+        $rows = $rows->sortBy('member')->values()->toArray();
 
         return [
             'context' => $this->buildContext(
@@ -574,75 +586,39 @@ class ReportService
 
     protected function allowanceForfeiture(array $filters): array
     {
-        // Fetch active members and eager load claims to eliminate the N+1 query performance bottleneck.
         $members = Member::query()
             ->active()
             ->when(!empty($filters['campus_id']), fn($query) => $query->where('campus_id', $filters['campus_id']))
             ->when(!empty($filters['member_id']), fn($query) => $query->where('id', $filters['member_id']))
-            ->with(['campus', 'claims']) 
-            ->get();
-
-        // 3. Eager load annual_limit configurations for all applicable campuses
-        $campusIds = $members->pluck('campus_id')->unique()->filter()->toArray();
-        $settingsMap = SystemSetting::whereIn('campus_id', $campusIds)
-            ->where('setting_key', 'annual_claim_limit')
+            ->with('campus')
             ->get()
-            ->groupBy('campus_id');
+            ->keyBy('id');
 
-        // 4. Map values strictly using secure, in-memory computations
-        $rows = $members->map(function (Member $member) use ($filters, $settingsMap) {
-            [$cycleStart, $cycleEnd, $cycleLabel] = $this->resolveCycleBounds(
-                $filters['cycle'] ?? 'current',
-                $member->campus_id
-            );
-            $targetCycle = $cycleLabel === 'Current Cycle'
-                ? $this->cycleService->currentRecord($member->campus_id)->cycle_label
-                : $cycleLabel;
+        // Forfeiture only exists once a member's own cycle has expired: `current`/`previous` take each
+        // member's latest expired cycle, `all` every expired cycle. The cycle carries its limit snapshot.
+        $cycles = $this->memberCycleService->cyclesForSelector($filters['cycle'] ?? null, $members->keys(), null, true);
+        $totals = $this->memberCycleService->totalsForCycles($cycles->pluck('id'));
 
-            // Isolate claims submitted strictly inside this cycle's date boundaries
-            $cycleClaims = $member->claims->filter(function ($claim) use ($cycleStart, $cycleEnd) {
-                return $claim->submitted_at >= $cycleStart && $claim->submitted_at <= $cycleEnd;
-            });
+        $rows = $cycles
+            ->filter(fn (MemberClaimCycle $cycle) => $members->has($cycle->member_id))
+            ->map(function (MemberClaimCycle $cycle) use ($members, $totals) {
+                $member = $members->get($cycle->member_id);
+                $baseLimit = (float) $cycle->claim_limit;
+                $claimedAmount = $totals->get($cycle->id)->consumed ?? 0.0;
 
-            // --- THE FIXED LOGIC HIERARCHY ---
-            $campusSettings = $settingsMap->get($member->campus_id) ?? collect();
-
-            // Priority 1: Check for an explicit historical setting recorded for this specific cycle
-            $matchedSetting = $campusSettings->firstWhere('cycle_label', $targetCycle);
-
-            if ($matchedSetting) {
-                $baseLimit = (float) $matchedSetting->setting_value;
-            } else {
-                // Priority 2: Fall back to the snapshot on the latest claim if no cycle setting is found
-                $latestClaim = $cycleClaims->sortByDesc('submitted_at')->first();
-
-                if ($latestClaim && $latestClaim->annual_limit) {
-                    $baseLimit = (float) $latestClaim->annual_limit;
-                } else {
-                    // Priority 3: Fall back to the global active system setting row as a last resort
-                    $activeSetting = $campusSettings->firstWhere('cycle_label', null);
-                    $baseLimit = $activeSetting ? (float) $activeSetting->setting_value : 0.00;
-                }
-            }
-            // ---------------------------------
-
-            // 5. Aggregate financial metrics accurately
-            $claimedAmount = (float) $cycleClaims
-                ->whereIn('status', ['Approved', 'Disbursed'])
-                ->sum('approved_amount');
-
-            // Ensure forfeited allowance never drops below zero
-            $forfeited = max(0, $baseLimit - $claimedAmount);
-
-            return [
-                'member'    => $member->full_name,
-                'campus'    => $member->campus?->acronym ?? 'Unassigned',
-                'cycle'     => $cycleLabel,
-                'allowance' => $baseLimit,
-                'claimed'   => $claimedAmount,
-                'forfeited' => $forfeited,
-            ];
-        })->toArray();
+                return [
+                    'member'    => $member->full_name,
+                    'campus'    => $member->campus?->acronym ?? 'Unassigned',
+                    'cycle'     => $cycle->label(),
+                    'allowance' => $baseLimit,
+                    'claimed'   => $claimedAmount,
+                    // Unused allowance never rolls over; it is forfeited when the cycle ends
+                    'forfeited' => max(0, $baseLimit - $claimedAmount),
+                ];
+            })
+            ->sortBy('member')
+            ->values()
+            ->toArray();
 
         return [
 
@@ -1245,136 +1221,99 @@ class ReportService
         |--------------------------------------------------------------------------
         */
     
-        $resolvedCycle = $this->cycleService->resolve($cycleParam, $campusId);
-    
-        $startDate = $resolvedCycle[0];
-        $endDate = $resolvedCycle[1];
-    
-        $cycleLabel = $startDate->format('F Y') . ' - ' . $endDate->format('F Y');
-    
+        // Claim cycles are per member: select each claimant's own cycle rather than a campus window
+        $selector = $this->memberCycleService->normalizeSelector($cycleParam);
+        $cycles = $this->memberCycleService->cyclesForSelector($selector)->keyBy('id');
+
+        $cycleLabel = collect($this->memberCycleService->selectorOptions())
+            ->firstWhere('value', $selector)['label'];
+
         /*
         |--------------------------------------------------------------------------
         | 2. Retrieve claims
         |--------------------------------------------------------------------------
         */
-    
-        $claims = $this->claimService->getAllClaims(
-            [],
-            $campusId,
-            [$startDate, $endDate]
-        );
-    
+
+        // Disbursed claims only, oldest first so each row can look back at earlier releases
+        $claims = $this->claimService->getAllClaims([], $campusId)
+            ->filter(fn (Claim $claim) => $cycles->has($claim->member_claim_cycle_id)
+                && $claim->status === ClaimStatus::Disbursed->value)
+            ->sortBy([['submitted_at', 'asc'], ['created_at', 'asc']])
+            ->values();
+
+        $includedCycles = $cycles->only($claims->pluck('member_claim_cycle_id')->unique()->all());
+        $startDate = $includedCycles->min('cycle_start');
+        $endDate = $includedCycles->max('cycle_end');
+
         /*
         |--------------------------------------------------------------------------
-        | 3. Build member-based records
+        | 3. Build ledger records: one row per disbursed claim
         |--------------------------------------------------------------------------
         |
-        | This preserves the existing medical-assistance business logic.
-        | The resulting records are also retained as the legacy `records`
+        | "Received previous claims" and the running balance only look at the
+        | member's earlier disbursements in the same claim cycle, so no amount is
+        | counted twice. The records are also retained as the legacy `records`
         | payload for backward compatibility.
         |
         */
-    
+
+        $releasedByCycle = [];
+
         $formattedRecords = $claims
-            ->groupBy('member_id')
-            ->filter(function ($memberClaims) {
-                return $memberClaims->contains('status', 'Approved');
-            })
-            ->map(function ($memberClaims, $memberId) use ($startDate, $endDate) {
-    
-                $firstClaim = $memberClaims->first();
-    
-                $member = $firstClaim->member;
-                $user = $member?->user;
-    
-                $fullName = trim($user?->name ?? 'Unknown Member');
-    
-                /*
-                 * Approved claims currently requiring reimbursement.
-                 */
-                $approvedAmountForReimbursement = $memberClaims
-                    ->where('status', 'Approved')
-                    ->sum('approved_amount');
-    
-                /*
-                 * Disbursed claims already present in the retrieved
-                 * cycle dataset.
-                 */
-                $previouslyDisbursedAmount = $memberClaims
-                    ->where('status', 'Disbursed')
-                    ->sum('approved_amount');
-    
-                /*
-                 * Historically disbursed claims for this member
-                 * within the current cycle.
-                 *
-                 * This intentionally remains separate from the
-                 * already-loaded collection because the existing
-                 * business rule explicitly queries Claim here.
-                 */
-                $receivedFromPreviousClaims = Claim::withoutGlobalScope(
-                    CampusMemberScope::class
-                )
-                    ->where('member_id', $memberId)
-                    ->where('status', 'Disbursed')
-                    ->whereBetween('submitted_at', [$startDate, $endDate])
-                    ->sum('approved_amount');
-    
-                /*
-                 * Annual claim limit.
-                 */
-                $maxAnnualLimit = $firstClaim->annual_limit ?? 23000.00;
-    
-                $remainingBalance = $maxAnnualLimit - $previouslyDisbursedAmount;
-    
-                /*
-                 * Existing prior-claim indicator.
-                 */
-                $hasExistingPriorClaim = $receivedFromPreviousClaims > 0;
-    
-                /*
-                 * Existing remarks rule.
-                 */
-                $remarks = (float) $remainingBalance === 0.00
-                    ? 'Can claim by ' . $endDate->copy()->addMonth()->format('F Y')
-                    : '';
-    
-                /*
-                 * Campus information.
-                 */
+            ->map(function (Claim $claim) use ($cycles, &$releasedByCycle) {
+                $cycle = $cycles->get($claim->member_claim_cycle_id);
+                $earlierClaims = collect($releasedByCycle[$cycle->id] ?? []);
+
+                $member = $claim->member;
                 $campus = $member?->campus;
-    
+                $approvedAmount = (float) $claim->approved_amount;
+
+                /*
+                 * Disbursements released to this member earlier in the same cycle.
+                 */
+                $receivedFromPreviousClaims = (float) $earlierClaims->sum('approved_amount');
+                $hasExistingPriorClaim = $receivedFromPreviousClaims > 0;
+
+                /*
+                 * Cycle claim limit (snapshotted when the member's cycle started)
+                 * less everything released up to and including this claim.
+                 */
+                $maxAnnualLimit = (float) $cycle->claim_limit;
+                $remainingBalance = max(0, $maxAnnualLimit - $receivedFromPreviousClaims - $approvedAmount);
+
+                $remarks = (float) $remainingBalance === 0.00
+                    ? 'Can claim by ' . $cycle->cycle_end->copy()->addDay()->format('F Y')
+                    : '';
+
+                $releasedByCycle[$cycle->id][] = $claim;
+
                 return [
-                    'year' => Carbon::parse($firstClaim->submitted_at)->format('Y'),
-    
-                    'month' => Carbon::parse($firstClaim->submitted_at)->format('F'),
-    
+                    'year' => Carbon::parse($claim->submitted_at)->format('Y'),
+
+                    'month' => Carbon::parse($claim->submitted_at)->format('F'),
+
                     'campus' => $campus?->acronym
                         ?? $campus?->campus_name
                         ?? 'N/A',
-    
-                    'name_of_claimant' => $fullName,
-    
-                    'type_of_claim' => $memberClaims
-                        ->pluck('claimType.name')
-                        ->filter()
-                        ->unique()
-                        ->implode(', '),
-    
-                    'approved_amount_ac' => (float) $approvedAmountForReimbursement,
-    
-                    'received_previous_claims' => (float) $receivedFromPreviousClaims,
-    
+
+                    'name_of_claimant' => trim($member?->user?->name ?? 'Unknown Member'),
+
+                    'type_of_claim' => $claim->claimType?->name ?? '',
+
+                    'approved_amount_ac' => $approvedAmount,
+
+                    'received_previous_claims' => $receivedFromPreviousClaims,
+
                     'month_year_previous' => $hasExistingPriorClaim
-                        ? Carbon::parse($startDate)->format('F Y')
+                        ? Carbon::parse($earlierClaims->last()->submitted_at)->format('F Y')
                         : 'N/A',
 
-                    'max_claimable_amount' => $maxAnnualLimit,    
-    
+                    'max_claimable_amount' => $maxAnnualLimit,
+
                     'balance' => (float) $remainingBalance,
-    
+
                     'remarks' => $remarks,
-    
+
                     'is_blue_indicator' => $hasExistingPriorClaim,
                 ];
             })
@@ -1414,7 +1353,7 @@ class ReportService
         */
     
         $rows = collect($formattedRecords)
-            ->map(function (array $record,) use ($maxClaimableAmount) {
+            ->map(function (array $record) {
                 return [
                     'year' => $record['year'],
                     'month' => $record['month'],
@@ -1425,7 +1364,7 @@ class ReportService
                     'received_previous_claims' => (float) $record['received_previous_claims'],
                     'previous_claim_month' => $record['month_year_previous'],
                     'balance' => (float) $record['balance'],
-                    'max_claimable_amount' => $maxClaimableAmount,
+                    'max_claimable_amount' => (float) $record['max_claimable_amount'],
                     'remarks' => $record['remarks'],
                     // 'is_blue_indicator' => (bool) $record['is_blue_indicator'],
                 ];
@@ -1521,7 +1460,7 @@ class ReportService
     
             'context' => [
                 'report_title' => 'Medical Assistance Report',
-                'description' => 'Medical assistance claims within the selected cycle.',
+                'description' => 'Disbursed medical assistance claims within each member\'s claim cycle.',
                 'association' => 'CVSCAFT FACULTY ASSOCIATION',
                 'campus' => $campus?->acronym ?? '',
                 'cycle' => $cycleLabel,
@@ -1722,14 +1661,11 @@ class ReportService
             return 'N/A';
         }
 
-        $cycle = ClaimsCycle::query()
-            ->where('campus_id', $campusId)
-            ->where('start_date', '<=', $submittedAt)
-            ->where('end_date', '>=', $submittedAt)
-            ->first();
+        // Coverage is the claimant's own claim cycle
+        $cycle = $this->memberCycleService->getCycleForClaim($claim);
 
         return $cycle
-            ? $cycle->start_date->format('F Y') . '-' . $cycle->end_date->format('F Y')
+            ? $cycle->cycle_start->format('F Y') . '-' . $cycle->cycle_end->format('F Y')
             : 'N/A';
     }
 
@@ -1763,11 +1699,6 @@ class ReportService
             ->when(!empty($filters['date_to']), function ($query) use ($filters) {
                 return $query->whereDate('submitted_at', '<=', $filters['date_to']);
             });
-    }
-
-    private function resolveCycleBounds(?string $cycle, ?string $campusId = null): array
-    {
-        return $this->cycleService->resolve($cycle, $campusId);
     }
 
     protected function buildContext(
@@ -2115,30 +2046,7 @@ class ReportService
 
     public function getAllowanceCycles(): array
     {
-        $cycles = [
-            ['value' => 'current', 'label' => 'Current Cycle'],
-        ];
-
-        $campusIds = Campus::query()->where('is_active', true)->pluck('id');
-        $storedCycles = collect();
-
-        foreach ($campusIds as $campusId) {
-            $this->cycleService->list($campusId);
-            $storedCycles = $storedCycles->merge(
-                ClaimsCycle::where('campus_id', $campusId)
-                    ->orderByDesc('start_date')
-                    ->limit(4)
-                    ->pluck('cycle_label')
-            );
-        }
-
-        foreach ($storedCycles->unique()->values() as $label) {
-            $cycles[] = [
-                'value' => $label,
-                'label' => str_replace('-', ' - ', $label),
-            ];
-        }
-
-        return $cycles;
+        // Members have independent cycles, so options select cycles relative to each member
+        return $this->memberCycleService->selectorOptions();
     }
 }

@@ -23,12 +23,16 @@ class Claim extends Model
     protected $fillable = [
         'claim_number',
         'member_id',
+        'member_claim_cycle_id',
         'claim_type_id',
         'payment_method_id',
         'requested_amount',
         'approved_amount',
         'annual_limit',
         'description',
+        'hospital_name',
+        'treatment_start_date',
+        'treatment_end_date',
         'status',
         'remarks',
         'submitted_at',
@@ -43,6 +47,9 @@ class Claim extends Model
             'requested_amount' => 'decimal:2',
             'approved_amount' => 'decimal:2',
             'annual_limit' => 'decimal:2',
+
+            'treatment_start_date' => 'date',
+            'treatment_end_date' => 'date',
 
             'submitted_at' => 'datetime',
             'approved_at' => 'datetime',
@@ -69,6 +76,11 @@ class Claim extends Model
     public function member()
     {
         return $this->belongsTo(Member::class, 'member_id', 'id');
+    }
+
+    public function memberClaimCycle()
+    {
+        return $this->belongsTo(MemberClaimCycle::class, 'member_claim_cycle_id');
     }
 
     public function claimType()

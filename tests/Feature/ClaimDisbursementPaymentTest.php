@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Enums\ClaimStatus;
+use App\Models\Campus;
 use App\Models\Claim;
 use App\Models\ClaimType;
 use App\Models\Member;
@@ -41,7 +42,9 @@ class ClaimDisbursementPaymentTest extends TestCase
             'name' => 'GCash',
             'is_active' => true,
         ]);
+        $campus = Campus::create(['campus_name' => 'Main Campus', 'acronym' => 'MC', 'location' => 'Bohol', 'is_active' => true]);
         $member = Member::create([
+            'campus_id' => $campus->id,
             'user_id' => $user->user_id,
             'employee_number' => 'EMP-1002',
             'first_name' => 'Ana',
@@ -66,7 +69,8 @@ class ClaimDisbursementPaymentTest extends TestCase
             'submitted_at' => now(),
         ]);
 
-        $this->withoutMiddleware();
+        // Skip only the policy gate; disabling all middleware would also drop route-model binding
+        $this->withoutMiddleware(\Illuminate\Auth\Middleware\Authorize::class);
 
         $response = $this->call(
             'POST',
@@ -110,7 +114,9 @@ class ClaimDisbursementPaymentTest extends TestCase
             'name' => 'GCash',
             'is_active' => true,
         ]);
+        $campus = Campus::create(['campus_name' => 'Main Campus', 'acronym' => 'MC', 'location' => 'Bohol', 'is_active' => true]);
         $member = Member::create([
+            'campus_id' => $campus->id,
             'user_id' => $user->user_id,
             'employee_number' => 'EMP-1001',
             'first_name' => 'Juan',
@@ -135,7 +141,7 @@ class ClaimDisbursementPaymentTest extends TestCase
             'submitted_at' => now(),
         ]);
 
-        $service = new ClaimService();
+        $service = app(ClaimService::class);
 
         $service->updateStatus($claim, [
             'status' => ClaimStatus::Disbursed->value,

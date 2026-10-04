@@ -7,6 +7,13 @@ use App\Models\SystemSetting;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
+/**
+ * Campus financial reporting periods (`claims_cycles`), used only to filter treasury ledger,
+ * contribution and disbursement totals.
+ *
+ * Claim eligibility does not use these periods: each member has their own claim cycle,
+ * see MemberClaimCycleService.
+ */
 class CycleService
 {
     public function current(?string $campusId = null, ?Carbon $date = null): array

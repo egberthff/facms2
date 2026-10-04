@@ -8,6 +8,7 @@ use App\Models\FundTransfer;
 use App\Models\User;
 use App\Services\MemberService;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Validation\ValidationException;
 
 class CollectionSummaryService
@@ -77,12 +78,7 @@ class CollectionSummaryService
                 'campus' => $transfer->source_campus_id,
             ]);
 
-        $disbursements = (clone $query)
-            ->with('destinationCampus')
-            ->where('type', 'ffa_disbursement')
-            ->when($campusId, fn ($query) => $query->where('destination_campus_id', $campusId))
-            ->oldest('created_at')
-            ->get()
+        $disbursements = $this->ffaDisbursementsForCampus($campusId, $from, $to)
             ->map(fn (FundTransfer $transfer) => (object) [
                 'label' => $transfer->description,
                 'amount' => $transfer->amount,
@@ -106,6 +102,24 @@ class CollectionSummaryService
             'campus_auditor' =>  '',
             'campus_president' => $campusPresident?->name ?? '',
         ];
+    }
+
+    /**
+     * Approved FFA disbursements received by a campus (all campuses when null), oldest first.
+     * The date range applies to $dateColumn: created_at for the collection summary,
+     * approved_at for the cash flow (the day the funds were posted to the campus ledger).
+     */
+    public function ffaDisbursementsForCampus(?string $campusId, ?string $from = null, ?string $to = null, string $dateColumn = 'created_at'): Collection
+    {
+        return FundTransfer::query()
+            ->approved()
+            ->with('destinationCampus')
+            ->where('type', 'ffa_disbursement')
+            ->when($campusId, fn ($query) => $query->where('destination_campus_id', $campusId))
+            ->when($from, fn ($query) => $query->where($dateColumn, '>=', Carbon::parse($from)->startOfDay()))
+            ->when($to, fn ($query) => $query->where($dateColumn, '<=', Carbon::parse($to)->endOfDay()))
+            ->oldest($dateColumn)
+            ->get();
     }
 
     public function buildPrintableData(?string $campusId = null, ?string $from = null, ?string $to = null): array

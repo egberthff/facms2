@@ -20,11 +20,13 @@ use App\Models\Claim;
 use App\Models\ClaimDocument;
 use App\Models\SystemSetting;
 use App\Services\ClaimService;
+use App\Services\ClaimFormService;
 use App\Services\TreasuryLedgerService;
 use App\Services\ReportService;
 use App\Services\EmailService;
 use App\Services\DashboardService;
 use App\Services\NotificationService;
+use Illuminate\Validation\ValidationException;
 
 use Exception;
 class ClaimController extends Controller
@@ -110,6 +112,9 @@ class ClaimController extends Controller
                 'message' => 'Claim submitted successfully.',
             ], 200);
 
+        } catch (ValidationException $e) {
+            // Cycle allowance re-check under lock failed; surface it as a normal 422
+            throw $e;
         } catch (Exception $e) {
             // Log the actual error here for debugging: 
             DB::rollback();
@@ -196,6 +201,11 @@ class ClaimController extends Controller
         $data['cycles'] = $this->reportService->getAllowanceCycles() ?? [];
 
         return view('claims.claims-list', $data);
+    }
+
+    public function printForms(Claim $claim, ClaimFormService $claimFormService)
+    {
+        return view('claims.forms.medical-claim-forms', $claimFormService->buildFormData($claim));
     }
 
     public function getRunningBalance(User $user)

@@ -48,7 +48,7 @@
         class="fixed inset-0 z-30 bg-slate-900/60 lg:hidden"
         aria-hidden="true"></div>
     {{-- Main Content --}}
-    <div class="flex-1 flex flex-col lg:ml-64">
+    <div class="flex-1 min-w-0 flex flex-col lg:ml-64">
 
         {{-- Top Navigation --}}
         {{-- <x-layout.topbar /> --}}

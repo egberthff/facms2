@@ -122,18 +122,6 @@
                 <div
                     x-data="{ open:false }"
                     class="relative inline-block text-left">
-                    @if(isset($isMemberMenu) && $isMemberMenu)
-                        <button
-                            @click="
-                                activeClaim = @js($claim);
-                                openModal = true;
-                                open = false;
-                                "
-                                class="flex w-full items-center px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-100">
-                                <x-heroicon-o-eye class="size-6 text-blue-600" />
-                                <span class="ml-3">View Details</span>
-                            </button>
-                        @else
                     <button
                         @click="open=!open"
                         class="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-100 transition">
@@ -150,8 +138,7 @@
                                 d="M19 9l-7 7-7-7"/>
                         </svg>
                     </button>
-                    @endif
-                     
+
                     <div
                         x-show="open"
                         @click.away="open=false"
@@ -168,7 +155,23 @@
                                 <x-heroicon-o-eye class="size-6 text-blue-600" />
                                 <span class="ml-3">View Details</span>
                             </button>
-                            @if($userRole === 'President' && strtolower(trim($claim->status ?? '')) === 'pending')
+                            @if(isset($isMemberMenu) && $isMemberMenu)
+                                <button
+                                    type="button"
+                                    @click="
+                                        window.dispatchEvent(new CustomEvent('open-file-preview', {
+                                            detail: {
+                                                url: '{{ route('claim.forms', $claim) }}',
+                                                name: 'Claim Forms – {{ $claim->claim_number }}'
+                                            }
+                                        }));
+                                        open = false;
+                                    "
+                                    class="flex w-full items-center px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-100 z-50">
+                                    <x-heroicon-o-printer class="size-6 text-emerald-600" />
+                                    <span class="ml-3">Print Forms</span>
+                                </button>
+                            @elseif($userRole === 'President' && strtolower(trim($claim->status ?? '')) === 'pending')
                                     <button
                                         @click="updateClaimStatus('{{ $claim->id }}', 'Approved', @js($claim))"
                                         class="flex w-full items-center px-4 py-2.5 text-sm text-blue-700 hover:bg-blue-50 z-50">
