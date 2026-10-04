@@ -2,9 +2,9 @@
     x-show="step == 3"
     x-transition.opacity.duration.250ms
     x-cloak>
-    <div class="bg-white rounded-2xl border border-blue-700 shadow-sm p-6">
+    <div class="rounded-xl border border-gray-200 bg-white p-4 shadow-xs sm:p-6">
         <div class="mb-6">
-            <h2 class="text-xl font-bold">
+            <h2 class="text-lg font-semibold text-gray-900">
                 Disbursement Information
             </h2>
             <p class="text-sm text-gray-500 mt-1">
@@ -14,7 +14,7 @@
         <!-- =========================================== -->
         <!-- PAYMENT OPTIONS -->
         <!-- =========================================== -->
-        <div class="grid md:grid-cols-3 gap-5">
+        <div class="grid gap-4 sm:grid-cols-3 sm:gap-5">
             <!-- ================================= -->
             <!-- BANK -->
             <!-- ================================= -->
@@ -24,7 +24,7 @@
                 :class="paymentMethod=='bank'
                     ? 'border-orange-500 bg-orange-50 ring-2 ring-orange-200 scale-105'
                     : 'border-gray-300 bg-white'"
-                class="relative border rounded-2xl p-6 transition duration-200">
+                class="relative w-full rounded-xl border p-5 text-center transition duration-200 sm:p-6">
                 <template x-if="paymentMethod=='bank'">
                     <div
                         class="absolute top-3 right-3 w-6 h-6 rounded-full bg-orange-500 text-white flex items-center justify-center text-xs">
@@ -45,10 +45,10 @@
                             d="M3 10l9-6 9 6M5 10v8M9 10v8M15 10v8M19 10v8M3 18h18"/>
                     </svg>
                 </div>
-                <h3 class="font-semibold text-lg mt-4">
+                <h3 class="mt-3 text-base font-semibold text-gray-900">
                     Bank Transfer
                 </h3>
-                <p class="text-sm text-gray-500 mt-2">
+                <p class="mt-1 text-sm text-gray-500">
                     Transfer directly to your bank account.
                 </p>
             </button>
@@ -61,7 +61,7 @@
                 :class="paymentMethod=='gcash'
                     ? 'border-orange-500 bg-orange-50 ring-2 ring-orange-200 scale-105'
                     : 'border-gray-300 bg-white'"
-                class="relative border rounded-2xl p-6 transition duration-200">
+                class="relative w-full rounded-xl border p-5 text-center transition duration-200 sm:p-6">
                 <template x-if="paymentMethod=='gcash'">
                     <div
                         class="absolute top-3 right-3 w-6 h-6 rounded-full bg-orange-500 text-white flex items-center justify-center text-xs">
@@ -89,10 +89,10 @@
                             y2="18"/>
                     </svg>
                 </div>
-                <h3 class="font-semibold text-lg mt-4">
+                <h3 class="mt-3 text-base font-semibold text-gray-900">
                     GCash
                 </h3>
-                <p class="text-sm text-gray-500 mt-2">
+                <p class="mt-1 text-sm text-gray-500">
                     Send directly to your GCash wallet.
                 </p>
             </button>
@@ -105,7 +105,7 @@
                 :class="paymentMethod=='check'
                     ? 'border-orange-500 bg-orange-50 ring-2 ring-orange-200 scale-105'
                     : 'border-gray-300 bg-white'"
-                class="relative border rounded-2xl p-6 transition duration-200">
+                class="relative w-full rounded-xl border p-5 text-center transition duration-200 sm:p-6">
                 <template x-if="paymentMethod=='check'">
                     <div
                         class="absolute top-3 right-3 w-6 h-6 rounded-full bg-orange-500 text-white flex items-center justify-center text-xs">
@@ -133,10 +133,10 @@
                             y2="10"/>
                     </svg>
                 </div>
-                <h3 class="font-semibold text-lg mt-4">
+                <h3 class="mt-3 text-base font-semibold text-gray-900">
                     Check
                 </h3>
-                <p class="text-sm text-gray-500 mt-2">
+                <p class="mt-1 text-sm text-gray-500">
                     Pick up your check from the office.
                 </p>
             </button>
@@ -150,16 +150,16 @@
             x-show="paymentMethod=='bank'"
             x-transition
             class="mt-8">
-            <div class="grid md:grid-cols-2 gap-5">
+            <div class="grid gap-4 md:grid-cols-2 md:gap-5">
                 <div>
-                    <label class="block text-sm font-medium mb-2">
+                    <label class="mb-1.5 block text-sm font-medium text-gray-700">
                         Bank Name
                         <span class="text-red-500">*</span>
                     </label>
                     <select
                         name="bank"
                         x-model="bank"
-                        class="w-full rounded-xl border border-gray-300 px-4 py-3">
+                        class="w-full rounded-lg border border-gray-300 bg-white px-3.5 py-2.5 text-sm shadow-xs">
                         <option value="">Select Bank</option>
                         <option>BDO</option>
                         <option>BPI</option>
@@ -169,7 +169,7 @@
                     </select>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium mb-2">
+                    <label class="mb-1.5 block text-sm font-medium text-gray-700">
                         Account Number
                         <span class="text-red-500">*</span>
                     </label>
@@ -185,13 +185,13 @@
                             accountNumber = $event.target.value;
                         "
                         autocomplete="off"
-                        class="w-full rounded-xl border border-gray-300 px-4 py-3"
+                        class="w-full rounded-lg border border-gray-300 bg-white px-3.5 py-2.5 text-sm shadow-xs"
                         placeholder="Enter account number"
                     >
 
                 </div>
                 <div>
-                    <label class="block text-sm font-medium mb-2">
+                    <label class="mb-1.5 block text-sm font-medium text-gray-700">
                         Account Name
                         <span class="text-red-500">*</span>
                     </label>
@@ -216,12 +216,12 @@
                             $event.target.value = value;
                             accountName = value;
                         "    
-                        class="w-full rounded-xl border border-gray-300 px-4 py-3"
+                        class="w-full rounded-lg border border-gray-300 bg-white px-3.5 py-2.5 text-sm shadow-xs"
                         placeholder="Enter account name"
                     >
                 </div>
                 <div>
-                    <label class="block text-sm font-medium mb-2">
+                    <label class="mb-1.5 block text-sm font-medium text-gray-700">
                         Branch (Optional)
                     </label>
                     <input
@@ -237,7 +237,7 @@
                             $event.target.value = value;
                             branch = value;
                         "
-                        class="w-full rounded-xl border border-gray-300 px-4 py-3">
+                        class="w-full rounded-lg border border-gray-300 bg-white px-3.5 py-2.5 text-sm shadow-xs">
                 </div>
             </div>
         </div>
@@ -248,9 +248,9 @@
             x-show="paymentMethod=='gcash'"
             x-transition
             class="mt-8">
-            <div class="grid md:grid-cols-2 gap-5">
+            <div class="grid gap-4 md:grid-cols-2 md:gap-5">
                 <div>
-                    <label class="block text-sm font-medium mb-2">
+                    <label class="mb-1.5 block text-sm font-medium text-gray-700">
                         GCash Number
                         <span class="text-red-500">*</span>
                     </label>
@@ -284,11 +284,11 @@
                             gcashNumber = value;
                         "
 
-                        class="w-full rounded-xl border border-gray-300 px-4 py-3"
+                        class="w-full rounded-lg border border-gray-300 bg-white px-3.5 py-2.5 text-sm shadow-xs"
                     >
                 </div>
                 <div>
-                    <label class="block text-sm font-medium mb-2">
+                    <label class="mb-1.5 block text-sm font-medium text-gray-700">
                         Account Name
                         <span class="text-red-500">*</span>
                     </label>
@@ -316,7 +316,7 @@
                         "                   
 
                         placeholder="Juan Dela Cruz"
-                        class="w-full rounded-xl border border-gray-300 px-4 py-3"
+                        class="w-full rounded-lg border border-gray-300 bg-white px-3.5 py-2.5 text-sm shadow-xs"
                     >
                 </div>
             </div>
@@ -330,9 +330,9 @@
             x-show="paymentMethod=='check'"
             x-transition
             class="mt-8">
-            <div class="rounded-2xl border border-yellow-300 bg-yellow-50 p-6">
+            <div class="rounded-xl border border-amber-200 bg-amber-50 p-4 sm:p-6">
                 <div class="flex items-start gap-4">
-                    <div class="w-12 h-12 rounded-full bg-yellow-200 flex items-center justify-center">
+                    <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-100">
                         <svg
                             xmlns="http://www.w3.org/2000/svg"
                             class="w-6 h-6 text-yellow-700"
@@ -367,17 +367,17 @@
     <!-- NAVIGATION -->
     <!-- =========================================== -->
 
-    <div class="flex justify-between mt-6">
+    <div class="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-between">
         <button
             type="button"
             @click="previousStep()"
-            class="px-8 py-3 rounded-xl bg-gray-300 hover:bg-gray-400 font-medium transition">
+            class="w-full rounded-lg border border-gray-300 bg-white px-6 py-2.5 text-sm font-medium text-gray-700 shadow-xs transition hover:bg-gray-50 sm:w-auto">
                 Back
         </button>
         <button
             type="button"
             @click="nextStep()"
-            class="px-8 py-3 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-semibold transition">
+            class="w-full rounded-lg bg-orange-500 px-6 py-2.5 text-sm font-semibold text-white shadow-xs transition hover:bg-orange-600 sm:w-auto">
             Continue
         </button>
     </div>

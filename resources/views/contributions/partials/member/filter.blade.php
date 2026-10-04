@@ -19,7 +19,7 @@
             <button 
                 type="button"
                 @click="open = !open"
-                class="inline-flex w-full justify-between items-center gap-x-2 rounded-lg bg-white px-4 py-2 text-sm font-medium text-slate-700 border border-slate-200 hover:bg-slate-50 transition focus:outline-none focus:ring-2 focus:ring-blue-400 min-w-[160px]">
+                class="inline-flex w-full min-w-40 items-center justify-between gap-x-2 rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 shadow-xs transition hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/30">
                 
                 <div class="flex items-center gap-2">
                     <span class="text-slate-400 font-normal">Status:</span>
@@ -42,7 +42,7 @@
                 x-transition:leave="transition ease-in duration-75"
                 x-transition:leave-start="transform opacity-100 scale-100"
                 x-transition:leave-end="transform opacity-0 scale-95"
-                class="absolute left-0 z-50 w-56 origin-top-left rounded-lg bg-white shadow-lg border border-slate-100 focus:outline-none py-1 max-h-60 overflow-y-auto"
+                class="absolute left-0 z-50 mt-2 max-h-60 w-56 origin-top-left overflow-y-auto rounded-xl border border-slate-200 bg-white py-1 shadow-lg ring-1 ring-black/5 focus:outline-none"
                 style="display: none;">
                 
                 <!-- Loop through statuses -->
@@ -63,8 +63,8 @@
         <!-- Search -->
         <form method="GET" action="{{ url()->current() }}">
             <div class="relative w-full lg:w-72">
-                <label for="contribution-type" class="block mb-2.5 text-sm font-medium text-heading">Select an option</label>
-                <select id="contribution-type" name="contribution_type" onchange="this.form.submit()" class="block w-full px-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand shadow-xs placeholder:text-body">
+                <label for="contribution-type" class="mb-1.5 block text-sm font-medium text-gray-700">Select an option</label>
+                <select id="contribution-type" name="contribution_type" onchange="this.form.submit()" class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 shadow-xs focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
                     @foreach(\App\Enums\ClaimTypes::cases() as $case)
                         <option value="{{ $case->value }}" {{ $contribution_type == strtolower(trim($case->value)) ? 'selected' : '' }}>
                             {{ $case->value }}

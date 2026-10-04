@@ -6,7 +6,7 @@
     $inputType = $isCycleMonth ? 'text' : 'number';
 @endphp
 
-<div class="rounded-xl border border-slate-200 bg-slate-50/60 p-5 transition hover:border-blue-200 hover:bg-blue-50/20">
+<div class="rounded-xl border border-slate-200 bg-slate-50/60 p-4 transition hover:border-blue-200 hover:bg-blue-50/20 sm:p-5">
     <div class="mb-4 flex items-start justify-between gap-4">
         <div>
             <h4 class="text-sm font-bold text-slate-900">{{ \Illuminate\Support\Str::title(str_replace('_', ' ', $setting->setting_key)) }}</h4>
@@ -23,7 +23,7 @@
         <label for="setting-{{ $setting->id }}" class="block text-xs font-semibold uppercase tracking-wide text-slate-500">{{ $isAssociationFund ? 'Additional cash-in' : 'Value' }}</label>
         <div class="flex gap-2">
             @if($isCycleMonth)
-                <select id="setting-{{ $setting->id }}" name="setting_value" required @disabled(!$canEdit) class="block min-w-0 flex-1 rounded-lg border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-blue-500 focus:ring-blue-500 disabled:bg-slate-100">
+                <select id="setting-{{ $setting->id }}" name="setting_value" required @disabled(!$canEdit) class="border block min-w-0 flex-1 rounded-lg border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-blue-500 focus:ring-blue-500 disabled:bg-slate-100">
                     @foreach(range(1, 12) as $month)
                         <option value="{{ $month }}" @selected((int) old('setting_value', $setting->setting_value) === $month)>{{ \Carbon\Carbon::create()->month($month)->format('F') }}</option>
                     @endforeach
@@ -39,7 +39,7 @@
                     @if($isAssociationFund) min="0.01" step="0.01" @endif
                     required
                     @disabled(!$canEdit)
-                    class="block min-w-0 flex-1 rounded-lg border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-blue-500 focus:ring-blue-500 disabled:bg-slate-100"
+                    class="border block min-w-0 flex-1 rounded-lg border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-blue-500 focus:ring-blue-500 disabled:bg-slate-100"
                 />
             @endif
             <button type="submit" @disabled(!$canEdit) class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-slate-300">{{ $canEdit ? 'Save' : 'Select campus' }}</button>

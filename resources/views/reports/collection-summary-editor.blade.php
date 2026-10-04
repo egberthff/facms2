@@ -1,12 +1,12 @@
 <x-app-layout>
-    <div class="max-w-6xl mx-auto px-4 py-6">
-        <div class="mb-6 flex items-center justify-between gap-4">
+    <div class="mx-auto max-w-6xl">
+        <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-                <h1 class="text-2xl font-bold text-gray-900">Fund Transfer Entry</h1>
+                <h1 class="text-xl font-semibold tracking-tight text-gray-900 sm:text-2xl">Fund Transfer Entry</h1>
                 <p class="text-sm text-gray-500">Record a campus remittance or an FFA disbursement. Approved transfers appear automatically in the collection summary.</p>
             </div>
-            {{-- <a href="{{ route('reports.index') }}" class="rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700">Back to Reports</a> --}}
-            <a href="{{ route('treasury.index') }}" class="rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700">Back to Treasury</a>
+            {{-- <a href="{{ route('reports.index') }}" class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 shadow-xs">Back to Reports</a> --}}
+            <a href="{{ route('treasury.index') }}" class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 shadow-xs">Back to Treasury</a>
         </div>
 
         @if(session('success'))
@@ -20,16 +20,16 @@
 
             <div class="grid md:grid-cols-2 gap-4 bg-white rounded-xl border border-gray-200 p-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700">Campus</label>
-                    <select name="campus_id" class="block w-full px-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand shadow-xs placeholder:text-body">
+                    <label class="mb-1.5 block text-sm font-medium text-gray-700">Campus</label>
+                    <select name="campus_id" class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 shadow-xs focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
                         @foreach($campuses as $campus)
                             <option value="{{ $campus->id }}">{{ $campus->campus_name }}</option>
                         @endforeach
                     </select>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700">Transfer type</label>
-                    <select name="type" class="block w-full px-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand shadow-xs placeholder:text-body" required>
+                    <label class="mb-1.5 block text-sm font-medium text-gray-700">Transfer type</label>
+                    <select name="type" class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 shadow-xs focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20" required>
                         <option value="campus_remittance">Campus remittance to FFA</option>
                         <option value="ffa_disbursement">FFA disbursement to campus</option>
                     </select>
@@ -38,26 +38,26 @@
 
             <div class="grid md:grid-cols-3 gap-4 bg-white rounded-xl border border-gray-200 p-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700">Reference number</label>
-                    <input type="text" name="reference_number" class="mt-1 w-full rounded-lg border-gray-300" required>
+                    <label class="mb-1.5 block text-sm font-medium text-gray-700">Reference number</label>
+                    <input type="text" name="reference_number" class="mt-1 block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-xs" required>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700">Amount</label>
-                    <input type="number" name="amount" min="0.01" step="0.01" class="mt-1 w-full rounded-lg border-gray-300" required>
+                    <label class="mb-1.5 block text-sm font-medium text-gray-700">Amount</label>
+                    <input type="number" name="amount" min="0.01" step="0.01" class="mt-1 block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-xs" required>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700">Description</label>
-                    <input type="text" name="description" placeholder="Annual dues remittance" class="mt-1 w-full rounded-lg border-gray-300" required>
+                    <label class="mb-1.5 block text-sm font-medium text-gray-700">Description</label>
+                    <input type="text" name="description" placeholder="Annual dues remittance" class="mt-1 block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-xs" required>
                 </div>
             </div>
 
             <div class="flex justify-end">
-                <button type="submit" class="rounded-lg bg-blue-600 px-5 py-2.5 text-white font-medium hover:bg-blue-700">Submit Transfer</button>
+                <button type="submit" class="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white shadow-xs transition hover:bg-blue-700">Submit Transfer</button>
             </div>
         </form>
 
         @if(Auth::user()->hasAnyRole(['Federated President', 'Federated Treasurer']) || Auth::user()->can('view all campus data'))
-            <div class="mt-6 bg-white rounded-xl border border-gray-200 p-4">
+            <div class="mt-6 rounded-xl border border-gray-200 bg-white p-4 shadow-xs">
                 <h2 class="text-lg font-semibold mb-4">Pending transfers</h2>
                 <div class="space-y-3">
                     @forelse($pendingTransfers as $transfer)
@@ -69,7 +69,7 @@
                             </div>
                             <form method="POST" action="{{ route('reports.fund-transfers.approve', $transfer) }}">
                                 @csrf
-                                <button type="submit" class="rounded-lg bg-green-600 px-3 py-2 text-sm font-medium text-white hover:bg-green-700">Approve and post</button>
+                                <button type="submit" class="inline-flex items-center justify-center rounded-lg bg-green-600 px-3 py-2 text-sm font-medium text-white shadow-xs transition hover:bg-green-700">Approve and post</button>
                             </form>
                         </div>
                     @empty

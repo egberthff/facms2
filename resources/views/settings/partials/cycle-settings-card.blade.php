@@ -63,11 +63,11 @@
             <div class="grid gap-4 sm:grid-cols-3">
                 <div>
                     <label for="cycle-start-year" class="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-500">Start year</label>
-                    <input id="cycle-start-year" name="cycle_start_year" type="number" min="1900" max="2200" value="{{ old('cycle_start_year', optional($startYearSetting)->setting_value) }}" required @disabled(!$canEdit || $cycleLocked) class="block w-full rounded-lg border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-blue-500 focus:ring-blue-500 disabled:bg-slate-100">
+                    <input id="cycle-start-year" name="cycle_start_year" type="number" min="1900" max="2200" value="{{ old('cycle_start_year', optional($startYearSetting)->setting_value) }}" required @disabled(!$canEdit || $cycleLocked) class="border block w-full rounded-lg border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-blue-500 focus:ring-blue-500 disabled:bg-slate-100">
                 </div>
                 <div>
                     <label for="cycle-start-month" class="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-500">Start month</label>
-                    <select id="cycle-start-month" name="cycle_start_month" required @disabled(!$canEdit || $cycleLocked) class="block w-full rounded-lg border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-blue-500 focus:ring-blue-500 disabled:bg-slate-100">
+                    <select id="cycle-start-month" name="cycle_start_month" required @disabled(!$canEdit || $cycleLocked) class="border block w-full rounded-lg border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-blue-500 focus:ring-blue-500 disabled:bg-slate-100">
                         @foreach(range(1, 12) as $month)
                             <option value="{{ $month }}" @selected((int) old('cycle_start_month', optional($startMonthSetting)->setting_value) === $month)>{{ \Carbon\Carbon::create()->month($month)->format('F') }}</option>
                         @endforeach
@@ -75,7 +75,7 @@
                 </div>
                 <div>
                     <label for="cycle-years" class="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-500">Number of years</label>
-                    <input id="cycle-years" name="cycle_years" type="number" min="1" max="20" value="{{ old('cycle_years', optional($yearsSetting)->setting_value) }}" required @disabled(!$canEdit || $cycleLocked) class="block w-full rounded-lg border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-blue-500 focus:ring-blue-500 disabled:bg-slate-100">
+                    <input id="cycle-years" name="cycle_years" type="number" min="1" max="20" value="{{ old('cycle_years', optional($yearsSetting)->setting_value) }}" required @disabled(!$canEdit || $cycleLocked) class="border block w-full rounded-lg border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-blue-500 focus:ring-blue-500 disabled:bg-slate-100">
                 </div>
             </div>
 

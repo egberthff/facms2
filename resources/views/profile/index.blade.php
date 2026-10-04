@@ -5,18 +5,18 @@
         </h2>
     </x-slot>
 
-    <div class="py-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+    <div class="mx-auto max-w-7xl space-y-6">
 
         <!-- 1. Hero Overview Card -->
-        <div class="bg-white overflow-hidden shadow-sm rounded-lg border border-slate-100 p-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div class="flex items-center space-x-4">
+        <div class="flex flex-col gap-4 overflow-hidden rounded-xl border border-gray-200 bg-white p-5 shadow-xs sm:p-6 md:flex-row md:items-center md:justify-between">
+            <div class="flex min-w-0 items-center gap-4">
                 <!-- Avatar Placeholder with Initial -->
-                <div class="h-16 w-16 rounded-full bg-slate-800 text-white flex items-center justify-center font-bold text-2xl shadow-inner uppercase tracking-wider">
+                <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-slate-800 text-xl font-bold uppercase tracking-wider text-white shadow-inner sm:h-16 sm:w-16 sm:text-2xl">
                     {{ substr($member->first_name, 0, 1) }}{{ substr($member->last_name, 0, 1) }}
                 </div>
                 <div>
-                    <div class="flex items-center space-x-2.5">
-                        <h1 class="text-2xl font-bold text-slate-800 tracking-tight">{{ $member->full_name }}</h1>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <h1 class="text-xl font-semibold tracking-tight text-slate-900 sm:text-2xl">{{ $member->full_name }}</h1>
                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold {{ $member->membership_status === 'Active' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-700 border border-slate-200' }}">
                             {{ $member->membership_status }}
                         </span>
@@ -28,7 +28,7 @@
             </div>
 
             <!-- Action Block (e.g., Link to Password Change or Edit) -->
-            <div class="flex items-center space-x-3 self-start md:self-center">
+            <div class="flex items-center gap-3 self-start md:self-center">
                 <span class="text-xs font-mono font-bold text-slate-400 uppercase tracking-wider bg-slate-50 px-2.5 py-1.5 rounded border border-slate-100">
                     ID: {{ Str::limit($member->id, 8, '') }}
                 </span>
@@ -38,9 +38,9 @@
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             
             <!-- 2. Personal Information Block -->
-            <div class="bg-white shadow-sm rounded-lg border border-slate-100 p-6 lg:col-span-2 space-y-6">
+            <div class="space-y-6 rounded-xl border border-gray-200 bg-white p-5 shadow-xs sm:p-6 lg:col-span-2">
                 <div>
-                    <h3 class="text-base font-bold text-slate-800 uppercase tracking-wide border-b border-slate-100 pb-2 mb-4">{{ __('Personal Information') }}</h3>
+                    <h3 class="mb-4 border-b border-slate-100 pb-2 text-sm font-semibold uppercase tracking-wide text-slate-800">{{ __('Personal Information') }}</h3>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-6">
                         <div>
                             <span class="block text-xs font-bold text-slate-500 uppercase tracking-wider">{{ __('Gender') }}</span>
@@ -67,7 +67,7 @@
 
                 <!-- 3. Deployment / Corporate Details -->
                 <div>
-                    <h3 class="text-base font-bold text-slate-800 uppercase tracking-wide border-b border-slate-100 pb-2 mb-4">{{ __('Employment & Campus Identity') }}</h3>
+                    <h3 class="mb-4 border-b border-slate-100 pb-2 text-sm font-semibold uppercase tracking-wide text-slate-800">{{ __('Employment & Campus Identity') }}</h3>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-6">
                         <div>
                             <span class="block text-xs font-bold text-slate-500 uppercase tracking-wider">{{ __('Employee Number') }}</span>
@@ -98,10 +98,10 @@
             <!-- 4. Sidebar: Financial/Payout Metadata -->
             <div class="space-y-6">
                 <!-- GCash Payout Setup -->
-                <div class="bg-white shadow-sm rounded-lg border border-slate-100 p-6">
-                    <h3 class="text-base font-bold text-slate-800 uppercase tracking-wide border-b border-slate-100 pb-2 mb-4">{{ __('GCash Payout Details') }}</h3>
+                <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-xs sm:p-6">
+                    <h3 class="mb-4 border-b border-slate-100 pb-2 text-sm font-semibold uppercase tracking-wide text-slate-800">{{ __('GCash Payout Details') }}</h3>
                     <div class="space-y-4">
-                        <div class="p-3.5 bg-blue-50/50 rounded-md border border-blue-100/50 flex items-start space-x-3">
+                        <div class="flex items-start gap-3 rounded-lg border border-blue-100 bg-blue-50/50 p-3.5">
                             <div class="mt-0.5 text-blue-600 font-bold text-lg">📱</div>
                             <div>
                                 <span class="block text-xs font-bold text-slate-500 uppercase tracking-wider">{{ __('GCash Registered Number') }}</span>
@@ -119,16 +119,16 @@
                 </div>
 
                 <!-- Account Metrics Summary Panel -->
-                <div class="bg-[#1e293b] text-slate-200 shadow-sm rounded-lg p-6 space-y-4">
+                <div class="space-y-4 rounded-xl bg-[#1e293b] p-5 text-slate-200 shadow-xs sm:p-6">
                     <h3 class="text-sm font-bold text-slate-400 uppercase tracking-wider border-b border-slate-700 pb-2">{{ __('Activity Logs Summaries') }}</h3>
                     <div class="grid grid-cols-2 gap-4 text-center">
-                        <div class="bg-slate-800/50 p-3 rounded border border-slate-700/50">
+                        <div class="rounded-lg border border-slate-700/50 bg-slate-800/50 p-3">
                             <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">{{ __('Claims Filed') }}</span>
-                            <span class="text-xl font-bold text-white mt-1 block">{{ $member->claims->count() }}</span>
+                            <span class="mt-1 block text-xl font-bold text-white tabular-nums">{{ $member->claims->count() }}</span>
                         </div>
-                        <div class="bg-slate-800/50 p-3 rounded border border-slate-700/50">
+                        <div class="rounded-lg border border-slate-700/50 bg-slate-800/50 p-3">
                             <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">{{ __('Contributions') }}</span>
-                            <span class="text-xl font-bold text-white mt-1 block">{{ $member->contributions->count() }}</span>
+                            <span class="mt-1 block text-xl font-bold text-white tabular-nums">{{ $member->contributions->count() }}</span>
                         </div>
                     </div>
                 </div>

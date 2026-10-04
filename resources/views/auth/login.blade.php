@@ -19,7 +19,7 @@
         <div>
             <x-input-label for="email" :value="__('Institutional Email')" class="text-xs font-bold text-slate-700 uppercase tracking-wider" />
             <div class="mt-1 relative rounded-md shadow-sm">
-                <x-text-input id="email" class="block w-full px-4 py-2.5 border-slate-300 focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 text-sm transition duration-150 ease-in-out" 
+                <x-text-input id="email" class="block w-full px-4 py-2.5 border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 text-sm transition duration-150 ease-in-out" 
                     type="email" 
                     name="email" 
                     :value="old('email')" 
@@ -38,7 +38,7 @@
             </div>
             
             <div class="mt-1 relative rounded-md shadow-sm">
-                <x-text-input id="password" class="block w-full pl-4 pr-12 py-2.5 border-slate-300 focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 text-sm transition duration-150 ease-in-out"
+                <x-text-input id="password" class="block w-full pl-4 pr-12 py-2.5 border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 text-sm transition duration-150 ease-in-out"
                     type="password"
                     name="password"
                     required 

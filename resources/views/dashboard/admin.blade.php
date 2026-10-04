@@ -6,7 +6,7 @@
     /> -->
 
     <!-- Fixed Grid: Changed xl:grid-cols-4 to xl:grid-cols-3 to fit 6 cards perfectly -->
-    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
         
         <x-stats-card title="Members" :value="$members">
             <x-slot:icon>
@@ -55,14 +55,14 @@
         
     <!-- Centered Treasury Balance Section -->
     <div class="flex justify-center mt-6">
-        <div class="w-full max-w-md bg-[#11224D] text-white rounded-2xl p-6 shadow-sm">
+        <div class="w-full max-w-md bg-navy-900 text-white rounded-2xl p-5 sm:p-6 shadow-sm">
             <!-- Fixed Alignment: Added text-center to match the balance placement -->
-            <div class="text-sm font-medium tracking-wide opacity-80 mb-2 text-center">
+            <div class="text-xs font-medium uppercase tracking-wider text-white/70 mb-2 text-center">
                 TREASURY BALANCE 
             </div>
 
             <!-- Fixed Layout: Removed conflicting 'flex items-center' to allow clean centering -->
-            <div class="text-4xl text-center font-bold mb-2">
+            <div class="text-3xl sm:text-4xl text-center font-semibold tracking-tight tabular-nums mb-2">
                 <span>₱ {{ $balance }}</span>
             </div>
         </div>

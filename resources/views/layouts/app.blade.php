@@ -55,7 +55,7 @@
         <x-topbar/>
 
         {{-- Main Content --}}
-        <main class="flex-1 p-2">
+        <main class="flex-1 w-full max-w-screen-2xl mx-auto p-3 sm:p-4 lg:p-6">
 
             {{ $slot }}
 

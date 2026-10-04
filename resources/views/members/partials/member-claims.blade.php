@@ -1,13 +1,13 @@
 <div id="member-claims-modal" data-modal-backdrop="static" tabindex="-1" aria-hidden="true" class="hidden bg-gray-900/50 overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-[calc(100%-1rem)] max-h-full">
     <div class="relative p-4 w-full max-w-6xl max-h-full">
         <!-- Modal content -->
-         <div class="relative bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-lg shadow-2xl p-4 md:p-6">
+         <div class="relative rounded-xl border border-gray-200 bg-white p-4 shadow-xl md:p-6 dark:border-zinc-800 dark:bg-zinc-900">
             <!-- Modal header -->
-            <div class="flex items-center justify-between border-b border-gray-200 dark:border-zinc-800 pb-4 md:pb-5">
-                <h3 id="claims-modal-title" class="text-lg font-medium text-gray-900 dark:text-white">
+            <div class="flex items-center justify-between gap-4 border-b border-gray-200 pb-4 md:pb-5 dark:border-zinc-800">
+                <h3 id="claims-modal-title" class="text-lg font-semibold text-gray-900 dark:text-white">
                     Member Claims History
                 </h3>
-                <button type="button" class="text-gray-500 bg-transparent hover:bg-gray-100 hover:text-gray-900 dark:hover:bg-zinc-800 dark:hover:text-white rounded-lg text-sm w-9 h-9 ms-auto inline-flex justify-center items-center" data-modal-hide="member-claims-modal">
+                <button type="button" class="ms-auto inline-flex h-9 w-9 items-center justify-center rounded-lg bg-transparent text-sm text-gray-400 transition hover:bg-gray-100 hover:text-gray-900 dark:hover:bg-zinc-800 dark:hover:text-white" data-modal-hide="member-claims-modal">
                     <svg class="w-5 h-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18 17.94 6M18 18 6.06 6"/></svg>
                     <span class="sr-only">Close modal</span>
                 </button>
@@ -16,49 +16,49 @@
             <!-- Balance Cards Grid -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 py-4 md:py-5 border-b border-gray-200 dark:border-zinc-800">
                 <!-- Card: Approved Balance -->
-                <div class="p-4 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl shadow-sm">
+                <div class="rounded-xl border border-gray-200 bg-white p-4 shadow-xs dark:border-zinc-800 dark:bg-zinc-900">
                     <p class="text-xs font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Approved Balance</p>
-                    <p id="balance-approved" class="mt-2 text-2xl font-semibold text-gray-900 dark:text-white">
+                    <p id="balance-approved" class="mt-2 text-xl font-semibold tracking-tight text-gray-900 tabular-nums sm:text-2xl dark:text-white">
                         ₱0.00
                     </p>
                 </div>
             
                 <!-- Card: Actual Balance -->
-                <div class="p-4 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl shadow-sm">
+                <div class="rounded-xl border border-gray-200 bg-white p-4 shadow-xs dark:border-zinc-800 dark:bg-zinc-900">
                     <p class="text-xs font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Actual Balance</p>
-                    <p id="balance-actual" class="mt-2 text-2xl font-semibold text-gray-900 dark:text-white">
+                    <p id="balance-actual" class="mt-2 text-xl font-semibold tracking-tight text-gray-900 tabular-nums sm:text-2xl dark:text-white">
                         ₱0.00
                     </p>
                 </div>
             
                 <!-- Card: Base Limit -->
-                <div class="p-4 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl shadow-sm">
+                <div class="rounded-xl border border-gray-200 bg-white p-4 shadow-xs dark:border-zinc-800 dark:bg-zinc-900">
                     <p class="text-xs font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Base Limit</p>
-                    <p id="balance-base-limit" class="mt-2 text-2xl font-semibold text-gray-900 dark:text-white">
+                    <p id="balance-base-limit" class="mt-2 text-xl font-semibold tracking-tight text-gray-900 tabular-nums sm:text-2xl dark:text-white">
                         ₱0.00
                     </p>
                 </div>
             
                 <!-- Card: Total Approved Cycle -->
-                <div class="p-4 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl shadow-sm">
+                <div class="rounded-xl border border-gray-200 bg-white p-4 shadow-xs dark:border-zinc-800 dark:bg-zinc-900">
                     <p class="text-xs font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Total Approved</p>
-                    <p id="balance-approved-cycle" class="mt-2 text-2xl font-semibold text-gray-900 dark:text-white">
+                    <p id="balance-approved-cycle" class="mt-2 text-xl font-semibold tracking-tight text-gray-900 tabular-nums sm:text-2xl dark:text-white">
                         0
                     </p>
                 </div>
             
                 <!-- Card: Total Disbursed Cycle -->
-                <div class="p-4 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl shadow-sm">
+                <div class="rounded-xl border border-gray-200 bg-white p-4 shadow-xs dark:border-zinc-800 dark:bg-zinc-900">
                     <p class="text-xs font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Total Disbursed</p>
-                    <p id="balance-disbursed-cycle" class="mt-2 text-2xl font-semibold text-gray-900 dark:text-white">
+                    <p id="balance-disbursed-cycle" class="mt-2 text-xl font-semibold tracking-tight text-gray-900 tabular-nums sm:text-2xl dark:text-white">
                         0
                     </p>
                 </div>
             
                 <!-- Card: Member's own claim cycle -->
-                <div class="p-4 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl shadow-sm">
+                <div class="rounded-xl border border-gray-200 bg-white p-4 shadow-xs dark:border-zinc-800 dark:bg-zinc-900">
                     <p class="text-xs font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Claim Cycle</p>
-                    <p id="balance-cycle-start" class="mt-2 text-xl font-semibold text-gray-900 dark:text-white">
+                    <p id="balance-cycle-start" class="mt-2 text-xl font-semibold tracking-tight text-gray-900 tabular-nums dark:text-white">
                         -
                     </p>
                 </div>
@@ -122,8 +122,8 @@
             
 
             <!-- Modal Footer -->
-            <div class="flex items-center justify-end border-t border-gray-200 dark:border-zinc-800 pt-4 md:pt-5">
-                 <button type="button" class="px-5 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 focus:ring-4 focus:outline-none focus:ring-blue-300 dark:bg-zinc-800 dark:text-gray-300 dark:border-zinc-700 dark:hover:bg-zinc-700" data-modal-hide="member-claims-modal" data-modal-dismiss="member-claims-modal">Close</button>
+            <div class="flex flex-col-reverse gap-2 border-t border-gray-200 pt-4 sm:flex-row sm:items-center sm:justify-end md:pt-5 dark:border-zinc-800">
+                 <button type="button" class="inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-xs transition hover:bg-gray-50 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-gray-300 dark:hover:bg-zinc-700" data-modal-hide="member-claims-modal" data-modal-dismiss="member-claims-modal">Close</button>
             </div>
         </div>
     </div>

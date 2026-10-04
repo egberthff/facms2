@@ -72,7 +72,7 @@
             }
         }
     }"
-    class="mx-auto px-4 py-6">
+    class="mx-auto max-w-5xl py-2 sm:py-4">
 
     <form
         id="claim-form"

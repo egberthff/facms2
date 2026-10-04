@@ -1,11 +1,11 @@
-<section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-    <div class="border-b border-slate-200 px-6 py-5">
-        <h3 class="text-lg font-bold text-slate-950">Claim types</h3>
+<section class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xs">
+    <div class="border-b border-slate-200 px-4 py-4 sm:px-6 sm:py-5">
+        <h3 class="text-lg font-semibold tracking-tight text-slate-900">Claim types</h3>
         <p class="mt-1 text-sm text-slate-500">Claim types are shared by all campuses. Each type sets the supporting document and amount members can claim.</p>
     </div>
 
     <div class="grid gap-6 p-6 lg:grid-cols-5">
-        <div class="rounded-xl border border-slate-200 bg-slate-50/60 p-5 transition hover:border-blue-200 hover:bg-blue-50/20 lg:col-span-2">
+        <div class="rounded-xl border border-slate-200 bg-slate-50/60 p-4 transition hover:border-blue-200 hover:bg-blue-50/20 sm:p-5 lg:col-span-2">
             <div class="mb-4">
                 <h4 class="text-sm font-bold text-slate-900">Add claim type</h4>
                 <p class="mt-1 text-xs leading-5 text-slate-500">New types become available on the claim form when marked active.</p>
@@ -17,23 +17,23 @@
 
                 <div>
                     <label for="claim-type-name" class="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-500">Name</label>
-                    <input id="claim-type-name" name="name" type="text" maxlength="100" data-title-case value="{{ old('name') }}" required placeholder="e.g. Outpatient" class="block w-full rounded-lg border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                    <input id="claim-type-name" name="name" type="text" maxlength="100" data-title-case value="{{ old('name') }}" required placeholder="e.g. Outpatient" class="border block w-full rounded-lg border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                 </div>
 
                 <div class="grid gap-4 sm:grid-cols-2">
                     <div>
                         <label for="claim-type-document" class="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-500">Required document</label>
-                        <input id="claim-type-document" name="required_document" type="text" maxlength="255" value="{{ old('required_document') }}" required placeholder="e.g. Medical Certificate" class="block w-full rounded-lg border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        <input id="claim-type-document" name="required_document" type="text" maxlength="255" value="{{ old('required_document') }}" required placeholder="e.g. Medical Certificate" class="border block w-full rounded-lg border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                     </div>
                     <div>
                         <label for="claim-type-amount" class="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-500">Required amount</label>
-                        <input id="claim-type-amount" name="required_amount" type="text" inputmode="decimal" autocomplete="off" placeholder="0.00" data-amount-format value="{{ old('required_amount') }}" required class="block w-full rounded-lg border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        <input id="claim-type-amount" name="required_amount" type="text" inputmode="decimal" autocomplete="off" placeholder="0.00" data-amount-format value="{{ old('required_amount') }}" required class="border block w-full rounded-lg border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                     </div>
                 </div>
 
                 <div>
                     <label for="claim-type-description" class="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-500">Description <span class="font-normal normal-case text-slate-400">(optional)</span></label>
-                    <textarea id="claim-type-description" name="description" rows="3" maxlength="1000" class="block w-full rounded-lg border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-blue-500 focus:ring-blue-500">{{ old('description') }}</textarea>
+                    <textarea id="claim-type-description" name="description" rows="3" maxlength="1000" class="border block w-full rounded-lg border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-blue-500 focus:ring-blue-500">{{ old('description') }}</textarea>
                 </div>
 
                 <div class="flex flex-col gap-3 border-t border-slate-200 pt-4 sm:flex-row sm:items-center sm:justify-between">
@@ -90,21 +90,21 @@
                                     <div class="grid gap-4 sm:grid-cols-3">
                                         <div>
                                             <label for="claim-type-name-{{ $claimType->id }}" class="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-500">Name</label>
-                                            <input id="claim-type-name-{{ $claimType->id }}" name="name" type="text" maxlength="100" data-title-case value="{{ $claimType->name }}" required class="block w-full rounded-lg border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                            <input id="claim-type-name-{{ $claimType->id }}" name="name" type="text" maxlength="100" data-title-case value="{{ $claimType->name }}" required class="border block w-full rounded-lg border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                                         </div>
                                         <div>
                                             <label for="claim-type-document-{{ $claimType->id }}" class="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-500">Required document</label>
-                                            <input id="claim-type-document-{{ $claimType->id }}" name="required_document" type="text" maxlength="255" value="{{ $claimType->required_document }}" required class="block w-full rounded-lg border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                            <input id="claim-type-document-{{ $claimType->id }}" name="required_document" type="text" maxlength="255" value="{{ $claimType->required_document }}" required class="border block w-full rounded-lg border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                                         </div>
                                         <div>
                                             <label for="claim-type-amount-{{ $claimType->id }}" class="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-500">Required amount</label>
-                                            <input id="claim-type-amount-{{ $claimType->id }}" name="required_amount" type="text" inputmode="decimal" autocomplete="off" placeholder="0.00" data-amount-format value="{{ number_format((float) $claimType->required_amount, 2) }}" required class="block w-full rounded-lg border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                            <input id="claim-type-amount-{{ $claimType->id }}" name="required_amount" type="text" inputmode="decimal" autocomplete="off" placeholder="0.00" data-amount-format value="{{ number_format((float) $claimType->required_amount, 2) }}" required class="border block w-full rounded-lg border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                                         </div>
                                     </div>
 
                                     <div>
                                         <label for="claim-type-description-{{ $claimType->id }}" class="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-500">Description <span class="font-normal normal-case text-slate-400">(optional)</span></label>
-                                        <textarea id="claim-type-description-{{ $claimType->id }}" name="description" rows="2" maxlength="1000" class="block w-full rounded-lg border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-blue-500 focus:ring-blue-500">{{ $claimType->description }}</textarea>
+                                        <textarea id="claim-type-description-{{ $claimType->id }}" name="description" rows="2" maxlength="1000" class="border block w-full rounded-lg border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-blue-500 focus:ring-blue-500">{{ $claimType->description }}</textarea>
                                     </div>
 
                                     <div class="flex flex-col gap-3 border-t border-slate-200 pt-4 sm:flex-row sm:items-center sm:justify-between">

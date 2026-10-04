@@ -14,13 +14,13 @@
     $cardTitle = $cardTitle ?? 'Committee on Claims';
 @endphp
 
-<section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-    <div class="border-b border-slate-200 px-6 py-5">
-        <h3 class="text-lg font-bold text-slate-950">{{ $cardTitle }}</h3>
+<section class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xs">
+    <div class="border-b border-slate-200 px-4 py-4 sm:px-6 sm:py-5">
+        <h3 class="text-lg font-semibold tracking-tight text-slate-900">{{ $cardTitle }}</h3>
         <p class="mt-1 text-sm text-slate-500">{{ $cardDescription ?? "Search this campus's members to assign the committee. The assigned names print as signatories on the claim forms (Forms 1 & 2)." }}</p>
     </div>
 
-    <div class="grid gap-4 p-6 md:grid-cols-2 lg:grid-cols-3">
+    <div class="grid gap-4 p-4 sm:p-6 md:grid-cols-2 lg:grid-cols-3">
         @foreach($committeeSettings as $setting)
             @php
                 $assigned = $committeeMembers->get($setting->setting_value);
@@ -76,7 +76,7 @@
                         this.selectedMeta = '';
                     }
                 }"
-                class="rounded-xl border border-slate-200 bg-slate-50/60 p-5 transition hover:border-blue-200 hover:bg-blue-50/20"
+                class="rounded-xl border border-slate-200 bg-slate-50/60 p-4 transition hover:border-blue-200 hover:bg-blue-50/20 sm:p-5"
             >
                 <div class="mb-4 flex items-start justify-between gap-4">
                     <div>
@@ -120,7 +120,7 @@
                             @disabled(!$canEdit)
                             autocomplete="off"
                             placeholder="Type name or employee ID..."
-                            class="block w-full rounded-lg border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-blue-500 focus:ring-blue-500 disabled:bg-slate-100"
+                            class="border block w-full rounded-lg border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-blue-500 focus:ring-blue-500 disabled:bg-slate-100"
                         />
 
                         <div x-show="open" x-transition x-cloak class="absolute left-0 right-0 top-full z-20 mt-1 max-h-60 overflow-y-auto rounded-lg border border-slate-200 bg-white shadow-lg">

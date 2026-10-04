@@ -1,14 +1,14 @@
-<form id='roles-permissions-form' action="{{ route('admin.permissions.sync') }}" method="POST" onsubmit="handleRolePermissionUpdate(event)" class="bg-white shadow rounded-xl border border-gray-200 overflow-hidden">
+<form id='roles-permissions-form' action="{{ route('admin.permissions.sync') }}" method="POST" onsubmit="handleRolePermissionUpdate(event)" class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xs">
     @csrf
     @method('PUT')
 
     <!-- Block Context Title -->
-    <div class="px-6 py-5 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
+    <div class="flex flex-col gap-3 border-b border-gray-200 bg-gray-50 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-5">
         <div>
             <h2 class="text-base font-semibold leading-6 text-gray-900">Role & Permission Matrix</h2>
             <p class="mt-1 text-xs text-gray-500">Map specific permissions directly to application tiers using the checkbox grid below.</p>
         </div>
-        <button type="submit" class="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-blue-500 focus-visible:outline focus-visible:outline-2">
+        <button type="submit" class="inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-xs transition hover:bg-blue-700 focus-visible:outline-2">
             Save Changes
         </button>
     </div>
@@ -46,7 +46,7 @@
                                            name="role_permissions[{{ $role->id }}][]" 
                                            value="{{ $permission->name }}"
                                            {{ $role->hasPermissionTo($permission->name) ? 'checked' : '' }}
-                                           class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600 transition group-hover:scale-110">
+                                           class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600 transition">
                                 </label>
                             </td>
                         @endforeach
@@ -63,9 +63,9 @@
     </div>
 
     <!-- Footer Action Panel -->
-    <div class="flex items-center justify-end gap-x-6 border-t border-gray-200 bg-gray-50 px-6 py-4">
+    <div class="flex items-center justify-end gap-x-6 border-t border-gray-200 bg-gray-50 px-4 py-4 sm:px-6">
         <span class="text-xs text-gray-400">Careful: Modifying live parameters alters immediate frontend controller checks.</span>
-        <button type="submit" class="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-blue-500">
+        <button type="submit" class="inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-xs transition hover:bg-blue-700">
             Save Changes
         </button>
     </div>
