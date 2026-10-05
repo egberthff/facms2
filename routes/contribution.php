@@ -5,7 +5,7 @@ use App\Http\Controllers\ContributionDetailsController;
 use App\Http\Controllers\CNAShareController;
 use App\Http\Controllers\MemberController;
 
-Route::middleware(['auth', 'active'])
+Route::middleware(['auth', 'active', 'verified', 'member.active'])
     ->group(function () {
 
     //Contributions Monitoring

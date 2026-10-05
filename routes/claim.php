@@ -1,7 +1,7 @@
 <?php 
 use App\Http\Controllers\ClaimController;
 
-Route::middleware(['auth', 'active'])
+Route::middleware(['auth', 'active', 'verified', 'member.active'])
     ->group(function () {
 
         // 1. Member claim listings (Maps to ClaimPolicy::viewMyClaims)

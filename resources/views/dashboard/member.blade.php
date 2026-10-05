@@ -58,6 +58,11 @@
                 </div>
 
                 <!-- Action Button Actions -->
+                @if (Auth::user()->hasInactiveMembership())
+                <p class="text-sm text-white/80">
+                    Claims become available once your membership is activated by your campus officers.
+                </p>
+                @else
                 <div class="flex gap-4">
                     <a href="{{ route('claim.my', Auth::user()) }}" class="flex-1 text-center border border-white/40 hover:bg-white/10 text-white font-medium py-2.5 px-4 rounded-full transition-colors text-sm">
                         View Details
@@ -66,6 +71,7 @@
                         New Claim
                     </a>
                 </div>
+                @endif
             </div>
         </div>
 

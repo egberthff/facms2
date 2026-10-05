@@ -9,7 +9,7 @@ Route::get('/', function () {
     return redirect()->route('login');
 });
 
-Route::middleware(['auth', 'active'])
+Route::middleware(['auth', 'active', 'verified', 'member.active'])
 ->group(function () {
     //Routes for Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
