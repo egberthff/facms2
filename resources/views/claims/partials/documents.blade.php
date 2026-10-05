@@ -41,7 +41,7 @@
                         or Click to Browse
                     </p>
                     <span class="text-sm text-gray-400 mt-3">
-                        Maximum file size: 10 MB
+                        Maximum file size: 10 MB · Up to <span x-text="maxFiles"></span> files
                     </span>
                     <input
                         name="documents[]"
@@ -67,34 +67,59 @@
 
                             const maxSize = 10 * 1024 * 1024; // 10 MB
 
-                            Array.from($event.target.files).forEach(file => {
-                            
+                            // Magic bytes of the real file content; the server validates content, not the extension
+                            const signatures = [
+                                [0x25, 0x50, 0x44, 0x46],                         // PDF
+                                [0xFF, 0xD8, 0xFF],                               // JPEG
+                                [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]  // PNG
+                            ];
+
+                            const selected = Array.from($event.target.files);
+                            $event.target.value = '';
+
+                            for (const file of selected) {
+
+                                if (files.length >= maxFiles) {
+
+                                    Swal.fire(`You can upload a maximum of ${maxFiles} files per claim. Some files were not added.`);
+                                    break;
+                                }
+
                                 const extension = file.name
                                     .split('.')
                                     .pop()
                                     .toLowerCase();
-                            
+
                                 const validExtension = allowedExtensions.includes(extension);
                                 const validType = allowedTypes.includes(file.type);
-                            
+
                                 if (!validExtension || !validType) {
-                                    
+
                                     Swal.fire({
                                         html: `${file.name} is not supported.</br>Only PDF, JPG, JPEG, and PNG files are allowed.`
                                     });
-                                    return;
+                                    continue;
                                 }
-                            
+
                                 if (file.size > maxSize) {
-                                    
+
                                     Swal.fire(`${file.name} exceeds the maximum file size of 10 MB.`);
-                                    return;
+                                    continue;
                                 }
-                            
+
+                                const header = new Uint8Array(await file.slice(0, 8).arrayBuffer());
+                                const validContent = signatures.some(sig => sig.every((byte, i) => header[i] === byte));
+
+                                if (!validContent) {
+
+                                    Swal.fire({
+                                        html: `${file.name} is not a real PDF, JPG, JPEG, or PNG file.</br>It may be another format (e.g. HEIC or WebP) with a renamed extension. Please convert it and try again.`
+                                    });
+                                    continue;
+                                }
+
                                 files.push(file);
-                            });
-                        
-                            $event.target.value = '';
+                            }
                         "
                     >
                 </label>

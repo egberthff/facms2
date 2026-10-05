@@ -91,10 +91,20 @@ class StoreClaimRequest extends FormRequest
             'documents' => [
                 'nullable',
                 'array',
+                // PHP silently drops files beyond max_file_uploads before Laravel sees the request
+                function ($attribute, $value, $fail) {
+                    $sent = (int) $this->input('documentsCount', count((array) $value));
+                    $received = count((array) $value);
+
+                    if ($received < $sent) {
+                        $max = (int) ini_get('max_file_uploads');
+                        $fail("Only {$received} of {$sent} documents were received. You can upload a maximum of {$max} files per claim.");
+                    }
+                },
             ],
             'documents.*' => [
                 'file',
-                'mimes:pdf,jpeg,jpeg,png',
+                'mimes:pdf,jpg,jpeg,png',
                 'max:10240'
             ],
             'paymentMethod' => [
@@ -126,7 +136,31 @@ class StoreClaimRequest extends FormRequest
                 'nullable',
                 'string'
             ],
-    
+
+        ];
+    }
+
+    /**
+     * Name each uploaded document by its original filename instead of "documents.N".
+     */
+    public function attributes(): array
+    {
+        $attributes = [];
+
+        foreach ((array) $this->file('documents', []) as $index => $file) {
+            if ($file) {
+                $attributes["documents.{$index}"] = $file->getClientOriginalName();
+            }
+        }
+
+        return $attributes;
+    }
+
+    public function messages(): array
+    {
+        return [
+            // mimes checks the file's actual content, so a HEIC/WebP renamed to .jpg is rejected
+            'documents.*.mimes' => ':attribute is not a valid PDF, JPG, JPEG, or PNG file. It may be a different format (e.g. HEIC or WebP) with a renamed extension. Please convert it and try again.',
         ];
     }
 }

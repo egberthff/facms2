@@ -119,6 +119,9 @@
 
             agree: false,
 
+            // PHP silently drops uploads beyond max_file_uploads, so cap selection at the same limit
+            maxFiles: {{ (int) ini_get('max_file_uploads') ?: 20 }},
+
             /* =====================================================
              * FORM MODEL
              * ===================================================== */
@@ -300,6 +303,8 @@
                         this.form.files.forEach(file => {
                             formData.append('documents[]', file);
                         });
+                        // Lets the server detect files PHP dropped before the request reached Laravel
+                        formData.append('documentsCount', this.form.files.length);
 
                         Swal.fire({
                             title: 'Are you sure?',
@@ -332,7 +337,14 @@
                                         body: formData
                                     });
                                 
-                                    const data = await response.json();
+                                    // PHP startup warnings (e.g. upload limits) can be printed before the JSON body
+                                    const text = await response.text();
+                                    let data;
+                                    try {
+                                        data = JSON.parse(text.slice(text.indexOf('{')));
+                                    } catch (e) {
+                                        throw { success: false, message: 'The server returned an unexpected response. Please try again.' };
+                                    }
 
                                     if (!response.ok) {
                                         throw data;
