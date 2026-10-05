@@ -19,7 +19,26 @@ Alpine.start();
 
 import 'flowbite';
 
-import Swal from 'sweetalert2';
+import SwalBase from 'sweetalert2';
+import 'animate.css';
+
+// Every popup shares the same Animate.css open/close animation
+const Swal = SwalBase.mixin({
+    showClass: {
+        popup: `
+            animate__animated
+            animate__fadeInUp
+            animate__faster
+        `,
+    },
+    hideClass: {
+        popup: `
+            animate__animated
+            animate__fadeOutDown
+            animate__faster
+        `,
+    },
+});
 
 window.Swal = Swal;
 

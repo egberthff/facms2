@@ -62,7 +62,6 @@
         </main>
 
     </div>
-    @include('sweetalert::alert')
 </div>
 
 <x-alert />

@@ -93,6 +93,7 @@ class DashboardService
 
         // The member's own claim cycle; none exists until their next qualifying claim
         $cycle = $this->memberCycleService->getActiveCycleForMember($member);
+        \Log::error('DashboardService::calculateMemberBalanceData() - Retrieved cycle: ' . ($cycle ? $cycle->id : 'null') . ' for member_id: ' . $member->id);
 
         if (!$cycle) {
             $baseLimit = (float) SystemSetting::getGlobalLimit($member->campus_id);

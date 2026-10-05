@@ -1,7 +1,7 @@
         <section
             x-show="step==1"
             x-transition.opacity.duration.250ms>
-            <div class="bg-white rounded-2xl shadow-sm p-6">
+            <div class="bg-white rounded-2xl border border-blue-700 shadow-sm p-6">
                 <div class="mb-6">
                     <h2 class="text-xl font-bold">
                         Claim Information
