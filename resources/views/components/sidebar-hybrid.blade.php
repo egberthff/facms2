@@ -39,6 +39,8 @@
             </ul>
         </div>
 
+        {{-- Inactive members (awaiting officer activation) only see Dashboard and My Profile --}}
+        @unless (auth()->user()->hasInactiveMembership())
         <!-- ========================================= -->
         <!-- MEMBER ZONE (Claims & Balance) -->
         <!-- ========================================= -->
@@ -231,6 +233,8 @@
                 <span class="ml-3">Faculty Deductions Summary</span>
             </a>
         </li> --}}
+
+        @endunless
 
         <!-- ========================================= -->
         <!-- ACCOUNT / GLOBAL PROFILE -->
