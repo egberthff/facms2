@@ -30,6 +30,7 @@ class ClaimDisbursementPaymentTest extends TestCase
             'password' => bcrypt('password'),
             'is_active' => true,
         ]);
+        $user->forceFill(['email_verified_at' => now()])->save();
         $this->actingAs($user);
         $role = Role::create(['name' => 'President']);
         $user->assignRole($role);
@@ -169,6 +170,7 @@ class ClaimDisbursementPaymentTest extends TestCase
             'password' => bcrypt('password'),
             'is_active' => true,
         ]);
+        $user->forceFill(['email_verified_at' => now()])->save();
         $this->actingAs($user);
 
         $claimType = ClaimType::create([

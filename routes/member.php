@@ -2,7 +2,7 @@
 use App\Http\Controllers\MemberController;
 use App\Http\Controllers\ContributionDetailsController;
 
-Route::middleware(['auth', 'active'])
+Route::middleware(['auth', 'active', 'verified', 'member.active'])
     ->group(function () {
 
         Route::resource('members', MemberController::class)->middleware('can:manage members,App\Models\Member');

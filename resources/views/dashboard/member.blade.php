@@ -56,14 +56,20 @@
                             <div class="mt-1 text-xs text-white/60">of ₱{{ number_format($allowance['limit'], 2) }} claim cycle limit</div>
                         @endif
                     </div>
-                    <div class="flex w-full gap-3 sm:w-auto">
-                        <a href="{{ route('claim.my', Auth::user()) }}" class="flex-1 rounded-full border border-white/40 px-4 py-2.5 text-center text-sm font-medium text-white transition-colors hover:bg-white/10">
-                            View Details
-                        </a>
-                        <a href="{{ route('claim.create') }}" class="flex-1 rounded-full bg-[#F28C4F] px-4 py-2.5 text-center text-sm font-medium text-white transition-colors hover:bg-[#e07b3e]">
-                            New Claim
-                        </a>
-                    </div>
+                    @if (Auth::user()->hasInactiveMembership())
+                        <p class="w-full text-sm text-white/80 sm:w-auto">
+                            Claims become available once your membership is activated by your campus officers.
+                        </p>
+                    @else
+                        <div class="flex w-full gap-3 sm:w-auto">
+                            <a href="{{ route('claim.my', Auth::user()) }}" class="flex-1 rounded-full border border-white/40 px-4 py-2.5 text-center text-sm font-medium text-white transition-colors hover:bg-white/10">
+                                View Details
+                            </a>
+                            <a href="{{ route('claim.create') }}" class="flex-1 rounded-full bg-[#F28C4F] px-4 py-2.5 text-center text-sm font-medium text-white transition-colors hover:bg-[#e07b3e]">
+                                New Claim
+                            </a>
+                        </div>
+                    @endif
                 </div>
 
                 @if($allowance && $allowance['limit'] > 0)

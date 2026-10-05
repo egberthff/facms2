@@ -2,7 +2,7 @@
 
 use App\Http\Controllers\DisbursementController;
 
-Route::middleware(['auth', 'active'])
+Route::middleware(['auth', 'active', 'verified', 'member.active'])
     ->group(function () {
 
     // Use ClaimPayment policy abilities: viewAny for listing, view for single item

@@ -4,7 +4,7 @@ use App\Http\Controllers\ClaimTypeController;
 use App\Http\Controllers\SettingController;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware(['auth', 'active'])
+Route::middleware(['auth', 'active', 'verified', 'member.active'])
     ->group(function () {
         Route::get('settings', [SettingController::class, 'index'])
             ->name('settings.index');

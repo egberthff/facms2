@@ -85,12 +85,18 @@
         
         <!-- Registration Route Link -->
         @if (Route::has('register'))
-            <div class="text-center pt-2">
+            <div class="relative flex items-center pt-1" aria-hidden="true">
+                <div class="grow border-t border-slate-200"></div>
+                <span class="mx-3 text-xs font-medium text-slate-400 uppercase tracking-wider">{{ __('or') }}</span>
+                <div class="grow border-t border-slate-200"></div>
+            </div>
+
+            <div class="text-center space-y-2">
+                <a href="{{ route('register') }}" class="w-full flex justify-center py-2.5 px-4 border border-slate-300 rounded-lg shadow-sm text-sm font-semibold text-[#1e293b] bg-white hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 transition duration-150 ease-in-out">
+                    {{ __('Create an Account') }}
+                </a>
                 <p class="text-xs font-medium text-slate-500">
-                    New to the association? 
-                    <a href="{{ route('register') }}" class="font-semibold text-slate-600 hover:text-[#1e293b] underline transition-colors">
-                        Create an account
-                    </a>
+                    {{ __('New to the association? Sign up and verify your email to get started.') }}
                 </p>
             </div>
         @endif
