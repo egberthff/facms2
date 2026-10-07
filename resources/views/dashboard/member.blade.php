@@ -45,29 +45,81 @@
             </x-stats-card>
         </div>
 
-        <!-- Middle Row: Balance Card with Action Buttons -->
-        <div class="flex justify-center">
-            <div class="w-full max-w-md bg-navy-900 text-white rounded-2xl p-5 sm:p-6 shadow-sm">
-                <div class="text-xs font-medium uppercase tracking-wider text-white/70 mb-2">
-                    Balance
-                </div>
-                
-                <!-- Large Peso Currency Display -->
-                <div class="text-3xl sm:text-4xl font-semibold tracking-tight tabular-nums mb-6 flex items-center">
-                    <span>₱{{ $balance }}</span>
+        <!-- Middle Row: Claim cycle allowance + claims by status -->
+        <div class="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-3">
+            <div class="flex flex-col rounded-xl bg-navy-900 p-5 text-white shadow-sm sm:p-6 lg:col-span-2">
+                <div class="flex flex-wrap items-start justify-between gap-4">
+                    <div>
+                        <div class="text-xs font-medium uppercase tracking-wider text-white/70">Available Balance</div>
+                        <div class="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">₱{{ number_format($balance, 2) }}</div>
+                        @if($allowance)
+                            <div class="mt-1 text-xs text-white/60">of ₱{{ number_format($allowance['limit'], 2) }} claim cycle limit</div>
+                        @endif
+                    </div>
+                    <div class="flex w-full gap-3 sm:w-auto">
+                        <a href="{{ route('claim.my', Auth::user()) }}" class="flex-1 rounded-full border border-white/40 px-4 py-2.5 text-center text-sm font-medium text-white transition-colors hover:bg-white/10">
+                            View Details
+                        </a>
+                        <a href="{{ route('claim.create') }}" class="flex-1 rounded-full bg-[#F28C4F] px-4 py-2.5 text-center text-sm font-medium text-white transition-colors hover:bg-[#e07b3e]">
+                            New Claim
+                        </a>
+                    </div>
                 </div>
 
-                <!-- Action Button Actions -->
-                <div class="flex gap-3">
-                    <a href="{{ route('claim.my', Auth::user()) }}" class="flex-1 text-center border border-white/40 hover:bg-white/10 text-white font-medium py-2.5 px-4 rounded-full transition-colors text-sm">
-                        View Details
-                    </a>
-                    <a href="{{ route('claim.create') }}" class="flex-1 text-center bg-[#F28C4F] hover:bg-[#e07b3e] text-white font-medium py-2.5 px-4 rounded-full transition-colors text-sm">
-                        New Claim
-                    </a>
-                </div>
+                @if($allowance && $allowance['limit'] > 0)
+                    @php
+                        $segments = [
+                            ['label' => 'Disbursed', 'value' => $allowance['disbursed'], 'color' => 'bg-chart-1'],
+                            ['label' => 'Approved, not yet released', 'value' => $allowance['approved'], 'color' => 'bg-chart-2'],
+                            ['label' => 'Reserved by claims in review', 'value' => $allowance['reserved'], 'color' => 'bg-chart-3'],
+                        ];
+                    @endphp
+
+                    <!-- Cycle limit meter: segments add up to the limit; the white track is what remains -->
+                    <div class="mt-6">
+                        <div class="flex h-3 w-full gap-0.5 overflow-hidden rounded-full bg-white/15"
+                             role="img"
+                             aria-label="Claim cycle usage: ₱{{ number_format($allowance['limit'] - $allowance['remaining'], 2) }} used of ₱{{ number_format($allowance['limit'], 2) }}">
+                            @foreach($segments as $segment)
+                                @if($segment['value'] > 0)
+                                    <div class="{{ $segment['color'] }} h-full" style="width: {{ round($segment['value'] / $allowance['limit'] * 100, 2) }}%"></div>
+                                @endif
+                            @endforeach
+                        </div>
+
+                        <dl class="mt-4 grid grid-cols-1 gap-3 text-xs sm:grid-cols-2 xl:grid-cols-4">
+                            @foreach($segments as $segment)
+                                <div class="flex items-start gap-2">
+                                    <span class="{{ $segment['color'] }} mt-0.5 h-2.5 w-2.5 shrink-0 rounded-sm"></span>
+                                    <div>
+                                        <dt class="text-white/70">{{ $segment['label'] }}</dt>
+                                        <dd class="font-semibold tabular-nums">₱{{ number_format($segment['value'], 2) }}</dd>
+                                    </div>
+                                </div>
+                            @endforeach
+                            <div class="flex items-start gap-2">
+                                <span class="mt-0.5 h-2.5 w-2.5 shrink-0 rounded-sm bg-white/15 ring-1 ring-white/30"></span>
+                                <div>
+                                    <dt class="text-white/70">Remaining</dt>
+                                    <dd class="font-semibold tabular-nums">₱{{ number_format($allowance['remaining'], 2) }}</dd>
+                                </div>
+                            </div>
+                        </dl>
+                    </div>
+                @endif
             </div>
+
+            <x-chart-card
+                title="My Claims by Status"
+                subtitle="All your claims, in workflow order"
+                chart="claimsByStatus"
+                :series="$chartData['claimsByStatus']"
+                type="bar"
+                critical="Rejected"
+                height="h-64" />
         </div>
+
+        <script type="application/json" id="dashboard-chart-data">@json($chartData)</script>
 
         <!-- Bottom Row: Recent Transactions Header Line -->
         <div class="rounded-xl border border-gray-200 bg-white p-4 shadow-xs sm:p-6">

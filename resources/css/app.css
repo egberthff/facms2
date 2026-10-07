@@ -29,6 +29,19 @@
   --color-navy-900: #11224D;
 }
 
+/* Dashboard charts: categorical slots in fixed order (validated for CVD on white) + chrome.
+   Static so the tokens are always emitted; dashboard-charts.js reads them at runtime. */
+@theme static {
+  --color-chart-1: #2a78d6;
+  --color-chart-2: #eb6834;
+  --color-chart-3: #1baf7a;
+  --color-chart-critical: #d03b3b;
+  --color-chart-track: #f0efec;
+  --color-chart-grid: #e1e0d9;
+  --color-chart-axis: #c3c2b7;
+  --color-chart-muted: #898781;
+}
+
 /* 4. Map content directories via v4 @source directives */
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';

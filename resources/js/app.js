@@ -28,6 +28,7 @@ import Chart from 'chart.js/auto';
 window.Chart = Chart;
 
 import './report-center';
+import './dashboard-charts';
 import { all } from 'axios';
 
 document.addEventListener('alpine:init', () => {
