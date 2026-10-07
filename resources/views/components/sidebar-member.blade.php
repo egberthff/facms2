@@ -121,10 +121,9 @@
         <div>
             <ul class="space-y-1">
                 <li>
-                    {{-- <a href="{{ route('profile.edit') }}" --}}
-                    <a href="{{ route('dashboard') }}"
+                    <a href="{{ route('members.profile') }}"
                         class="group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors
-                        {{ request()->routeIs('profile.*')
+                        {{ request()->routeIs('members.profile*')
                             ? 'bg-slate-700 text-white'
                             : 'text-white hover:bg-slate-700' }}">
                         <x-heroicon-o-user-circle class="h-5 w-5 shrink-0"/>

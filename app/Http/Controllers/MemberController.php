@@ -10,6 +10,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use App\Http\Requests\StoreMemberRequest;
 use App\Http\Requests\UpdateMemberRequest;
+use App\Http\Requests\UpdateOwnProfileRequest;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use App\Enums\MembershipStatus;
 use Illuminate\Support\Facades\Log;
@@ -322,7 +324,20 @@ class MemberController extends Controller
             ->where('user_id', Auth::id())
             ->firstOrFail();
 
-        return view('profile.index', compact('member')); 
+        return view('profile.index', compact('member'));
+    }
+
+    /**
+     * A member updating their own contact and payout details.
+     */
+    public function updateProfile(UpdateOwnProfileRequest $request): RedirectResponse
+    {
+        // Always the signed-in user's own record, never one from the URL
+        $member = Member::where('user_id', Auth::id())->firstOrFail();
+
+        $member->update($request->validated());
+
+        return redirect()->route('members.profile')->with('success', 'Profile updated.');
     }
 
     public function searchMembers(Request $request)
