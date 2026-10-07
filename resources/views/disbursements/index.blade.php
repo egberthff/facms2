@@ -131,7 +131,9 @@
                                 'released_on' => optional($row->released_at)->format('M d, Y') ?: 'Pending',
                                 'reference_number' => $row->reference_number ?? 'N/A',
                                 'remarks' => $row->remarks ?? 'No remarks provided.',
-                                'receipt_path' => [$row->receipt_path] ?? [],
+                                'attachments' => $row->receipt_path
+                                    ? [['file_path' => $row->receipt_path, 'original_filename' => basename($row->receipt_path)]]
+                                    : [],
                             ];
                         @endphp
                         <tr>
@@ -238,10 +240,9 @@
                     <span class="mb-2 block text-xs font-semibold uppercase tracking-wider text-slate-400">Attachments</span>
                     
                     <div class="divide-y divide-slate-100">
-                        <!-- Show documents if receipt_path is an array with items -->
-                        <template x-if="activeDisbursement.receipt_path && activeDisbursement.receipt_path.length > 0">
+                        <template x-if="activeDisbursement.attachments && activeDisbursement.attachments.length > 0">
                             <div>
-                                <template x-for="(doc, index) in activeDisbursement.receipt_path" :key="index">
+                                <template x-for="(doc, index) in activeDisbursement.attachments" :key="index">
                                     <div class="flex items-center justify-between py-2.5 text-xs first:pt-0 last:pb-0">
                                         <div class="flex items-center gap-2.5 min-w-0 pr-4">
                                             <div class="p-2 bg-slate-50 rounded-lg text-slate-500 shrink-0">
@@ -250,11 +251,10 @@
                                                 </svg>
                                             </div>
                                             <div class="min-w-0 truncate">
-                                                <span class="font-medium text-slate-800 block truncate" x-text="doc.split('/').pop()"></span>
-                                                {{-- <span class="text-[10px] text-slate-400" x-text="doc.file_size ? (doc.file_size / 1024).toFixed(1) + ' KB' : '0 KB'"></span> --}}
+                                                <span class="font-medium text-slate-800 block truncate" x-text="doc.original_filename"></span>
                                             </div>
                                         </div>
-                                        <button type="button" @click="$dispatch('open-file-preview', { url: '/storage/' + doc, name: doc.split('/').pop() })" class="inline-flex shrink-0 items-center gap-1 rounded-md bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700 ring-1 ring-inset ring-blue-200 transition hover:bg-blue-100">
+                                        <button type="button" @click="$dispatch('open-file-preview', { url: '/storage/' + doc.file_path, name: doc.original_filename })" class="inline-flex shrink-0 items-center gap-1 rounded-md bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700 ring-1 ring-inset ring-blue-200 transition hover:bg-blue-100">
                                             View File
                                         </button>
                                     </div>
@@ -262,10 +262,9 @@
                             </div>
                         </template>
                     
-                        <!-- Fallback template when no attachments exist -->
-                        <template x-if="!activeDisbursement.receipt_path || activeDisbursement.receipt_path.length === 0">
+                        <template x-if="!activeDisbursement.attachments || activeDisbursement.attachments.length === 0">
                             <div class="text-center py-4 text-slate-400 text-xs">
-                                No receipt or proof of payment uploaded.
+                                No proof of payment was uploaded for this disbursement.
                             </div>
                         </template>
                     </div>
