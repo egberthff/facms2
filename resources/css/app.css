@@ -266,6 +266,17 @@ td.action-cell {
     float: none !important;
   }
 
+  /* The library's clearfix ::after becomes a third flex item and pulls search/pagination to the center */
+  .datatable-wrapper .datatable-top::after,
+  .datatable-wrapper .datatable-bottom::after {
+    content: none;
+  }
+
+  .datatable-wrapper .datatable-search,
+  .datatable-wrapper .datatable-pagination {
+    margin-left: auto;
+  }
+
   .datatable-wrapper .datatable-container {
     border-bottom: 0;
     overflow-x: auto;
