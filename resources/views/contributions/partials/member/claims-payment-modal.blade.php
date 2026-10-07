@@ -135,7 +135,7 @@
                     </button>
 
                     <!-- Primary Action: Form submission for Pending payments -->
-                    <template x-if="activeContribution.status === 'Unpaid'">
+                    {{-- <template x-if="activeContribution.status === 'Unpaid'">
                         <form :action="'/contribution-details/' + activeContribution.contribution_id + '/pay'" method="POST" class="inline">
                             @csrf
                             @method('PATCH')
@@ -145,11 +145,11 @@
                                 Settle Contribution ₱<span x-text="Number(activeContribution.amount_to_pay).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })"></span>
                             </button>
                         </form>
-                    </template>
+                    </template> --}}
 
                     <!-- Secondary Action: Print option for Paid contributions -->
-                    <template x-if="activeContribution.status === 'Paid'">
-                        {{-- <button 
+                    {{-- <template x-if="activeContribution.status === 'Paid'">
+                        <button 
                             type="button" 
                             @click="window.print()" 
                             class="inline-flex items-center justify-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-100">
@@ -157,8 +157,8 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 012-2h2a2 2 0 012 2v4M5 10h14" />
                             </svg>
                             Print Receipt Proof
-                        </button> --}}
-                    </template>
+                        </button>  
+                    </template> --}}
                 </div>
             </div>
         </div>

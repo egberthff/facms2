@@ -118,7 +118,7 @@
                 </button>
 
                 <!-- Primary Action: Process the outstanding baseline fee -->
-                <template x-if="activeAnnual.status !== 'Paid' && activeAnnual.status !== 'Failed'">
+                {{-- <template x-if="activeAnnual.status !== 'Paid' && activeAnnual.status !== 'Failed'">
                     <form :action="'/annual-contributions/' + activeAnnual.id + '/pay'" method="POST" class="inline">
                         @csrf
                         @method('PATCH')
@@ -128,10 +128,10 @@
                             Settle Contribution ₱<span x-text="Number(activeAnnual.amount_paid).toLocaleString('en-US', { minimumFractionDigits: 2 })"></span>
                         </button>
                     </form>
-                </template>
+                </template> --}}
 
                 <!-- Secondary Action: Print Receipt for Verified Records -->
-                <template x-if="activeAnnual.status === 'Paid'">
+                {{-- <template x-if="activeAnnual.status === 'Paid'">
                     <button 
                         type="button" 
                         @click="window.print()" 
@@ -141,7 +141,7 @@
                         </svg>
                         Print Payment Token
                     </button>
-                </template>
+                </template> --}}
             </div>
         </div>
     </div>
