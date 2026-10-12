@@ -20,7 +20,7 @@
             <!-- ================================= -->
             <button
                 type="button"
-                @click="paymentMethod='bank'"
+                @click="paymentMethod='bank'; errors.paymentMethod = ''"
                 :class="paymentMethod=='bank'
                     ? 'border-orange-500 bg-orange-50 ring-2 ring-orange-200 scale-105'
                     : 'border-gray-300 bg-white'"
@@ -57,7 +57,7 @@
             <!-- ================================= -->
             <button
                 type="button"
-                @click="paymentMethod='gcash'"
+                @click="paymentMethod='gcash'; errors.paymentMethod = ''"
                 :class="paymentMethod=='gcash'
                     ? 'border-orange-500 bg-orange-50 ring-2 ring-orange-200 scale-105'
                     : 'border-gray-300 bg-white'"
@@ -101,7 +101,7 @@
             <!-- ================================= -->
             <button
                 type="button"
-                @click="paymentMethod='check'"
+                @click="paymentMethod='check'; errors.paymentMethod = ''"
                 :class="paymentMethod=='check'
                     ? 'border-orange-500 bg-orange-50 ring-2 ring-orange-200 scale-105'
                     : 'border-gray-300 bg-white'"
@@ -141,6 +141,7 @@
                 </p>
             </button>
         </div>
+        <p id="paymentMethod-error" x-show="errors.paymentMethod" x-text="errors.paymentMethod" x-cloak class="mt-3 text-xs text-red-600"></p>
 
         <!-- =========================================== -->
         <!-- BANK DETAILS -->
@@ -159,6 +160,7 @@
                     <select
                         name="bank"
                         x-model="bank"
+                        :class="{ 'error-border': errors.bank }"
                         class="w-full rounded-lg border border-gray-300 bg-white px-3.5 py-2.5 text-sm shadow-xs">
                         <option value="">Select Bank</option>
                         <option>BDO</option>
@@ -167,6 +169,7 @@
                         <option>Metrobank</option>
                         <option>PNB</option>
                     </select>
+                    <p id="bank-error" x-show="errors.bank" x-text="errors.bank" x-cloak class="mt-1.5 text-xs text-red-600"></p>
                 </div>
                 <div>
                     <label class="mb-1.5 block text-sm font-medium text-gray-700">
@@ -178,6 +181,7 @@
                         inputmode="numeric"
                         name="accountNumber"
                         x-model="accountNumber"
+                        :class="{ 'error-border': errors.accountNumber }"
                         minlength="8"
                         maxlength="20"
                         x-on:input="
@@ -188,6 +192,7 @@
                         class="w-full rounded-lg border border-gray-300 bg-white px-3.5 py-2.5 text-sm shadow-xs"
                         placeholder="Enter account number"
                     >
+                    <p id="accountNumber-error" x-show="errors.accountNumber" x-text="errors.accountNumber" x-cloak class="mt-1.5 text-xs text-red-600"></p>
 
                 </div>
                 <div>
@@ -199,6 +204,7 @@
                         type="text"
                         name="accountName"
                         x-model="accountName"
+                        :class="{ 'error-border': errors.accountName }"
                          x-on:input="
                             let value = $event.target.value;                    
 
@@ -219,6 +225,7 @@
                         class="w-full rounded-lg border border-gray-300 bg-white px-3.5 py-2.5 text-sm shadow-xs"
                         placeholder="Enter account name"
                     >
+                    <p id="accountName-error" x-show="errors.accountName" x-text="errors.accountName" x-cloak class="mt-1.5 text-xs text-red-600"></p>
                 </div>
                 <div>
                     <label class="mb-1.5 block text-sm font-medium text-gray-700">
@@ -237,7 +244,9 @@
                             $event.target.value = value;
                             branch = value;
                         "
+                        :class="{ 'error-border': errors.branch }"
                         class="w-full rounded-lg border border-gray-300 bg-white px-3.5 py-2.5 text-sm shadow-xs">
+                    <p id="branch-error" x-show="errors.branch" x-text="errors.branch" x-cloak class="mt-1.5 text-xs text-red-600"></p>
                 </div>
             </div>
         </div>
@@ -259,6 +268,7 @@
                         type="text"
                         inputmode="numeric"
                         x-model="gcashNumber"
+                        :class="{ 'error-border': errors.gcashNumber }"
                         maxlength="11"
                         minlength="11"
                         pattern="09[0-9]{9}"
@@ -286,6 +296,7 @@
 
                         class="w-full rounded-lg border border-gray-300 bg-white px-3.5 py-2.5 text-sm shadow-xs"
                     >
+                    <p id="gcashNumber-error" x-show="errors.gcashNumber" x-text="errors.gcashNumber" x-cloak class="mt-1.5 text-xs text-red-600"></p>
                 </div>
                 <div>
                     <label class="mb-1.5 block text-sm font-medium text-gray-700">
@@ -295,7 +306,8 @@
                     <input
                         name="gcashName"
                         type="text"
-                        x-model="gcashName"                 
+                        x-model="gcashName"
+                        :class="{ 'error-border': errors.gcashName }"                 
 
                         x-on:input="
                             let value = $event.target.value;                    
@@ -318,6 +330,7 @@
                         placeholder="Juan Dela Cruz"
                         class="w-full rounded-lg border border-gray-300 bg-white px-3.5 py-2.5 text-sm shadow-xs"
                     >
+                    <p id="gcashName-error" x-show="errors.gcashName" x-text="errors.gcashName" x-cloak class="mt-1.5 text-xs text-red-600"></p>
                 </div>
             </div>
         </div>

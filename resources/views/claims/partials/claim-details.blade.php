@@ -21,6 +21,7 @@
                             id="claim-type-input"
                             name="claimType"
                             x-model="claimType"
+                            :class="{ 'error-border': errors.claimType }"
                             @change="claimTypeText = $el.selectedIndex > 0 ? $el.options[$el.selectedIndex].text : ''"
                             class="w-full rounded-lg border border-gray-300 bg-white px-3.5 py-2.5 text-sm shadow-xs">
 
@@ -32,6 +33,7 @@
                                 </option>
                             @endforeach
                         </select>
+                        <p id="claimType-error" x-show="errors.claimType" x-text="errors.claimType" x-cloak class="mt-1.5 text-xs text-red-600"></p>
                     </div>
                     <!-- Amount -->
                     <div>
@@ -78,10 +80,12 @@
                                     "
 
                                     @blur="checkRunningBalance()"
+                                    :class="{ 'error-border': errors.amount }"
 
                                     class="w-full rounded-lg border border-gray-300 bg-white pl-8 pr-3.5 py-2.5 text-sm shadow-xs tabular-nums"
                                 >
                         </div>
+                        <p id="amount-error" x-show="errors.amount" x-text="errors.amount" x-cloak class="mt-1.5 text-xs text-red-600"></p>
                     </div>
                 </div>
                 <!-- Description -->
@@ -95,6 +99,7 @@
                         name="description"
                         rows="5"
                         x-model="description"
+                        :class="{ 'error-border': errors.description }"
                          x-on:input="
                             let value = $event.target.value;
 
@@ -107,6 +112,7 @@
                         "
                         class="w-full rounded-lg border border-gray-300 bg-white px-3.5 py-2.5 text-sm shadow-xs resize-none"
                         placeholder="Provide a brief description of your claim..."></textarea>
+                    <p id="description-error" x-show="errors.description" x-text="errors.description" x-cloak class="mt-1.5 text-xs text-red-600"></p>
                 </div>
                 <!-- Bottom -->
                 <div class="mt-5 grid gap-5 lg:grid-cols-3">
@@ -121,7 +127,9 @@
                             type="date"
                             required
                             x-model="incidentDate"
+                            :class="{ 'error-border': errors.incidentDate }"
                             class="w-full rounded-lg border border-gray-300 bg-white px-3.5 py-2.5 text-sm shadow-xs">
+                        <p id="incidentDate-error" x-show="errors.incidentDate" x-text="errors.incidentDate" x-cloak class="mt-1.5 text-xs text-red-600"></p>
                     </div>
                     <div>
                         <label class="mb-1.5 block text-sm font-medium text-gray-700">
@@ -133,7 +141,9 @@
                             type="date"
                             x-model="treatmentEndDate"
                             :min="incidentDate"
+                            :class="{ 'error-border': errors.treatmentEndDate }"
                             class="w-full rounded-lg border border-gray-300 bg-white px-3.5 py-2.5 text-sm shadow-xs">
+                        <p id="treatmentEndDate-error" x-show="errors.treatmentEndDate" x-text="errors.treatmentEndDate" x-cloak class="mt-1.5 text-xs text-red-600"></p>
                     </div>
                     <div>
                         <label class="mb-1.5 block text-sm font-medium text-gray-700">
@@ -145,6 +155,7 @@
                             name="hospital"
                             type="text"
                             x-model="hospital"
+                            :class="{ 'error-border': errors.hospital }"
                              x-on:input="
                                 let value = $event.target.value;
 
@@ -157,6 +168,7 @@
                             "
                             class="w-full rounded-lg border border-gray-300 bg-white px-3.5 py-2.5 text-sm shadow-xs"
                             placeholder="Hospital / Institution">
+                        <p id="hospital-error" x-show="errors.hospital" x-text="errors.hospital" x-cloak class="mt-1.5 text-xs text-red-600"></p>
                     </div>
                 </div>
             </div>

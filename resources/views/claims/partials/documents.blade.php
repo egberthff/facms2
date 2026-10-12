@@ -18,6 +18,7 @@
                 <!-- Upload Area -->
                 <label
                     for="documents"
+                    :class="{ 'error-border': errors.documents }"
                     class="group flex h-56 cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-blue-300 bg-gray-50/50 px-4 text-center transition hover:border-orange-400 hover:bg-orange-50/60 sm:h-64">
                     <svg
                         xmlns="http://www.w3.org/2000/svg"
@@ -58,6 +59,7 @@
                             ];
 
                             const maxSize = 10 * 1024 * 1024; // 10 MB
+                            const rejected = [];
 
                             Array.from($event.target.files).forEach(file => {
                             
@@ -70,26 +72,24 @@
                                 const validType = allowedTypes.includes(file.type);
                             
                                 if (!validExtension || !validType) {
-                                    
-                                    Swal.fire({
-                                        html: `${file.name} is not supported.</br>Only PDF, JPG, JPEG, and PNG files are allowed.`
-                                    });
+                                    rejected.push(`${file.name} is not supported. Only PDF, JPG, JPEG, and PNG files are allowed.`);
                                     return;
                                 }
-                            
+
                                 if (file.size > maxSize) {
-                                    
-                                    Swal.fire(`${file.name} exceeds the maximum file size of 10 MB.`);
+                                    rejected.push(`${file.name} exceeds the maximum file size of 10 MB.`);
                                     return;
                                 }
                             
                                 files.push(file);
                             });
                         
+                            errors.documents = rejected.join(' ');
                             $event.target.value = '';
                         "
                     >
                 </label>
+                <p id="documents-error" x-show="errors.documents" x-text="errors.documents" x-cloak class="mt-1.5 text-xs text-red-600"></p>
 
                 <!-- ================================================= -->
                 <!-- FILE LIST -->

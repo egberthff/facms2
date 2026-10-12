@@ -53,19 +53,13 @@
                 }
                 const runningBalance = parseFloat(rawBalanceValue) || 0;
 
-               // 3. Fire SweetAlert if running balance is greater than the input amount
+               // 3. Flag the amount field if it exceeds the claimable balance
                 if (inputAmount > runningBalance) {
-                    this.claimableBalanceOk = false
-                    Swal.fire({
-                        title: 'Balance Threshold Exceeded',
-                        text: `The inputted amount (₱${inputAmount.toLocaleString('en-PH')}) is greater than claimable balance balance (₱${runningBalance.toLocaleString('en-PH')}).`,
-                        icon: 'warning',
-                        confirmButtonColor: '#FDBA74', // Tailwind orange-300 matching focus ring
-                        confirmButtonText: 'Understood',
-                    });
-                     $('#claim-amount-input').toggleClass('error-border', true);
+                    this.claimableBalanceOk = false;
+                    this.errors.amount = `Amount exceeds your claimable balance of ₱${runningBalance.toLocaleString('en-PH')}.`;
                 }else{
                     this.claimableBalanceOk = true;
+                    this.errors.amount = '';
                 }
             } catch (error) {
                 console.error('Error fetching running balance:', error);
@@ -79,6 +73,8 @@
         action="{{ route('claim.store') }}"
         method="POST"
         enctype="multipart/form-data"
+        @input="clearError($event.target.name)"
+        @change="clearError($event.target.name)"
         @submit.prevent="submitForm">
 
         @csrf
@@ -118,6 +114,12 @@
             step: 1,
 
             agree: false,
+
+            /* =====================================================
+             * VALIDATION ERRORS (field name => message)
+             * ===================================================== */
+
+            errors: {},
 
             /* =====================================================
              * FORM MODEL
@@ -355,11 +357,16 @@
                                     });
                                 
                                 } catch (error) {
+                                    // Field validation errors: show them under their inputs
+                                    if (error && error.errors) {
+                                        Swal.close();
+                                        this.showServerErrors(error.errors);
+                                        return;
+                                    }
+
                                     let errorMessage = "Something went wrong. Please try again.";
                                     if (error && error.success === false && error.message) {
-                                        errorMessage = error.message;  
-                                    } else if (error && error.errors) {
-                                        errorMessage = Object.values(error.errors).flat().join('\n'); 
+                                        errorMessage = error.message;
                                     }
                                 
                                     // Target the active loader alert and convert it to Error
@@ -415,43 +422,35 @@
 
             validateStep() {
 
+                const errors = {};
+
                 switch (this.step) {
 
                     case 1:
 
                         if (!this.claimType) {
-                            Swal.fire('Please select a Claim Type.');
-                            this.setErrorFocus(step = 1)
-                            return false;
+                            errors.claimType = 'Please select a claim type.';
                         }
 
                         if (!this.amount) {
-                             Swal.fire('Please enter the Claim Amount');
-                            this.setErrorFocus(step = 1)
-                            return false;
+                            errors.amount = 'Please enter the claim amount.';
+                        } else if (!this.claimableBalanceOk) {
+                            errors.amount = this.errors.amount || 'Requested amount is greater than your claimable balance.';
                         }
 
                         if (!this.description) {
-                            Swal.fire('Please provide a Description.');
-                            this.setErrorFocus(step = 1)
-                            return false;
+                            errors.description = 'Please provide a description.';
                         }
 
-                        if(!this.incidentDate) {
-                            Swal.fire("Please provide the incident date");
-                            this.setErrorFocus(step = 1)
-                            return false;
+                        if (!this.incidentDate) {
+                            errors.incidentDate = 'Please provide the treatment start date.';
                         }
 
-                        if(!this.hospital) {
-                            Swal.fire("Please provide the hospital/institution"); 
-                            this.setErrorFocus(step = 1)
-                            return false;
+                        if (!this.hospital) {
+                            errors.hospital = 'Please provide the hospital / institution.';
                         }
 
-                        if(!this.claimableBalanceOk)  {
-                            Swal.fire('Requested amount is greater than claimable balance');
-                            this.setErrorFocus(step = 1)
+                        if (!this.setStepErrors(errors, ['claimType', 'amount', 'description', 'incidentDate', 'hospital'])) {
                             return false;
                         }
 
@@ -463,75 +462,62 @@
                         return true;
 
                     case 2:
-                            if (this.files.length === 0) {
-                                Swal.fire("Please provide the required documents");
-                                this.setErrorFocus(step = 2)
-                                    return false;
-                            } else {
-                               return true;
-                            }
+
+                        if (this.files.length === 0) {
+                            errors.documents = 'Please upload the required supporting documents.';
+                        }
+
+                        return this.setStepErrors(errors, ['documents']);
+
                     case 3:
 
                         if (!this.paymentMethod) {
-                            Swal.fire("Please select your preferred disbursement method");
-                            return false;
+                            errors.paymentMethod = 'Please select your preferred disbursement method.';
                         }
 
                         if (this.paymentMethod === 'bank') {
 
-                            if (
-                                !this.bank ||
-                                !this.accountNumber ||
-                                !this.accountName
-                            ) {
-
-                                Swal.fire(
-                                    'Please complete all required bank information.'
-                                );
-                                this.setErrorFocus(step = 3)
-                                return false;
+                            if (!this.bank) {
+                                errors.bank = 'Please select a bank.';
                             }
 
-                         if (this.accountNumber.length < 8 || this.accountNumber.length > 20) { 
-                            Swal.fire('Please double check account number.'); 
-                            this.setErrorFocus(step = 3); 
-                            return false; 
-                        }
-                            
-                            this.form.paymentMethod = this.selectedId;
-                            this.form.bank = this.bank;
-                            this.form.accountNumber = this.accountNumber;
-                            this.form.accountName = this.accountName;
+                            if (!this.accountNumber) {
+                                errors.accountNumber = 'Please enter your account number.';
+                            } else if (this.accountNumber.length < 8 || this.accountNumber.length > 20) {
+                                errors.accountNumber = 'Account number must be 8 to 20 digits.';
+                            }
+
+                            if (!this.accountName) {
+                                errors.accountName = 'Please enter the account name.';
+                            }
 
                         }
 
                         if (this.paymentMethod === 'gcash') {
 
-                            if (
-                                !this.gcashName ||
-                                !this.gcashNumber
-                            ) {
-
-                                Swal.fire(
-                                    'Please complete your GCash details.'
-                                );
-                                this.setErrorFocus(step = 3);
-                                return false;
+                            if (!this.gcashNumber) {
+                                errors.gcashNumber = 'Please enter your GCash number.';
+                            } else if (this.gcashNumber.length !== 11) {
+                                errors.gcashNumber = 'GCash number must be 11 digits (09XXXXXXXXX).';
                             }
 
-                             if (this.gcashNumber.length < 11 || this.gcashNumber.length > 11) { 
-                                Swal.fire('Please double check account number.'); 
-                                this.setErrorFocus(step = 3); 
-                                return false; 
+                            if (!this.gcashName) {
+                                errors.gcashName = 'Please enter the account name.';
                             }
-                            
-                            this.form.paymentMethod = this.selectedId;
-                            this.form.gcashName = this.gcashName;
-                            this.form.gcashNumber = this.gcashNumber;
 
                         }
 
+                        if (!this.setStepErrors(errors, ['paymentMethod', 'bank', 'accountNumber', 'accountName', 'branch', 'gcashNumber', 'gcashName'])) {
+                            return false;
+                        }
+
                         this.form.paymentMethod = this.selectedId;
+                        this.form.bank = this.bank;
+                        this.form.accountNumber = this.accountNumber;
+                        this.form.accountName = this.accountName;
+                        this.form.branch = this.branch;
+                        this.form.gcashName = this.gcashName;
+                        this.form.gcashNumber = this.gcashNumber;
                         return true;
 
                     default:
@@ -542,73 +528,74 @@
 
             },
 
-            setErrorFocus(step = 1) {
-                if (step === 1) {
-                  const isClaimTypeInvalid = !this.claimType;
-                  $('#claim-type-input').toggleClass('error-border', isClaimTypeInvalid);
-                  const isAmountInvalid = !this.amount;
-                  $('#claim-amount-input').toggleClass('error-border', isAmountInvalid);
-                  const isDescriptionInvalid = !this.description
-                  $('#claim-description-input').toggleClass('error-border', isDescriptionInvalid);
-                  const isIncidentDatInvalid = !this.incidentDate;
-                  $('#claim-incident-date-input').toggleClass('error-border', isIncidentDatInvalid);
-                  const isHospitalInvalid = !this.hospital;
-                  $('#claim-hospital-input').toggleClass('error-border', isHospitalInvalid);
-                  const isClaimableBalanceValid = !this.claimableBalanceOk;
-                  $('#claim-amount-input').toggleClass('error-border', isClaimableBalanceValid);
-                
-                  // 3. Focus the first invalid field found
-                  if (isClaimTypeInvalid) {
-                    $('#claim-type-input').focus();
-                  }else if (isAmountInvalid || !this.claimableBalanceOk) {
-                    $('#claim-amount-input').focus();
-                  }else if (isDescriptionInvalid) {
-                    $('#claim-description-input').focus();
-                  }else if (isIncidentDatInvalid) {
-                    $('#claim-incident-date-input').focus();
-                  }else if (isHospitalInvalid) {
-                    $('#claim-hospital-input').focus();
-                  }
-                } 
+            /**
+             * Replace the errors of the given step fields, then focus the
+             * first invalid one. Returns true when the step has no errors.
+             */
+            setStepErrors(errors, fields) {
+                fields.forEach(field => {
+                    this.errors[field] = errors[field] || '';
+                });
 
-                if (step == 2) {
-                    const isDocumentsValid = !this.files.length === 0
-                    $('#documents').toggleClass('error-border', isDocumentsValid);
+                const firstInvalid = fields.find(field => errors[field]);
+
+                if (firstInvalid) {
+                    this.focusField(firstInvalid);
+                    return false;
                 }
 
-                if (step == 3) {
-                    if(this.paymentMethod === 'bank') {
-                        $('[name="bank"]').toggleClass('error-border', !this.bank);
-                        $('[name="accountNumber"]').toggleClass('error-border', !this.accountNumber);
-                        $('[name="accountName"]').toggleClass('error-border', !this.accountName);
+                return true;
+            },
 
-                        const isAccountNumberInvalid = this.accountNumber.length < 8 || this.accountNumber.length > 20;                     
-                        $('[name="accountNumber"]').toggleClass('error-border', isAccountNumberInvalid);
+            focusField(field) {
+                this.$nextTick(() => {
+                    const el = document.querySelector(`#claim-form [name="${field}"]`);
+                    if (el && el.type !== 'file') {
+                        el.focus();
+                    } else {
+                        document.getElementById(`${field}-error`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                });
+            },
 
-                        if(!this.bank){
-                            $('[name="bank"]').focus();
-                        } else if(!this.accountNumber){
-                             $('[name="accountNumber"]').focus();
-                        }else if(!this.accountName) {
-                            $('[name="accountName"]').focus();
-                        }else if(isAccountNumberInvalid) {
-                             $('[name="accountNumber"]').focus();
-                        }
+            clearError(name) {
+                if (!name || name === 'documents[]') return;
+                if (this.errors[name]) {
+                    this.errors[name] = '';
+                }
+            },
+
+            /**
+             * Show server-side (422) validation errors under their fields
+             * and jump back to the step of the first invalid field.
+             */
+            showServerErrors(serverErrors) {
+                const stepFields = {
+                    1: ['claimType', 'amount', 'description', 'incidentDate', 'treatmentEndDate', 'hospital'],
+                    2: ['documents'],
+                    3: ['paymentMethod', 'bank', 'accountName', 'accountNumber', 'branch', 'gcashName', 'gcashNumber'],
+                };
+
+                let firstStep = null;
+                let firstField = null;
+
+                Object.entries(serverErrors).forEach(([key, messages]) => {
+                    // documents.0 => documents
+                    const field = key.split('.')[0];
+                    if (!this.errors[field]) {
+                        this.errors[field] = [].concat(messages)[0];
                     }
 
-                    if(this.paymentMethod === 'gcash') {
-                        $('[name="gcashNumber"]').toggleClass('error-border', !this.gcashNumber);
-                        $('[name="gcashName"]').toggleClass('error-border', !this.gcashName);
-                        const isGcashNumberInvalid = this.accountNumber.length < 11 || this.accountNumber.length > 11;                     
-                        $('[name="gcashNumber"]').toggleClass('error-border', isGcashNumberInvalid);
-                        if(!this.gcashNumber){
-                            $('[name="gcashNumber"]').focus();
-                        }else if(!this.gcashName) {
-                            $('[name="gcashName"]').focus();
-                        }else if(isGcashNumberInvalid) {
-                            $('[name="gcashNumber"]').focus();
-                        }
+                    const step = Number(Object.keys(stepFields).find(s => stepFields[s].includes(field)));
+                    if (step && (firstStep === null || step < firstStep)) {
+                        firstStep = step;
+                        firstField = field;
                     }
+                });
+
+                if (firstStep !== null) {
+                    this.step = firstStep;
+                    this.focusField(firstField);
                 }
             },
 
@@ -645,6 +632,8 @@
                 this.step = 1;
 
                 this.agree = false;
+
+                this.errors = {};
 
                 this.form = {
 
