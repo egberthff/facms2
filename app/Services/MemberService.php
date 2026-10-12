@@ -94,47 +94,86 @@ class MemberService
     public function createMember(array $data): Member
     {
         return DB::transaction(function () use ($data) {
-            // 1. Construct full name string cleanly
-            $fullName = collect([
-                $data['first_name'] ?? null,
-                $data['middle_name'] ?? null,
-                $data['last_name'] ?? null,
-                $data['suffix'] ?? null,
-            ])->filter()->implode(' ');
-
-            // 2. Create the base login account
+            // 1. Create the base login account
             $user = User::create([
-                'name' => $fullName,
+                'name' => $this->buildFullName($data),
                 'email' => $data['email'],
                 'password' => Hash::make('password123'),
                 'is_active' => true,
             ]);
 
+            // 2. Officer-created accounts are vouched for, so they skip email verification
+            $user->forceFill(['email_verified_at' => now()])->save();
+
             // 3. Assign default system role
             $user->assignRole('Member');
 
             // 4. Create and return the linked Member profile record
-            return $user->member()->create([
-                'employee_number' => $data['employee_number'],
-                'first_name' => $data['first_name'],
-                'middle_name' => $data['middle_name'] ?? null,
-                'last_name' => $data['last_name'],
-                'suffix' => $data['suffix'] ?? null,
-                'gender' => $data['gender'],
-                'birth_date' => $data['birth_date'] ?? null,
-                'department' => $data['department'],
-                'position' => $data['position'],
-                'employment_status' => $data['employment_status'],
-                'membership_status' => MembershipStatus::Active->value,
-                'active_member_on' =>$data['active_member_on'] ?? null,
-                'inactive_member_on' => $data['inactive_member_on'] ?? null,
-                'contact_number' => $data['contact_number'],
-                'address' => $data['address'],
-                'gcash_number' => $data['gcash_number'] ?? null,
-                'gcash_account_name' => $data['gcash_account_name'] ?? null,
-                'campus_id' => $data['campus_id'] ?? null,
-            ]);
+            return $this->createMemberProfile($user, $data, MembershipStatus::Active->value);
         });
+    }
+
+    /**
+     * Register a member through the public signup form.
+     *
+     * The account starts unverified (the Registered event sends the verification link)
+     * and the membership starts Inactive until a campus officer activates it.
+     */
+    public function registerSelfServiceMember(array $data): User
+    {
+        return DB::transaction(function () use ($data) {
+            $user = User::create([
+                'name' => $this->buildFullName($data),
+                'email' => $data['email'],
+                'password' => Hash::make($data['password']),
+                'is_active' => true,
+            ]);
+
+            $user->assignRole('Member');
+
+            // Officer-controlled fields are never taken from signup input
+            $this->createMemberProfile($user, [
+                ...$data,
+                'active_member_on' => null,
+                'inactive_member_on' => null,
+            ], MembershipStatus::Inactive->value);
+
+            return $user;
+        });
+    }
+
+    private function buildFullName(array $data): string
+    {
+        return collect([
+            $data['first_name'] ?? null,
+            $data['middle_name'] ?? null,
+            $data['last_name'] ?? null,
+            $data['suffix'] ?? null,
+        ])->filter()->implode(' ');
+    }
+
+    private function createMemberProfile(User $user, array $data, string $membershipStatus): Member
+    {
+        return $user->member()->create([
+            'employee_number' => $data['employee_number'],
+            'first_name' => $data['first_name'],
+            'middle_name' => $data['middle_name'] ?? null,
+            'last_name' => $data['last_name'],
+            'suffix' => $data['suffix'] ?? null,
+            'gender' => $data['gender'],
+            'birth_date' => $data['birth_date'] ?? null,
+            'department' => $data['department'],
+            'position' => $data['position'],
+            'employment_status' => $data['employment_status'],
+            'membership_status' => $membershipStatus,
+            'active_member_on' =>$data['active_member_on'] ?? null,
+            'inactive_member_on' => $data['inactive_member_on'] ?? null,
+            'contact_number' => $data['contact_number'],
+            'address' => $data['address'],
+            'gcash_number' => $data['gcash_number'] ?? null,
+            'gcash_account_name' => $data['gcash_account_name'] ?? null,
+            'campus_id' => $data['campus_id'] ?? null,
+        ]);
     }
 
     /**

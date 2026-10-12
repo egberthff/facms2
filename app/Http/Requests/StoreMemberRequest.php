@@ -5,10 +5,13 @@ namespace App\Http\Requests;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
 use App\Enums\MembershipStatus;
+use App\Http\Requests\Concerns\MemberProfileRules;
 use Illuminate\Validation\Rule;
 
 class StoreMemberRequest extends FormRequest
 {
+    use MemberProfileRules;
+
     public function authorize(): bool
     {
         return Auth::user()->hasAnyRole([
@@ -21,65 +24,10 @@ class StoreMemberRequest extends FormRequest
 
     public function rules(): array
     {
-        return [
-
-            'employee_number' => [
-                'required',
-                'string',
-                'unique:members,employee_number',
-            ],
-
-            'first_name' => [
-                'required',
-                'string',
-                'max:100',
-            ],
-
-            'middle_name' => [
-                'nullable',
-                'string',
-                'max:100',
-            ],
-
-            'last_name' => [
-                'required',
-                'string',
-                'max:100',
-            ],
-
-            'suffix' => [
-                'nullable',
-                'string',
-                'max:20',
-            ],
-
-            'gender' => [
-                'required',
-                'in:Male,Female',
-            ],
-
-            'birth_date' => [
-                'nullable',
-                'date',
-            ],
-
-            'department' => [
-                'required',
-                'string',
-            ],
-
-            'position' => [
-                'required',
-                'string',
-            ],
-
-            'employment_status' => [
-                'required',
-                'in:Permanent,Probationary,Contractual,Part-time',
-            ],
+        return array_merge($this->memberProfileRules(), [
 
             'membership_status' => [
-                'required', 
+                'required',
                 Rule::enum(MembershipStatus::class)
             ],
 
@@ -92,17 +40,6 @@ class StoreMemberRequest extends FormRequest
                 'nullable',
                 'date'
             ],
-            
-            'contact_number' => [
-                'required',
-                'string',
-                'max:20',
-            ],
-
-            'address' => [
-                'required',
-                'string',
-            ],
 
             'email' => [
                 'required',
@@ -111,22 +48,11 @@ class StoreMemberRequest extends FormRequest
                 'unique:users,email',
             ],
 
-            'gcash_number' => [
-                'nullable',
-                'string',
-                'max:20',
-            ],
-
-            'gcash_account_name' => [
-                'nullable',
-                'string',
-                'max:255',
-            ],
             'campus_id' => [
                 'nullable',
                 'string',
                 'max:36',
             ]
-        ];
+        ]);
     }
 }

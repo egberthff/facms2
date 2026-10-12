@@ -2,7 +2,7 @@
 
 use App\Http\Controllers\ReportController;
 
-Route::middleware(['auth', 'active'])
+Route::middleware(['auth', 'active', 'verified', 'member.active'])
     ->group(function () {
 
     //Report Admin

@@ -2,7 +2,7 @@
 
 use App\Http\Controllers\RolePermissionController;
 
-Route::prefix('admin')->name('admin.')->group(function () {
+Route::middleware(['auth', 'active', 'verified', 'member.active'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/access-control', [RolePermissionController::class, 'index'])->middleware('can:manage users')->name('permissions.index');
     //Role based access assignment
     Route::put('/access-control/sync', [RolePermissionController::class, 'syncMatrix'])->middleware('can:manage users')->name('permissions.sync');

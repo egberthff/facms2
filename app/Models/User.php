@@ -1,6 +1,8 @@
 <?php
 namespace App\Models;
 
+use App\Enums\MembershipStatus;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -9,7 +11,7 @@ use Spatie\Permission\Traits\HasRoles;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 
-class User extends Authenticatable
+class User extends Authenticatable implements MustVerifyEmail
 {
     use HasFactory;
     use Notifiable;
@@ -21,6 +23,9 @@ class User extends Authenticatable
     public $incrementing = false;
 
     protected $keyType = 'string';
+
+    /** Per-instance cache for hasInactiveMembership(). */
+    private ?bool $inactiveMembership = null;
 
     protected $fillable = [
         'username',
@@ -81,6 +86,17 @@ class User extends Authenticatable
         }
 
         return $campusId;
+    }
+
+    /**
+     * Whether this account's membership is Inactive (e.g. a self-signup awaiting
+     * officer activation). Inactive members may only use the dashboard and their profile.
+     */
+    public function hasInactiveMembership(): bool
+    {
+        return $this->inactiveMembership ??= $this->member()
+            ->withoutGlobalScopes()
+            ->value('membership_status') === MembershipStatus::Inactive->value;
     }
 
     public function reviewedClaims()

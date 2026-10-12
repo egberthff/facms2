@@ -60,6 +60,7 @@ class SystemSetting extends Model
     {
         // Safely resolve the query builder scope, defaulting to 23000.00 if the DB row doesn't exist
         $setting = self::annualLimit($campusId)->first();   
+        \Log::error('SystemSetting::getGlobalLimit() - Retrieved setting: ' . ($setting ? $setting->setting_value : 'null') . ' for campus_id: ' . ($campusId ?? 'null'));  
         return $setting ? (float) $setting->setting_value : 23000.00; 
     }
 

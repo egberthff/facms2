@@ -66,46 +66,20 @@
                     </div>
                 </div>
 
-                @if($allowance && $allowance['limit'] > 0)
-                    @php
-                        $segments = [
-                            ['label' => 'Disbursed', 'value' => $allowance['disbursed'], 'color' => 'bg-chart-1'],
-                            ['label' => 'Approved, not yet released', 'value' => $allowance['approved'], 'color' => 'bg-chart-2'],
-                            ['label' => 'Reserved by claims in review', 'value' => $allowance['reserved'], 'color' => 'bg-chart-3'],
-                        ];
-                    @endphp
-
-                    <!-- Cycle limit meter: segments add up to the limit; the white track is what remains -->
-                    <div class="mt-6">
-                        <div class="flex h-3 w-full gap-0.5 overflow-hidden rounded-full bg-white/15"
-                             role="img"
-                             aria-label="Claim cycle usage: ₱{{ number_format($allowance['limit'] - $allowance['remaining'], 2) }} used of ₱{{ number_format($allowance['limit'], 2) }}">
-                            @foreach($segments as $segment)
-                                @if($segment['value'] > 0)
-                                    <div class="{{ $segment['color'] }} h-full" style="width: {{ round($segment['value'] / $allowance['limit'] * 100, 2) }}%"></div>
-                                @endif
-                            @endforeach
-                        </div>
-
-                        <dl class="mt-4 grid grid-cols-1 gap-3 text-xs sm:grid-cols-2 xl:grid-cols-4">
-                            @foreach($segments as $segment)
-                                <div class="flex items-start gap-2">
-                                    <span class="{{ $segment['color'] }} mt-0.5 h-2.5 w-2.5 shrink-0 rounded-sm"></span>
-                                    <div>
-                                        <dt class="text-white/70">{{ $segment['label'] }}</dt>
-                                        <dd class="font-semibold tabular-nums">₱{{ number_format($segment['value'], 2) }}</dd>
-                                    </div>
-                                </div>
-                            @endforeach
-                            <div class="flex items-start gap-2">
-                                <span class="mt-0.5 h-2.5 w-2.5 shrink-0 rounded-sm bg-white/15 ring-1 ring-white/30"></span>
-                                <div>
-                                    <dt class="text-white/70">Remaining</dt>
-                                    <dd class="font-semibold tabular-nums">₱{{ number_format($allowance['remaining'], 2) }}</dd>
-                                </div>
-                            </div>
-                        </dl>
-                    </div>
+                <!-- Action Button Actions -->
+                @if (Auth::user()->hasInactiveMembership())
+                <p class="text-sm text-white/80">
+                    Claims become available once your membership is activated by your campus officers.
+                </p>
+                @else
+                <div class="flex gap-4">
+                    <a href="{{ route('claim.my', Auth::user()) }}" class="flex-1 text-center border border-white/40 hover:bg-white/10 text-white font-medium py-2.5 px-4 rounded-full transition-colors text-sm">
+                        View Details
+                    </a>
+                    <a href="{{ route('claim.create') }}" class="flex-1 text-center bg-[#F28C4F] hover:bg-[#e07b3e] text-white font-medium py-2.5 px-4 rounded-full transition-colors text-sm">
+                        New Claim
+                    </a>
+                </div>
                 @endif
             </div>
 
