@@ -14,7 +14,6 @@
                         <strong>PDF, JPG, JPEG, PNG</strong>
                     </p>
                 </div>
-                <x-file-preview-modal />
                 <!-- Upload Area -->
                 <label
                     for="documents"

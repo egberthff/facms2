@@ -122,6 +122,15 @@
             errors: {},
 
             /* =====================================================
+             * PAYOUT QR UPLOAD (per payment method)
+             * ===================================================== */
+
+            qr: {
+                gcash: { file: null, payload: '', preview: null, fileName: '', message: '', loading: false },
+                bank:  { file: null, payload: '', preview: null, fileName: '', message: '', loading: false },
+            },
+
+            /* =====================================================
              * FORM MODEL
              * ===================================================== */
 
@@ -299,6 +308,12 @@
                         formData.append('gcashName', this.form.gcashName);
                         formData.append('gcashNumber', this.form.gcashNumber);
 
+                        const payoutQr = this.qr[this.paymentMethod];
+                        if (payoutQr?.file) {
+                            formData.append('payoutQr', payoutQr.file);
+                            formData.append('payoutQrPayload', payoutQr.payload);
+                        }
+
                         this.form.files.forEach(file => {
                             formData.append('documents[]', file);
                         });
@@ -475,34 +490,39 @@
                             errors.paymentMethod = 'Please select your preferred disbursement method.';
                         }
 
+                        // An attached payment QR replaces the typed account details
                         if (this.paymentMethod === 'bank') {
 
-                            if (!this.bank) {
-                                errors.bank = 'Please select a bank.';
+                            const hasQr = !!this.qr.bank.file;
+
+                            if (!this.bank && !hasQr) {
+                                errors.bank = 'Please select a bank or upload your bank QR code.';
                             }
 
                             if (!this.accountNumber) {
-                                errors.accountNumber = 'Please enter your account number.';
+                                if (!hasQr) errors.accountNumber = 'Please enter your account number or upload your bank QR code.';
                             } else if (this.accountNumber.length < 8 || this.accountNumber.length > 20) {
                                 errors.accountNumber = 'Account number must be 8 to 20 digits.';
                             }
 
-                            if (!this.accountName) {
-                                errors.accountName = 'Please enter the account name.';
+                            if (!this.accountName && !hasQr) {
+                                errors.accountName = 'Please enter the account name or upload your bank QR code.';
                             }
 
                         }
 
                         if (this.paymentMethod === 'gcash') {
 
+                            const hasQr = !!this.qr.gcash.file;
+
                             if (!this.gcashNumber) {
-                                errors.gcashNumber = 'Please enter your GCash number.';
+                                if (!hasQr) errors.gcashNumber = 'Please enter your GCash number or upload your GCash QR code.';
                             } else if (this.gcashNumber.length !== 11) {
                                 errors.gcashNumber = 'GCash number must be 11 digits (09XXXXXXXXX).';
                             }
 
-                            if (!this.gcashName) {
-                                errors.gcashName = 'Please enter the account name.';
+                            if (!this.gcashName && !hasQr) {
+                                errors.gcashName = 'Please enter the account name or upload your GCash QR code.';
                             }
 
                         }
@@ -558,6 +578,104 @@
                 });
             },
 
+            /**
+             * Decode an uploaded GCash / bank QR and fill in the payout fields.
+             */
+            async handlePaymentQr(event, method) {
+                const file = event.target.files[0];
+                event.target.value = '';
+                if (!file) return;
+
+                const state = this.qr[method];
+                const errorKey = `${method}Qr`;
+
+                this.errors[errorKey] = '';
+                state.message = '';
+
+                if (!file.type.startsWith('image/')) {
+                    this.errors[errorKey] = 'Please upload the QR code as an image (PNG or JPG).';
+                    return;
+                }
+
+                state.loading = true;
+
+                try {
+                    const details = await window.readPaymentQr(file);
+
+                    if (!details.raw.startsWith('000201')) {
+                        throw new Error('This is not a payment QR code. Please upload the QR from your GCash or banking app.');
+                    }
+
+                    // Wallets often leave the number out or mask the name; fill only what is readable
+                    const filled = [];
+
+                    if (method === 'gcash') {
+                        if (details.provider !== 'GCash') {
+                            throw new Error(details.provider
+                                ? `This looks like a ${details.provider} QR, not a GCash QR.`
+                                : 'This is not a GCash QR code.');
+                        }
+
+                        if (details.number) {
+                            this.gcashNumber = details.number;
+                            this.errors.gcashNumber = '';
+                            filled.push('number');
+                        }
+
+                        if (details.name && !details.nameMasked) {
+                            this.gcashName = details.name;
+                            this.errors.gcashName = '';
+                            filled.push('name');
+                        }
+                    }
+
+                    if (method === 'bank') {
+                        if (details.provider === 'GCash') {
+                            throw new Error('This is a GCash QR. Select GCash as your disbursement method instead.');
+                        }
+
+                        if (details.number) {
+                            this.accountNumber = details.number.slice(0, 20);
+                            this.errors.accountNumber = '';
+                            filled.push('account number');
+                        }
+
+                        if (details.bank && Array.from(document.querySelectorAll('#claim-form [name="bank"] option')).some(o => o.value === details.bank)) {
+                            this.bank = details.bank;
+                            this.errors.bank = '';
+                            filled.push('bank');
+                        }
+
+                        if (details.name && !details.nameMasked) {
+                            this.accountName = details.name;
+                            this.errors.accountName = '';
+                            filled.push('name');
+                        }
+                    }
+
+                    if (state.preview) URL.revokeObjectURL(state.preview);
+                    Object.assign(state, {
+                        file,
+                        payload: details.raw,
+                        preview: URL.createObjectURL(file),
+                        fileName: file.name,
+                        message: 'QR attached. It will be used to send your payout'
+                            + (filled.length ? `, and your ${filled.join(', ')} was filled in from it.` : '. The fields below are optional.'),
+                    });
+                } catch (e) {
+                    this.errors[errorKey] = e.message || 'The QR code could not be read.';
+                } finally {
+                    state.loading = false;
+                }
+            },
+
+            removePaymentQr(method) {
+                const state = this.qr[method];
+                if (state.preview) URL.revokeObjectURL(state.preview);
+                Object.assign(state, { file: null, payload: '', preview: null, fileName: '', message: '' });
+                this.errors[`${method}Qr`] = '';
+            },
+
             clearError(name) {
                 if (!name || name === 'documents[]') return;
                 if (this.errors[name]) {
@@ -573,15 +691,18 @@
                 const stepFields = {
                     1: ['claimType', 'amount', 'description', 'incidentDate', 'treatmentEndDate', 'hospital'],
                     2: ['documents'],
-                    3: ['paymentMethod', 'bank', 'accountName', 'accountNumber', 'branch', 'gcashName', 'gcashNumber'],
+                    3: ['paymentMethod', 'bank', 'accountName', 'accountNumber', 'branch', 'gcashName', 'gcashNumber', 'gcashQr', 'bankQr'],
                 };
 
                 let firstStep = null;
                 let firstField = null;
 
                 Object.entries(serverErrors).forEach(([key, messages]) => {
-                    // documents.0 => documents
-                    const field = key.split('.')[0];
+                    // documents.0 => documents; QR errors show under the active method's upload card
+                    let field = key.split('.')[0];
+                    if (field === 'payoutQr' || field === 'payoutQrPayload') {
+                        field = `${this.paymentMethod}Qr`;
+                    }
                     if (!this.errors[field]) {
                         this.errors[field] = [].concat(messages)[0];
                     }
@@ -635,6 +756,9 @@
 
                 this.errors = {};
 
+                this.removePaymentQr('gcash');
+                this.removePaymentQr('bank');
+
                 this.form = {
 
                     claimType: '',
@@ -674,6 +798,9 @@
 </script>
 
     </form>
+
+    {{-- Shared by every step (documents, payout QR, review); kept outside the step sections so it is never hidden with them --}}
+    <x-file-preview-modal />
 
 </div>
 

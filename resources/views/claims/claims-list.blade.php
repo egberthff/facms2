@@ -324,6 +324,8 @@ redrawTable() {
                         </div>
                     </div>
 
+                    @include('claims.partials.claim-payout-details')
+
                     <!-- Section 3: Detailed Explanations & Descriptions -->
                     <div class="space-y-4">
                         <div class="bg-slate-50/30 p-4 rounded-xl border border-slate-100">

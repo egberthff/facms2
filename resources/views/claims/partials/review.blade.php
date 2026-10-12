@@ -4,7 +4,6 @@
             x-cloak>
 
             <div class="rounded-xl border border-gray-200 bg-white p-4 shadow-xs sm:p-6">
-                <x-file-preview-modal />
                 <div class="mb-6">
 
                     <h2 class="text-lg font-semibold text-gray-900">
@@ -317,6 +316,8 @@
 
                             </div>
 
+                            @include('claims.partials.review-payout-qr', ['method' => 'bank'])
+
                         </div>
 
                         <!-- ================================= -->
@@ -360,6 +361,8 @@
                                 </div>
 
                             </div>
+
+                            @include('claims.partials.review-payout-qr', ['method' => 'gcash'])
 
                         </div>
 

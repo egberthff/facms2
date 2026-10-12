@@ -151,6 +151,7 @@
             x-show="paymentMethod=='bank'"
             x-transition
             class="mt-8">
+            @include('claims.partials.payment-qr-upload', ['method' => 'bank'])
             <div class="grid gap-4 md:grid-cols-2 md:gap-5">
                 <div>
                     <label class="mb-1.5 block text-sm font-medium text-gray-700">
@@ -257,6 +258,7 @@
             x-show="paymentMethod=='gcash'"
             x-transition
             class="mt-8">
+            @include('claims.partials.payment-qr-upload', ['method' => 'gcash'])
             <div class="grid gap-4 md:grid-cols-2 md:gap-5">
                 <div>
                     <label class="mb-1.5 block text-sm font-medium text-gray-700">

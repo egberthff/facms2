@@ -29,6 +29,9 @@ window.Chart = Chart;
 
 import './report-center';
 import './dashboard-charts';
+import { readPaymentQr } from './payment-qr';
+
+window.readPaymentQr = readPaymentQr;
 import { all } from 'axios';
 
 document.addEventListener('alpine:init', () => {
