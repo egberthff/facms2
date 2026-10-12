@@ -2,12 +2,12 @@
             <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm" @click="closeBatchModal()"></div>
             <div class="flex min-h-full items-center justify-center p-4">
                 <div class="relative w-full max-w-5xl rounded-2xl bg-white shadow-2xl border border-slate-100 overflow-hidden">
-                    <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+                    <div class="flex items-center justify-between gap-4 border-b border-slate-100 px-4 py-4 sm:px-6">
                         <div>
-                            <h3 class="text-lg font-bold text-slate-900">Contribution Detail Breakdown</h3>
+                            <h3 class="text-lg font-semibold text-slate-900">Contribution Detail Breakdown</h3>
                             <p class="text-xs text-slate-500 mt-1" x-text="selectedBatch ? selectedBatch.claim_number + ' • ' + selectedBatch.claimant : ''"></p>
                         </div>
-                        <button @click="closeBatchModal()" class="text-slate-400 hover:text-slate-600 transition p-1.5 rounded-lg hover:bg-slate-50">
+                        <button @click="closeBatchModal()" class="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-700">
                             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                         </button>
                     </div>
@@ -93,7 +93,7 @@
                                     </template>
                                     <template x-if="filteredDetails.length === 0">
                                         <tr>
-                                            <td colspan="{{ $isPresident ? '7' : '6' }}" class="text-center py-12 text-gray-400 dark:text-zinc-500 text-xs">
+                                            <td colspan="{{ $isPresident ? '7' : '6' }}" class="py-12 text-center text-sm text-gray-400 dark:text-zinc-500">
                                                 No records match your filters or search terms inside this workspace view.
                                             </td>
                                         </tr>

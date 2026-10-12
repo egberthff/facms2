@@ -2,14 +2,14 @@
    
     {{-- @if(($isPresident ?? false) || ($isTreasurer ?? false)) --}}
     @if(Auth::user()->hasAnyRole(['Federated President', 'Federated Treasurer']) || Auth::user()->can('view all campus data'))
-        <div class="p-6 bg-gray-50 dark:bg-zinc-800/40 rounded-xl border border-gray-200 dark:border-zinc-800/80 mb-6">
+        <div class="mb-6 rounded-xl border border-gray-200 bg-gray-50/60 p-4 sm:p-5 dark:border-zinc-800/80 dark:bg-zinc-800/40">
             <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <h4 class="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Campus Member Filter</h4>
                     <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Filter members by campus for leadership review.</p>
                 </div>
                 <form method="GET" action="{{ route('members.index') }}" class="flex items-center gap-2">
-                    <select name="campus_filter" onchange="this.form.submit()" class="text-sm rounded-lg bg-white dark:bg-zinc-900 border-gray-300 dark:border-zinc-700 text-gray-700 dark:text-gray-300 focus:ring-blue-500 focus:border-blue-500 min-w-52">
+                    <select name="campus_filter" onchange="this.form.submit()" class="block w-full min-w-52 rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-700 shadow-xs focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-zinc-700 dark:bg-zinc-900 dark:text-gray-300">
                         <option value="">All Campuses (Global View)</option>
                         @foreach($allCampuses as $campus)
                             <option value="{{ $campus->id }}" {{ ($selectedCampusId ?? '') == $campus->id ? 'selected' : '' }}>{{ $campus->acronym }}</option>
@@ -17,23 +17,23 @@
                     </select>
                 </form>
             </div>
-            <div class="flex gap-3 overflow-x-auto mt-4 pb-2 scrollbar-none">
+            <div class="scrollbar-none -mx-1 mt-4 flex gap-2 overflow-x-auto px-1 pb-1">
                 @foreach($allCampuses as $campus)
-                    <div class="shrink-0 bg-white dark:bg-zinc-900 px-3 py-1.5 rounded-lg border {{ ($selectedCampusId ?? '') == $campus->id ? 'border-blue-500 bg-blue-50/10' : 'border-gray-200 dark:border-zinc-800' }} text-xs">
-                        <span class="font-bold text-gray-500 dark:text-gray-400">{{ $campus->acronym }}</span>
+                    <div class="shrink-0 rounded-full border bg-white px-3 py-1 text-xs font-medium dark:bg-zinc-900 {{ ($selectedCampusId ?? '') == $campus->id ? 'border-blue-500 bg-blue-50/10' : 'border-gray-200 dark:border-zinc-800' }}">
+                        <span class="text-gray-600 dark:text-gray-400">{{ $campus->acronym }}</span>
                     </div>
                 @endforeach
             </div>
         </div>
     @endif
 
-    <div class="p-4 bg-white border border-blue-200 rounded-xl shadow-sm ">
-        <div class="flex justify-between items-center mb-4 w-full p-2">
+    <div class="rounded-xl border border-gray-200 bg-white p-4 shadow-xs sm:p-5">
+        <div class="mb-4 flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <!-- Left End: Filter Dropdown -->
-            <div class="flex items-center bg-blue-100 rounded-xl">
+            <div class="flex w-full items-center sm:w-64">
                 <label for="member-status-filter" class="sr-only">Filter by Status</label>
                 <form action="{{ route('members.index') }}"  method="GET">
-                   <select id="member-status-filter" name="status" onchange="this.form.submit()" class="block w-full px-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand shadow-xs placeholder:text-body">
+                   <select id="member-status-filter" name="status" onchange="this.form.submit()" class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 shadow-xs focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
                         <option value="">All Members</option>                   
 
                         @foreach(\App\Enums\MembershipStatus::cases() as $status)
@@ -52,7 +52,7 @@
                 <x-button
                     id="add-new-member-btn-csv"
                     type="button"
-                    class="member-btn add-new-member-btn-csv btn-warning bg-amber-500 hover:bg-brand-strong text-white focus:ring-4 focus:ring-brand-medium shadow-xs font-medium leading-5 rounded-base text-sm px-4 py-2.5 focus:outline-none transition-colors" 
+                    class="member-btn add-new-member-btn-csv btn-warning bg-amber-500 hover:bg-amber-600 text-white shadow-xs font-medium rounded-lg text-sm px-4 py-2.5 focus:outline-none transition-colors" 
                     data-action="add-new-member-csv"
                     data-modal-target="member-modal-csv" 
                     data-modal-toggle="member-modal-csv">
@@ -62,7 +62,7 @@
                  <x-button
                     id="add-new-member-btn"
                     type="button" 
-                    class="member-btn btn btn-info add-new-member-btn hover:bg-brand-strong focus:ring-4 focus:ring-brand-medium shadow-xs font-medium leading-5 rounded-base text-sm px-4 py-2.5 focus:outline-none" 
+                    class="member-btn btn btn-info add-new-member-btn shadow-xs font-medium rounded-lg text-sm px-4 py-2.5 focus:outline-none" 
                     data-action="add-new-member"
                     data-modal-target="member-modal" 
                     data-modal-toggle="member-modal">

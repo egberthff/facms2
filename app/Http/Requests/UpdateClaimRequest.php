@@ -45,6 +45,7 @@ class UpdateClaimRequest extends FormRequest
                 'min:0'
             ],
             'reference_number' => [
+                Rule::requiredIf(fn () => $this->input('status') === ClaimStatus::Disbursed->value),
                 'nullable',
                 'string'
             ],

@@ -1,17 +1,17 @@
 <x-app-layout>
-    <div class="min-h-screen bg-slate-50 p-4 text-slate-800 sm:p-6">
-        <div class="mx-auto space-y-6">
-        <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-            <div class="flex flex-col gap-5 border-b border-slate-200 px-6 py-6 lg:flex-row lg:items-end lg:justify-between">
+    <div class="min-h-screen text-slate-800">
+        <div class="mx-auto space-y-4">
+        <div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xs">
+            <div class="flex flex-col gap-3 px-4 py-4 sm:px-5 lg:flex-row lg:items-end lg:justify-between">
                 <div>
-                    <p class="text-xs font-semibold uppercase tracking-widest text-blue-600">Administration</p>
-                    <h2 class="mt-1 text-2xl font-bold tracking-tight text-slate-950">System settings</h2>
-                    <p class="mt-2 max-w-2xl text-sm leading-6 text-slate-500">Manage the configuration used for member benefits, contributions, and claims cycles.</p>
+                    <p class="text-[11px] font-semibold uppercase tracking-widest text-blue-600">Administration</p>
+                    <h2 class="text-xl font-semibold tracking-tight text-slate-900">System settings</h2>
+                    <p class="mt-0.5 text-sm text-slate-500">Manage the configuration used for member benefits, contributions, and claims cycles.</p>
                 </div>
-                <form method="GET" action="{{ route('settings.index') }}" class="w-full lg:w-72">
+                <form method="GET" action="{{ route('settings.index') }}" class="w-full lg:w-64">
                     @if($isPresident)
-                        <label for="campus_filter" class="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-500">Campus scope</label>
-                        <select id="campus_filter" name="campus_filter" onchange="this.form.submit()" class="block w-full rounded-lg border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        <label for="campus_filter" class="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">Campus scope</label>
+                        <select id="campus_filter" name="campus_filter" onchange="this.form.submit()" class="block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 shadow-xs focus:border-blue-500 focus:ring-blue-500">
                             <option value="">All Campuses (Global View)</option>
                             @foreach($allCampuses as $campus)
                                 <option value="{{ $campus->id }}" {{ ($selectedCampusId ?? '') == $campus->id ? 'selected' : '' }}>{{ $campus->acronym }}</option>
@@ -22,15 +22,15 @@
             </div>
 
             @if($isPresident && $selectedCampusId)
-                <div class="border-t border-slate-100 bg-slate-50 px-6 py-3">
-                    <div class="flex items-center gap-2 text-sm text-slate-600">
+                <div class="border-t border-slate-100 bg-slate-50 px-4 py-2 sm:px-5">
+                    <div class="flex items-center gap-2 text-xs text-slate-600">
                         <span class="h-2 w-2 rounded-full bg-emerald-500"></span>
-                        Editing  settings for <strong class="text-slate-900">{{ optional($allCampuses->firstWhere('id', $selectedCampusId))->acronym }}</strong>
+                        Editing settings for <strong class="text-slate-900">{{ optional($allCampuses->firstWhere('id', $selectedCampusId))->acronym }}</strong>
                     </div>
                 </div>
             @elseif($isPresident)
-                <div class="border-t border-slate-100 bg-slate-50 px-6 py-3">
-                    <div class="flex items-center gap-2 text-sm text-slate-600">
+                <div class="border-t border-slate-100 bg-slate-50 px-4 py-2 sm:px-5">
+                    <div class="flex items-center gap-2 text-xs text-slate-600">
                         <span class="h-2 w-2 rounded-full bg-blue-500"></span>
                         Global view. Select a campus to edit its settings.
                     </div>
@@ -64,14 +64,14 @@
         @endphp
 
         @if($settings->isEmpty())
-            <div class="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center text-sm text-slate-500">No settings are available for the selected campus.</div>
+            <div class="rounded-xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center text-sm text-slate-500">No settings are available for the selected campus.</div>
         @else
         {{-- @if($cyclesByCampus->isNotEmpty())
-                <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-                    <div class="border-b border-slate-200 px-6 py-5">
+                <section class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xs">
+                    <div class="border-b border-slate-200 px-4 py-4 sm:px-6 sm:py-5">
                         <div class="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
                             <div>
-                                <h3 class="text-lg font-bold text-slate-950">Claims cycles</h3>
+                                <h3 class="text-lg font-semibold tracking-tight text-slate-900">Claims cycles</h3>
                                 <p class="mt-1 text-sm text-slate-500">The schedule below is generated from each campus's cycle duration and start month.</p>
                             </div>
                             <span class="text-xs font-medium text-slate-400">Current and previous 3 cycles</span>
@@ -111,28 +111,23 @@
                 </section>
             @endif --}}
 
-            @if($cycleSettings->isNotEmpty())
-                @include('settings.partials.cycle-settings-card', ['cycleSettings' => $cycleSettings, 'canEdit' => $canEdit])
-            @endif
-
-            @if($generalSettings->isNotEmpty())
-                <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-                    <div class="border-b border-slate-200 px-6 py-5">
-                        <h3 class="text-lg font-bold text-slate-950">Campus settings</h3>
-                        <p class="mt-1 text-sm text-slate-500">Edit each live setting independently. Cycle duration and claim limit apply to member claim cycles started after the change; existing member cycles keep their original dates and limit.</p>
-                    </div>
-                    <div class="grid gap-4 p-6 md:grid-cols-2 lg:grid-cols-3">
+            @if($cycleSettings->isNotEmpty() || $generalSettings->isNotEmpty())
+                <x-settings-section title="Campus settings" description="Each setting saves on its own. Cycle duration and claim limit apply to member cycles started after the change.">
+                    <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                        @if($cycleSettings->isNotEmpty())
+                            @include('settings.partials.cycle-settings-card', ['cycleSettings' => $cycleSettings, 'canEdit' => $canEdit])
+                        @endif
                         @foreach($generalSettings as $setting)
                             @include('settings.partials.setting-card', ['setting' => $setting, 'canEdit' => $canEdit])
                         @endforeach
                     </div>
-                </section>
+                </x-settings-section>
             @endif
 
             @if($committeeSettings->isNotEmpty())
                 @include('settings.partials.committee-on-claims-card', ['committeeSettings' => $committeeSettings, 'committeeMembers' => $committeeMembers, 'canEdit' => $canEdit])
             @elseif($isPresident && !$selectedCampusId)
-                <div class="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-6 text-center text-sm text-slate-500">Select a campus to assign its Committee on Claims.</div>
+                <div class="rounded-xl border border-dashed border-slate-300 bg-white px-4 py-4 text-center text-sm text-slate-500">Select a campus to assign its Committee on Claims.</div>
             @endif
 
             @if($signatorySettings->isNotEmpty())

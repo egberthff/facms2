@@ -3,17 +3,16 @@
             x-transition.opacity.duration.250ms
             x-cloak>
 
-            <div class="bg-white rounded-2xl border border-blue-700 shadow-sm p-6">
-                <x-file-preview-modal />
+            <div class="rounded-xl border border-gray-200 bg-white p-4 shadow-xs sm:p-6">
                 <div class="mb-6">
 
-                    <h2 class="text-xl font-bold">
+                    <h2 class="text-lg font-semibold text-gray-900">
 
                         Review Your Claim
 
                     </h2>
 
-                    <p class="text-gray-500 text-sm mt-1">
+                    <p class="mt-1 text-sm text-gray-500">
 
                         Please review all information before submitting your
                         claim request.
@@ -28,7 +27,7 @@
 
                 <div class="rounded-xl border border-gray-200 overflow-hidden mb-6">
 
-                    <div class="bg-blue-50 px-5 py-3">
+                    <div class="border-b border-blue-100 bg-blue-50/70 px-4 py-3 sm:px-5">
 
                         <h3 class="font-semibold">
 
@@ -38,7 +37,7 @@
 
                     </div>
 
-                    <div class="grid md:grid-cols-2 gap-5 p-5">
+                    <div class="grid gap-4 p-4 sm:p-5 md:grid-cols-2 md:gap-5">
 
                         <div>
 
@@ -104,7 +103,7 @@
 
                     </div>
 
-                    <div class="border-t p-5">
+                    <div class="border-t border-gray-200 p-4 sm:p-5">
 
                         <label class="text-sm text-gray-500">
 
@@ -127,7 +126,7 @@
 
                 <div class="rounded-xl border border-gray-200 overflow-hidden mb-6">
 
-                    <div class="bg-blue-50 px-5 py-3">
+                    <div class="border-b border-blue-100 bg-blue-50/70 px-4 py-3 sm:px-5">
 
                         <h3 class="font-semibold">
 
@@ -148,12 +147,12 @@
                                     :key="file.name">
 
                                     <div
-                                        class="flex justify-between items-center rounded-lg border p-3">
+                                        class="flex items-center justify-between gap-3 rounded-lg border border-gray-200 p-3">
 
                                         <div class="flex items-center gap-3">
 
                                             <div
-                                                class="w-10 h-10 rounded-lg bg-orange-100 flex items-center justify-center">
+                                                class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-orange-100">
 
                                                 📄
 
@@ -175,7 +174,7 @@
                                             
                                         </div>
 
-                                        <div class="flex flex-row gap-1">
+                                        <div class="flex shrink-0 items-center gap-1">
                                             <span
                                                 class="text-green-600 font-semibold">
 
@@ -185,7 +184,7 @@
                                             <button 
                                                 type="button" 
                                                 @click="window.dispatchEvent(new CustomEvent('open-file-preview', { detail: { url: window.URL.createObjectURL(file), name: file.name } }))" 
-                                                class="inline-flex items-center gap-1 font-semibold text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100/70 px-2.5 py-1 rounded transition shrink-0">
+                                                class="inline-flex shrink-0 items-center gap-1 rounded-md bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700 ring-1 ring-inset ring-blue-200 transition hover:bg-blue-100">
                                                 View File
                                             </button>
                                         </div>
@@ -200,7 +199,7 @@
                         <template x-if="files.length==0">
 
                             <div
-                                class="text-center text-gray-400 py-8">
+                                class="py-8 text-center text-sm text-gray-400">
 
                                 No supporting documents uploaded.
 
@@ -218,7 +217,7 @@
 
                 <div class="rounded-xl border border-gray-200 overflow-hidden">
 
-                    <div class="bg-blue-50 px-5 py-3">
+                    <div class="border-b border-blue-100 bg-blue-50/70 px-4 py-3 sm:px-5">
 
                         <h3 class="font-semibold">
 
@@ -253,7 +252,7 @@
                             x-show="paymentMethod == 'bank'"
                             x-transition>
 
-                            <div class="grid md:grid-cols-2 gap-5">
+                            <div class="grid gap-4 md:grid-cols-2 md:gap-5">
 
                                 <div>
 
@@ -317,6 +316,8 @@
 
                             </div>
 
+                            @include('claims.partials.review-payout-qr', ['method' => 'bank'])
+
                         </div>
 
                         <!-- ================================= -->
@@ -327,7 +328,7 @@
                             x-show="paymentMethod == 'gcash'"
                             x-transition>
 
-                            <div class="grid md:grid-cols-2 gap-5">
+                            <div class="grid gap-4 md:grid-cols-2 md:gap-5">
 
                                 <div>
 
@@ -361,6 +362,8 @@
 
                             </div>
 
+                            @include('claims.partials.review-payout-qr', ['method' => 'gcash'])
+
                         </div>
 
                         <!-- ================================= -->
@@ -371,7 +374,7 @@
                             x-show="paymentMethod == 'check'"
                             x-transition>
 
-                            <div class="rounded-xl bg-yellow-50 border border-yellow-300 p-5">
+                            <div class="rounded-xl border border-amber-200 bg-amber-50 p-4 sm:p-5">
 
                                 <h4 class="font-semibold text-yellow-700">
 
@@ -403,14 +406,14 @@
                 <!-- ================================= -->
 
                 <div
-                    class="mt-6 rounded-xl border border-blue-200 bg-blue-50 p-5">
+                    class="mt-6 rounded-xl border border-blue-200 bg-blue-50 p-4 sm:p-5">
 
                     <label class="flex items-start gap-3">
 
                         <input
                             type="checkbox"
                             x-model="agree"
-                            class="mt-1 rounded">
+                            class="mt-0.5 h-4 w-4 rounded border-gray-300">
 
                         <span class="text-sm leading-relaxed">
 
@@ -434,12 +437,12 @@
             <!-- BUTTONS -->
             <!-- ================================= -->
 
-            <div class="flex justify-between mt-6">
+            <div class="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-between">
 
                 <button
                     type="button"
                     @click="previousStep()"
-                    class="px-8 py-3 rounded-xl bg-gray-300 hover:bg-gray-400 transition">
+                    class="w-full rounded-lg border border-gray-300 bg-white px-6 py-2.5 text-sm font-medium text-gray-700 shadow-xs transition hover:bg-gray-50 sm:w-auto">
 
                     ← Back
 
@@ -452,7 +455,7 @@
                         ? 'bg-orange-500 hover:bg-orange-600'
                         : 'bg-gray-400 cursor-not-allowed'"
 
-                    class="px-8 py-3 rounded-xl text-white font-semibold transition">
+                    class="w-full rounded-lg px-6 py-2.5 text-sm font-semibold text-white shadow-xs transition sm:w-auto">
 
                     Submit Claim
 

@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Services\ClaimService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
@@ -21,6 +22,8 @@ class ClaimDisbursementPaymentTest extends TestCase
 
     public function test_claim_update_accepts_browser_multipart_payload(): void
     {
+        Storage::fake('public');
+
         $user = User::create([
             'name' => 'Treasurer',
             'email' => 'treasurer2@example.com',
@@ -92,6 +95,71 @@ class ClaimDisbursementPaymentTest extends TestCase
         $response->assertStatus(200);
         $claim->refresh();
         $this->assertSame(ClaimStatus::Disbursed->value, $claim->status);
+
+        $receiptPath = $claim->payment()->first()?->receipt_path;
+        $this->assertNotNull($receiptPath);
+        Storage::disk('public')->assertExists($receiptPath);
+    }
+
+    public function test_disbursing_without_reference_number_is_rejected(): void
+    {
+        $user = User::create([
+            'name' => 'Treasurer',
+            'email' => 'treasurer3@example.com',
+            'password' => bcrypt('password'),
+            'is_active' => true,
+        ]);
+        $this->actingAs($user);
+        $user->assignRole(Role::create(['name' => 'President']));
+
+        $claimType = ClaimType::create([
+            'name' => 'Medical',
+            'required_document' => 'Prescription',
+            'description' => 'Medical assistance',
+            'required_amount' => '1000.00',
+            'is_active' => true,
+        ]);
+        $paymentMethod = PaymentMethod::create([
+            'name' => 'GCash',
+            'is_active' => true,
+        ]);
+        $campus = Campus::create(['campus_name' => 'Main Campus', 'acronym' => 'MC', 'location' => 'Bohol', 'is_active' => true]);
+        $member = Member::create([
+            'campus_id' => $campus->id,
+            'user_id' => $user->user_id,
+            'employee_number' => 'EMP-1003',
+            'first_name' => 'Pedro',
+            'last_name' => 'Dela Cruz',
+            'gender' => 'Male',
+            'department' => 'Finance',
+            'position' => 'Staff',
+            'employment_status' => 'Permanent',
+            'membership_status' => 'Active',
+            'contact_number' => '09170000002',
+            'address' => 'Test address',
+        ]);
+        $claim = Claim::create([
+            'claim_number' => 'CLM-TEST-003',
+            'member_id' => $member->id,
+            'claim_type_id' => $claimType->id,
+            'payment_method_id' => $paymentMethod->id,
+            'requested_amount' => '1000.00',
+            'approved_amount' => '1000.00',
+            'annual_limit' => '1000.00',
+            'status' => ClaimStatus::Approved->value,
+            'submitted_at' => now(),
+        ]);
+
+        $this->withoutMiddleware(\Illuminate\Auth\Middleware\Authorize::class);
+
+        $response = $this->postJson(route('claim.update', $claim), [
+            '_method' => 'PUT',
+            'status' => ClaimStatus::Disbursed->value,
+            'amount' => '1000.00',
+        ]);
+
+        $response->assertStatus(422)->assertJsonValidationErrors('reference_number');
+        $this->assertSame(ClaimStatus::Approved->value, $claim->refresh()->status);
     }
 
     public function test_disbursing_a_claim_creates_or_updates_the_claim_payment_record(): void

@@ -1,6 +1,6 @@
     <div
-        class="bg-white border border-gray-200 rounded-xl shadow-sm">
-        <div class="flex items-center justify-between border-b border-gray-200 px-6 py-4">
+        class="rounded-xl border border-gray-200 bg-white shadow-xs">
+        <div class="flex flex-col gap-3 border-b border-gray-200 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
             <h2 class="text-lg font-semibold text-gray-800">
                 Report Configuration
             </h2>
@@ -11,17 +11,17 @@
         </div>
 
         <div
-            class="p-6 grid grid-cols-1 lg:grid-cols-4 gap-6">
+            class="grid grid-cols-1 gap-4 p-4 sm:grid-cols-2 sm:p-6 lg:grid-cols-4 lg:gap-6">
             {{-- Report Type --}}
-            <div class="lg:col-span-2">
+            <div class="sm:col-span-2">
                 <label
-                    class="block text-sm font-medium text-gray-700">
+                    class="mb-1.5 block text-sm font-medium text-gray-700">
                     Report Type
                 </label>
                 <select
                     x-model="selectedReport"
                     @change="changeReport()"
-                    class="block w-full px-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand shadow-xs placeholder:text-body">
+                    class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 shadow-xs focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
                     <template
                         x-for="(category, categoryKey) in configuration.categories"
                         :key="categoryKey">
@@ -47,12 +47,12 @@
                 x-if="showFilter('campus')">
                 <div>
                     <label
-                        class="block text-sm font-medium text-gray-700">
+                        class="mb-1.5 block text-sm font-medium text-gray-700">
                         Campus
                     </label>
                     <select
                         x-model="filters.campus_id"
-                        class="block w-full px-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand shadow-xs placeholder:text-body">
+                        class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 shadow-xs focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
                         <option value="">
                             All Campuses
                         </option>
@@ -76,12 +76,12 @@
                 x-if="showFilter('member')">
                 <div>
                     <label
-                        class="block text-sm font-medium text-gray-700">
+                        class="mb-1.5 block text-sm font-medium text-gray-700">
                         Member
                     </label>
                     <select
                         x-model="filters.member_id"
-                        class="block w-full px-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand shadow-xs placeholder:text-body">
+                        class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 shadow-xs focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
                         <option value="">
                             All Members
                         </option>
@@ -103,21 +103,21 @@
         {{-- ========================================================= --}}
 
         <div
-            class="px-6 pb-6">
+            class="px-4 pb-4 sm:px-6 sm:pb-6">
             <div
-                class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
                 {{-- Date From --}}
                 <template
                     x-if="showFilter('date_range')">
                     <div>
                         <label
-                            class="block text-sm font-medium text-gray-700">
+                            class="mb-1.5 block text-sm font-medium text-gray-700">
                             Date From
                         </label>
                         <input
                             x-model="filters.date_from"
                             type="date"
-                            class="block w-full px-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand shadow-xs placeholder:text-body">
+                            class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 shadow-xs focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
                     </div>
                 </template>
 
@@ -126,13 +126,13 @@
                     x-if="showFilter('claim_month')">
                     <div>
                         <label
-                            class="block text-sm font-medium text-gray-700">
+                            class="mb-1.5 block text-sm font-medium text-gray-700">
                             Claim Submission Month
                         </label>
                         <input
                             x-model="filters.claim_month"
                             type="month"
-                            class="block w-full px-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand shadow-xs placeholder:text-body">
+                            class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 shadow-xs focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
                     </div>
                 </template>
 
@@ -141,13 +141,13 @@
                     x-if="showFilter('payroll_month')">
                     <div>
                         <label
-                            class="block text-sm font-medium text-gray-700">
+                            class="mb-1.5 block text-sm font-medium text-gray-700">
                             Payroll Month
                         </label>
                         <input
                             x-model="filters.payroll_month"
                             type="month"
-                            class="block w-full px-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand shadow-xs placeholder:text-body">
+                            class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 shadow-xs focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
                     </div>
                 </template>
 
@@ -157,13 +157,13 @@
                     x-if="showFilter('date_range')">
                     <div>
                         <label
-                            class="block text-sm font-medium text-gray-700">
+                            class="mb-1.5 block text-sm font-medium text-gray-700">
                             Date To
                         </label>
                         <input
                             x-model="filters.date_to"
                             type="date"
-                            class="block w-full px-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand shadow-xs placeholder:text-body">
+                            class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 shadow-xs focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
                     </div>
                 </template>
 
@@ -171,7 +171,7 @@
                 <template 
                     x-if="showFilter('year_range')">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700">
+                        <label class="mb-1.5 block text-sm font-medium text-gray-700">
                             Reporting year:
                         </label>
 
@@ -179,7 +179,7 @@
                         <select 
                             x-model="filters.reporting_year"
                             id="year-select"
-                            class="block w-full px-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand shadow-xs placeholder:text-body">
+                            class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 shadow-xs focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
                             <option value="">--Select Year--</option>
 
                             <!-- Fiscal years (FY N = Oct 15, N-1 to Oct 14, N); from Oct 15 onward the next FY is already running -->
@@ -197,12 +197,12 @@
                     x-if="showFilter('cycle')">
                     <div>
                         <label
-                            class="block text-sm font-medium text-gray-700">
+                            class="mb-1.5 block text-sm font-medium text-gray-700">
                             Allowance Cycle
                         </label>
                         <select
                             x-model="filters.cycle"
-                            class="block w-full px-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand shadow-xs placeholder:text-body">
+                            class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 shadow-xs focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
                             <template
                                 x-for="cycle in cycles"
                                 :key="cycle.value">
@@ -221,12 +221,12 @@
                     x-if="showFilter('status')">
                     <div>
                         <label
-                            class="block text-sm font-medium text-gray-700">
+                            class="mb-1.5 block text-sm font-medium text-gray-700">
                             Status
                         </label>
                         <select
                             x-model="filters.status"
-                            class="block w-full px-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand shadow-xs placeholder:text-body">
+                            class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 shadow-xs focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
                             <option value="">All Status</option>
                             <option value="Pending">Pending</option>
                             <option value="Processing">Processing</option>
@@ -243,12 +243,12 @@
                     x-if="showFilter('claim_type')">
                     <div>
                         <label
-                            class="block text-sm font-medium text-gray-700">
+                            class="mb-1.5 block text-sm font-medium text-gray-700">
                             Claim Type
                         </label>
                         <select
                             x-model="filters.claim_type"
-                            class="block w-full px-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand shadow-xs placeholder:text-body">
+                            class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 shadow-xs focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
                             <option value="">All Claim Types</option>
                              <template
                                 x-for="claimType in claimTypes"
@@ -268,7 +268,7 @@
                     class="flex items-end">
                     <button
                         @click="generateReport()"
-                        class="w-full rounded-lg bg-blue-600 text-white py-2.5 hover:bg-blue-700">
+                        class="w-full rounded-lg bg-blue-600 py-2.5 text-sm font-semibold text-white shadow-xs transition hover:bg-blue-700">
                         Generate Report
                     </button>
                 </div>

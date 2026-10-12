@@ -96,7 +96,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="{{ $isPresident ? 7 : 6 }}" class="text-center py-12 text-gray-400 dark:text-zinc-500 text-xs">
+                                <td colspan="{{ $isPresident ? 7 : 6 }}" class="py-12 text-center text-sm text-gray-400 dark:text-zinc-500">
                                     No contribution records found.
                                 </td>
                             </tr>

@@ -19,15 +19,15 @@
                 @csrf
                 @method('PUT')
                 <input type="hidden" name="section" value="{{ $item->section }}">
-                <input type="text" name="label" value="{{ $item->label }}" class="md:col-span-3 rounded-lg border-gray-300 text-sm" required>
-                <input type="text" name="notes" value="{{ $item->notes }}" placeholder="Note, e.g. with P10 transaction fee" class="md:col-span-3 rounded-lg border-gray-300 text-sm">
+                <input type="text" name="label" value="{{ $item->label }}" class="md:col-span-3 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-xs" required>
+                <input type="text" name="notes" value="{{ $item->notes }}" placeholder="Note, e.g. with P10 transaction fee" class="md:col-span-3 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-xs">
                 @if($item->is_manual)
-                    <input type="date" name="entry_date" value="{{ $item->entry_date?->toDateString() }}" class="md:col-span-2 rounded-lg border-gray-300 text-sm">
-                    <input type="number" name="amount" step="0.01" min="0.01" value="{{ $item->amount }}" class="md:col-span-2 rounded-lg border-gray-300 text-sm" required>
+                    <input type="date" name="entry_date" value="{{ $item->entry_date?->toDateString() }}" class="md:col-span-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-xs">
+                    <input type="number" name="amount" step="0.01" min="0.01" value="{{ $item->amount }}" class="md:col-span-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-xs" required>
                 @endif
                 <div class="flex gap-2 {{ $item->is_manual ? 'md:col-span-2' : 'md:col-span-6' }}">
-                    <button type="submit" class="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700">Save</button>
-                    <button type="button" @click="editing = false" class="rounded-lg border border-gray-300 px-3 py-1.5 text-xs text-gray-700">Cancel</button>
+                    <button type="submit" class="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white shadow-xs transition hover:bg-blue-700">Save</button>
+                    <button type="button" @click="editing = false" class="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 shadow-xs transition hover:bg-gray-50">Cancel</button>
                 </div>
             </form>
         @endif

@@ -35,8 +35,15 @@
 
     // $cycleLocked = $cycleSettings->contains(fn ($setting) => \App\Models\ClaimsCycle::where('campus_id', $setting->campus_id)->exists());
     $cycleSetting = $startYearSetting ?? $startMonthSetting ?? $yearsSetting;
-    $previewStartYear = (int) old('cycle_start_year', optional($startYearSetting)->setting_value);
-    $previewStartMonth = (int) old('cycle_start_month', optional($startMonthSetting)->setting_value);
+    $cycleCampusId = optional($cycleSetting)->campus_id;
+    $hiddenStartYear = filled(optional($startYearSetting)->setting_value)
+        ? $startYearSetting->setting_value
+        : \App\Models\SystemSetting::getCycleStartYear($cycleCampusId);
+    $hiddenStartMonth = filled(optional($startMonthSetting)->setting_value)
+        ? $startMonthSetting->setting_value
+        : \App\Models\SystemSetting::getCycleStartMonth($cycleCampusId);
+    $previewStartYear = (int) old('cycle_start_year', $hiddenStartYear);
+    $previewStartMonth = (int) old('cycle_start_month', $hiddenStartMonth);
     $previewYears = (int) old('cycle_years', optional($yearsSetting)->setting_value);
     $previewEnd = $previewStartYear && $previewStartMonth && $previewYears
         ? \Carbon\Carbon::create($previewStartYear, $previewStartMonth, 1)->addYears($previewYears)->subDay()
@@ -44,59 +51,40 @@
 @endphp
 
 @if($cycleSetting)
-    <section class="overflow-hidden rounded-xl border border-slate-200 bg-slate-50/60 p-5 transition hover:border-blue-200 hover:bg-blue-50/20">
-        <div class="mb-5 flex items-start justify-between gap-4">
-            <div>
-                <h4 class="text-sm font-bold text-slate-900">Claims cycle configuration</h4>
-                <p class="mt-1 text-xs leading-5 text-slate-500">Set the cycle start year, start month, and duration together. The end month and year are calculated automatically.</p>
-                <p class="mt-1 text-xs leading-5 text-slate-500">Start year and month define the campus treasury reporting period. Each member's claim cycle starts with their own first claim and uses the duration and claim limit in force at that moment; changes apply to new member cycles only.</p>
+    <div class="flex flex-col rounded-lg border border-slate-200 bg-slate-50/60 p-3.5 transition hover:border-blue-200">
+        <div class="mb-3 flex items-start justify-between gap-3">
+            <div class="min-w-0">
+                <h4 class="text-sm font-semibold text-slate-900">Claims Cycle Duration</h4>
+                <p class="mt-0.5 text-xs leading-5 text-slate-500">Years per member claim cycle. Changes apply to new member cycles only.</p>
             </div>
-            <span class="shrink-0 rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-500 shadow-sm ring-1 ring-slate-200">{{ optional($cycleSetting->campus)->acronym ?? 'Campus' }}</span>
+            <span class="shrink-0 rounded-full bg-white px-2 py-0.5 text-[10px] font-semibold text-slate-500 ring-1 ring-slate-200">{{ optional($cycleSetting->campus)->acronym ?? 'Campus' }}</span>
         </div>
 
-        {{-- <form method="POST" action="{{ route('settings.update', $cycleSetting) }}" class="space-y-4" onsubmit="return {{ $canEdit && !$cycleLocked ? 'confirm(\'Save this cycle configuration?\')' : 'false' }}"> --}}
-        <form method="POST" action="{{ route('settings.update', $cycleSetting) }}" class="space-y-4"  onsubmit="saveCycleConfig(event, this)"> 
+        <form method="POST" action="{{ route('settings.update', $cycleSetting) }}" class="mt-auto space-y-1.5" onsubmit="saveCycleConfig(event, this)">
             @csrf
             @method('PUT')
             <input type="hidden" name="campus_filter" value="{{ $selectedCampusId ?? '' }}">
 
-            <div class="grid gap-4 sm:grid-cols-3">
-                <div>
-                    <label for="cycle-start-year" class="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-500">Start year</label>
-                    <input id="cycle-start-year" name="cycle_start_year" type="number" min="1900" max="2200" value="{{ old('cycle_start_year', optional($startYearSetting)->setting_value) }}" required @disabled(!$canEdit || $cycleLocked) class="block w-full rounded-lg border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-blue-500 focus:ring-blue-500 disabled:bg-slate-100">
-                </div>
-                <div>
-                    <label for="cycle-start-month" class="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-500">Start month</label>
-                    <select id="cycle-start-month" name="cycle_start_month" required @disabled(!$canEdit || $cycleLocked) class="block w-full rounded-lg border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-blue-500 focus:ring-blue-500 disabled:bg-slate-100">
-                        @foreach(range(1, 12) as $month)
-                            <option value="{{ $month }}" @selected((int) old('cycle_start_month', optional($startMonthSetting)->setting_value) === $month)>{{ \Carbon\Carbon::create()->month($month)->format('F') }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div>
-                    <label for="cycle-years" class="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-500">Number of years</label>
-                    <input id="cycle-years" name="cycle_years" type="number" min="1" max="20" value="{{ old('cycle_years', optional($yearsSetting)->setting_value) }}" required @disabled(!$canEdit || $cycleLocked) class="block w-full rounded-lg border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-blue-500 focus:ring-blue-500 disabled:bg-slate-100">
-                </div>
-            </div>
+            {{-- Start year and month are no longer edited here, but the update endpoint still requires them, so submit the stored values unchanged --}}
+            <input id="cycle-start-year" name="cycle_start_year" type="hidden" value="{{ old('cycle_start_year', $hiddenStartYear) }}">
+            <input id="cycle-start-month" name="cycle_start_month" type="hidden" value="{{ old('cycle_start_month', $hiddenStartMonth) }}">
 
-            <div class="rounded-lg border border-blue-100 bg-blue-50/60 px-4 py-3">
-                <p class="text-xs font-semibold uppercase tracking-wide text-blue-700">Calculated end</p>
-                <p id="cycle-end-preview" class="mt-1 text-sm font-semibold text-blue-950">{{ $previewEnd?->format('F Y') ?? 'Enter all cycle values' }}</p>
+            <label for="cycle-years" class="block text-[11px] font-semibold uppercase tracking-wide text-slate-500">Number of years</label>
+            <div class="flex gap-2">
+                <input id="cycle-years" name="cycle_years" type="number" min="1" max="20" value="{{ old('cycle_years', optional($yearsSetting)->setting_value) }}" required @disabled(!$canEdit || $cycleLocked) class="block min-w-0 flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-xs focus:border-blue-500 focus:ring-blue-500 disabled:bg-slate-100">
+                <button type="submit" @disabled(!$canEdit || $cycleLocked) class="shrink-0 rounded-lg bg-blue-600 px-3.5 py-2 text-sm font-semibold text-white shadow-xs transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-slate-300">{{ $cycleLocked ? 'Locked' : ($canEdit ? 'Save' : 'Select campus') }}</button>
             </div>
-
-            <div class="flex flex-col gap-3 border-t border-slate-200 pt-4 sm:flex-row sm:items-center sm:justify-between">
-                <p class="text-xs text-slate-400">
-                    @if($cycleLocked)
-                        This configuration is locked because a claims cycle has already been initialized.
-                    @else
-                        The end date is calculated as the day before the next cycle begins.
-                    @endif
-                </p>
-                <button type="submit" @disabled(!$canEdit || $cycleLocked) class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-slate-300">{{ $cycleLocked ? 'Configuration locked' : ($canEdit ? 'Save cycle configuration' : 'Select campus') }}</button>
-            </div>
+            <p class="text-xs text-slate-400">
+                @if($cycleLocked)
+                    Locked because a claims cycle has already been initialized.
+                @else
+                    Current cycle ends <span id="cycle-end-preview" class="font-semibold text-slate-600">{{ $previewEnd?->format('F Y') ?? 'Enter all cycle values' }}</span>.
+                @endif
+            </p>
         </form>
-    </section>
+    </div>
 @endif
+
 
 <script>
     (() => {

@@ -55,7 +55,7 @@
         <x-topbar/>
 
         {{-- Main Content --}}
-        <main class="flex-1 p-2">
+        <main class="flex-1 w-full max-w-screen-2xl mx-auto p-3 sm:p-4 lg:p-6">
 
             @if (auth()->user()?->hasInactiveMembership())
                 <div class="mb-3 p-4 bg-amber-50 border-l-4 border-amber-500 rounded-r-md text-sm text-amber-800" role="status">

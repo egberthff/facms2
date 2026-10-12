@@ -3,17 +3,17 @@
             x-transition.opacity.duration.250ms>
             <div class="bg-white rounded-2xl border border-blue-700 shadow-sm p-6">
                 <div class="mb-6">
-                    <h2 class="text-xl font-bold">
+                    <h2 class="text-lg font-semibold text-gray-900">
                         Claim Information
                     </h2>
-                    <p class="text-gray-500 text-sm mt-1">
+                    <p class="mt-1 text-sm text-gray-500">
                         Enter the details regarding your claim request.
                     </p>
                 </div>
-                <div class="grid lg:grid-cols-2 gap-6">
+                <div class="grid gap-5 lg:grid-cols-2">
                     <!-- Claim Type -->
                     <div>
-                        <label class="block text-sm font-medium mb-2">
+                        <label class="mb-1.5 block text-sm font-medium text-gray-700">
                             Claim Type
                             <span class="text-red-500">*</span>
                         </label>
@@ -21,8 +21,9 @@
                             id="claim-type-input"
                             name="claimType"
                             x-model="claimType"
+                            :class="{ 'error-border': errors.claimType }"
                             @change="claimTypeText = $el.selectedIndex > 0 ? $el.options[$el.selectedIndex].text : ''"
-                            class="w-full rounded-xl border border-gray-300 px-4 py-3">
+                            class="w-full rounded-lg border border-gray-300 bg-white px-3.5 py-2.5 text-sm shadow-xs">
 
                             <option value="">Select Claim Type</option>
 
@@ -32,15 +33,16 @@
                                 </option>
                             @endforeach
                         </select>
+                        <p id="claimType-error" x-show="errors.claimType" x-text="errors.claimType" x-cloak class="mt-1.5 text-xs text-red-600"></p>
                     </div>
                     <!-- Amount -->
                     <div>
-                        <label class="block text-sm font-medium mb-2">
+                        <label class="mb-1.5 block text-sm font-medium text-gray-700">
                             Claim Amount
                             <span class="text-red-500">*</span>
                         </label>
                         <div class="relative">
-                            <span class="absolute left-4 top-3.5 text-gray-500">
+                            <span class="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-sm text-gray-500">
                                 ₱
                             </span>
                                 <input
@@ -78,15 +80,17 @@
                                     "
 
                                     @blur="checkRunningBalance()"
+                                    :class="{ 'error-border': errors.amount }"
 
-                                    class="w-full rounded-xl border border-gray-300 pl-9 pr-4 py-3"
+                                    class="w-full rounded-lg border border-gray-300 bg-white pl-8 pr-3.5 py-2.5 text-sm shadow-xs tabular-nums"
                                 >
                         </div>
+                        <p id="amount-error" x-show="errors.amount" x-text="errors.amount" x-cloak class="mt-1.5 text-xs text-red-600"></p>
                     </div>
                 </div>
                 <!-- Description -->
                 <div class="mt-6">
-                    <label class="block text-sm font-medium mb-2">
+                    <label class="mb-1.5 block text-sm font-medium text-gray-700">
                         Description
                         <span class="text-red-500">*</span>
                     </label>
@@ -95,6 +99,7 @@
                         name="description"
                         rows="5"
                         x-model="description"
+                        :class="{ 'error-border': errors.description }"
                          x-on:input="
                             let value = $event.target.value;
 
@@ -105,13 +110,14 @@
                             $event.target.value = value;
                             description = value;
                         "
-                        class="w-full rounded-xl border border-gray-300 p-4 resize-none"
+                        class="w-full rounded-lg border border-gray-300 bg-white px-3.5 py-2.5 text-sm shadow-xs resize-none"
                         placeholder="Provide a brief description of your claim..."></textarea>
+                    <p id="description-error" x-show="errors.description" x-text="errors.description" x-cloak class="mt-1.5 text-xs text-red-600"></p>
                 </div>
                 <!-- Bottom -->
-                <div class="grid lg:grid-cols-3 gap-6 mt-6">
+                <div class="mt-5 grid gap-5 lg:grid-cols-3">
                     <div>
-                        <label class="block text-sm font-medium mb-2">
+                        <label class="mb-1.5 block text-sm font-medium text-gray-700">
                             Treatment Start Date
                             <span class="text-red-500">*</span>
                         </label>
@@ -121,10 +127,12 @@
                             type="date"
                             required
                             x-model="incidentDate"
-                            class="w-full rounded-xl border border-gray-300 px-4 py-3">
+                            :class="{ 'error-border': errors.incidentDate }"
+                            class="w-full rounded-lg border border-gray-300 bg-white px-3.5 py-2.5 text-sm shadow-xs">
+                        <p id="incidentDate-error" x-show="errors.incidentDate" x-text="errors.incidentDate" x-cloak class="mt-1.5 text-xs text-red-600"></p>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium mb-2">
+                        <label class="mb-1.5 block text-sm font-medium text-gray-700">
                             Treatment End Date
                         </label>
                         <input
@@ -133,10 +141,12 @@
                             type="date"
                             x-model="treatmentEndDate"
                             :min="incidentDate"
-                            class="w-full rounded-xl border border-gray-300 px-4 py-3">
+                            :class="{ 'error-border': errors.treatmentEndDate }"
+                            class="w-full rounded-lg border border-gray-300 bg-white px-3.5 py-2.5 text-sm shadow-xs">
+                        <p id="treatmentEndDate-error" x-show="errors.treatmentEndDate" x-text="errors.treatmentEndDate" x-cloak class="mt-1.5 text-xs text-red-600"></p>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium mb-2">
+                        <label class="mb-1.5 block text-sm font-medium text-gray-700">
                             Hospital / Institution
                             <span class="text-red-500">*</span>
                         </label>
@@ -145,6 +155,7 @@
                             name="hospital"
                             type="text"
                             x-model="hospital"
+                            :class="{ 'error-border': errors.hospital }"
                              x-on:input="
                                 let value = $event.target.value;
 
@@ -155,8 +166,9 @@
                                 $event.target.value = value;
                                 hospital = value;
                             "
-                            class="w-full rounded-xl border border-gray-300 px-4 py-3"
+                            class="w-full rounded-lg border border-gray-300 bg-white px-3.5 py-2.5 text-sm shadow-xs"
                             placeholder="Hospital / Institution">
+                        <p id="hospital-error" x-show="errors.hospital" x-text="errors.hospital" x-cloak class="mt-1.5 text-xs text-red-600"></p>
                     </div>
                 </div>
             </div>
@@ -165,7 +177,7 @@
                 <button
                     type="button"
                     @click="nextStep()"
-                    class="bg-orange-500 hover:bg-orange-600 text-white px-8 py-3 rounded-xl font-semibold transition">
+                    class="w-full rounded-lg bg-orange-500 px-6 py-2.5 text-sm font-semibold text-white shadow-xs transition hover:bg-orange-600 sm:w-auto">
                     Continue
                 </button>
             </div>

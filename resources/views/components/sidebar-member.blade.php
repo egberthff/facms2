@@ -26,109 +26,108 @@
         <!-- OVERVIEW -->
         <!-- ========================================= -->
         <div class="mb-4">
-            <div class="px-3 mb-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+            <div class="mb-1.5 px-3 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
                 Overview
             </div>
-            <ul class="space-y-2">
+            <ul class="space-y-1">
                 <li>
                     <a href="{{ route('dashboard') }}"
-                        class="flex items-center p-3 rounded-lg transition
+                        class="group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors
                         {{ request()->routeIs('dashboard')
                             ? 'bg-slate-700 text-white'
                             : 'text-white hover:bg-slate-700' }}">
-                        <x-heroicon-o-home class="w-5 h-5"/>
-                        <span class="ml-3">
+                        <x-heroicon-o-home class="h-5 w-5 shrink-0"/>
+                        <span class="truncate">
                             Dashboard
                         </span>
                     </a>
                 </li>
             </ul>
         </div>
-        <hr class="border-slate-700 my-4">
+        <hr class="my-3 border-slate-700/70">
         <!-- ========================================= -->
         <!-- CLAIMS -->
         <!-- ========================================= -->
         <div class="mb-4">
-            <div class="px-3 mb-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+            <div class="mb-1.5 px-3 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
                 Claims
             </div>
-            <ul class="space-y-2">
+            <ul class="space-y-1">
                 <li>
                     <a href="{{ route('claim.create') }}"
-                        class="flex items-center p-3 rounded-lg transition
+                        class="group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors
                         {{ request()->routeIs('claim.create')
                             ? 'bg-slate-700 text-white'
                             : 'text-white hover:bg-slate-700' }}">
-                        <x-heroicon-o-plus-circle class="w-5 h-5"/>
-                        <span class="ml-3">
+                        <x-heroicon-o-plus-circle class="h-5 w-5 shrink-0"/>
+                        <span class="truncate">
                             Submit Claim
                         </span>
                     </a>
                 </li>
                 <li>
                      <a href="{{ route('claim.my', Auth::user()) }}" 
-                        class="flex items-center p-3 rounded-lg transition
+                        class="group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors
                         {{ request()->routeIs('claim.my')
                             ? 'bg-slate-700 text-white'
                             : 'text-white hover:bg-slate-700' }}">
-                        <x-heroicon-o-document-text class="w-5 h-5"/>
-                        <span class="ml-3">
+                        <x-heroicon-o-document-text class="h-5 w-5 shrink-0"/>
+                        <span class="truncate">
                             My Claims
                         </span>
                     </a>
                 </li>
                 <li>
                     <a href="{{ route('balance.my-metrics') }}"
-                        class="flex items-center p-3 rounded-lg transition
+                        class="group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors
                         {{ request()->routeIs('balance.*')
                             ? 'bg-slate-700 text-white'
                             : 'text-white hover:bg-slate-700' }}">
-                        <x-heroicon-o-banknotes class="w-5 h-5"/>
-                        <span class="ml-3">
+                        <x-heroicon-o-banknotes class="h-5 w-5 shrink-0"/>
+                        <span class="truncate">
                             Balance
                         </span>
                     </a>
                 </li>
             </ul>
         </div>
-        <hr class="border-slate-700 my-4">
+        <hr class="my-3 border-slate-700/70">
         <!-- ========================================= -->
         <!-- Contibutions -->
         <!-- ========================================= -->
                 <div class="mb-4">
-                    <div class="px-3 mb-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                    <div class="mb-1.5 px-3 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
                         Contributions
                     </div>
-                    <ul class="space-y-2">
+                    <ul class="space-y-1">
                         <li>
                             <a href="{{ route('member.my-contributions' , Auth::user()) }}"
-                                class="flex items-center p-3 rounded-lg transition
+                                class="group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors
                                 {{ request()->routeIs('member.my-contributions')
                                     ? 'bg-slate-700 text-white'
                                     : 'text-white hover:bg-slate-700' }}">
-                                <x-heroicon-o-chart-bar-square class="w-5 h-5"/>
-                                <span class="ml-3">
+                                <x-heroicon-o-chart-bar-square class="h-5 w-5 shrink-0"/>
+                                <span class="truncate">
                                    My Contributions
                                 </span>
                             </a>
                         </li>
                     </ul>
                 </div>
-        <hr class="border-slate-700 my-4">
+        <hr class="my-3 border-slate-700/70">
         <!-- ========================================= -->
         <!-- ACCOUNT -->
         <!-- ========================================= -->
         <div>
-            <ul class="space-y-2">
+            <ul class="space-y-1">
                 <li>
-                    {{-- <a href="{{ route('profile.edit') }}" --}}
-                    <a href="{{ route('dashboard') }}"
-                        class="flex items-center p-3 rounded-lg transition
-                        {{ request()->routeIs('profile.*')
+                    <a href="{{ route('members.profile') }}"
+                        class="group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors
+                        {{ request()->routeIs('members.profile*')
                             ? 'bg-slate-700 text-white'
                             : 'text-white hover:bg-slate-700' }}">
-                        <x-heroicon-o-user-circle class="w-5 h-5"/>
-                        <span class="ml-3">
+                        <x-heroicon-o-user-circle class="h-5 w-5 shrink-0"/>
+                        <span class="truncate">
                             My Profile
                         </span>
                     </a>

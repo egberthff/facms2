@@ -1,14 +1,14 @@
 <x-app-layout>
-    <div class="mx-auto px-4 sm:px-6 lg:px-8 py-10">
+    <div class="mx-auto">
         
         <!-- Header -->
-        <header class="mb-10 flex flex-col md:flex-row md:items-center md:justify-between border-b border-gray-200 pb-6">
+        <header class="mb-8 flex flex-col gap-3 border-b border-gray-200 pb-5 md:flex-row md:items-center md:justify-between">
             {{-- <div>
-                <h1 class="text-3xl font-bold tracking-tight text-gray-900">Access Control</h1>
+                <h1 class="text-xl font-semibold tracking-tight text-gray-900 sm:text-2xl">Access Control</h1>
                 <p class="mt-2 text-sm text-gray-500">Configure global application roles and fine-tune individual module permissions.</p>
             </div> --}}
             <div>
-                <h1 class="text-3xl font-bold tracking-tight text-gray-900">Access Control</h1>
+                <h1 class="text-xl font-semibold tracking-tight text-gray-900 sm:text-2xl">Access Control</h1>
                 <p class="mt-2 text-sm text-gray-500">Configure global application roles.</p>
             </div>
             <!-- Action Buttons -->
@@ -20,7 +20,7 @@
 
         <!-- Status Alerts -->
         @if(session('success'))
-            <div class="mb-6 p-4 rounded-md bg-green-50 border border-green-200 flex items-center text-sm text-green-700">
+            <div class="mb-6 flex items-center rounded-lg border border-green-200 bg-green-50 p-4 text-sm text-green-700">
                 <svg class="h-5 w-5 text-green-400 mr-3" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                 {{ session('success') }}
             </div>
@@ -28,34 +28,34 @@
 
         <!-- Quick Stats Widgets -->
         <!-- Stats Dashboard Section -->
-        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 mb-10">
+        <div class="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
             
             <!-- Total System Roles -->
-            <div class="relative overflow-hidden rounded-xl bg-white p-4 sm:p-5 shadow-sm border border-gray-100 transition-all hover:shadow-md">
+            <div class="relative overflow-hidden rounded-xl border border-gray-200 bg-white p-4 shadow-xs sm:p-5">
                 <div class="flex items-center justify-between gap-2">
                     <div class="min-w-0 flex-1">
                         <dt class="text-xs font-semibold text-gray-500 uppercase tracking-wider truncate">Total System Roles</dt>
-                        <dd class="mt-1 text-2xl sm:text-3xl font-bold tracking-tight text-indigo-600">{{ $roles->count() }}</dd>
+                        <dd class="mt-1 text-2xl font-bold tracking-tight text-indigo-600 tabular-nums sm:text-3xl">{{ $roles->count() }}</dd>
                     </div>
                     <div class="p-2.5 sm:p-3 bg-indigo-50 text-indigo-600 rounded-lg shrink-0">
-                        <svg class="w-5 h-5 sm:w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                        <svg class="h-5 w-5 sm:h-6 sm:w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
                     </div>
                 </div>
             </div>
         
             <!-- Federated Presidents -->
-            <div class="relative overflow-hidden rounded-xl bg-white p-4 sm:p-5 shadow-sm border border-gray-100 transition-all hover:shadow-md flex flex-col justify-between">
+            <div class="relative flex flex-col justify-between overflow-hidden rounded-xl border border-gray-200 bg-white p-4 shadow-xs sm:p-5">
                 <div class="flex items-center justify-between gap-2">
                     <div class="min-w-0 flex-1">
                         <dt class="text-xs font-semibold text-gray-500 uppercase tracking-wider truncate">Federated Presidents</dt>
-                        <dd class="mt-1 text-2xl sm:text-3xl font-bold tracking-tight text-indigo-600">{{ count($userRoles['federatedPresident'] ?? []) }}</dd>
+                        <dd class="mt-1 text-2xl font-bold tracking-tight text-indigo-600 tabular-nums sm:text-3xl">{{ count($userRoles['federatedPresident'] ?? []) }}</dd>
                     </div>
                     <div class="p-2.5 sm:p-3 bg-indigo-50 text-indigo-600 rounded-lg shrink-0">
-                        <svg class="w-5 h-5 sm:w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+                        <svg class="h-5 w-5 sm:h-6 sm:w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
                     </div>
                 </div>
                 @if(!empty($userRoles['federatedPresident']))
-                    <div class="mt-3 pt-3 border-t border-gray-50 max-h-24 overflow-y-auto custom-scrollbar space-y-1.5">
+                    <div class="custom-scrollbar mt-3 max-h-24 space-y-1.5 overflow-y-auto border-t border-gray-100 pt-3">
                         @foreach($userRoles['federatedPresident'] as $user)
                             <div class="flex justify-between items-center text-xs gap-2">
                                 <span class="font-medium text-gray-700 truncate" title="{{ $user['name'] }}">{{ $user['name'] }}</span>
@@ -67,18 +67,18 @@
             </div>
         
             <!-- Presidents -->
-            <div class="relative overflow-hidden rounded-xl bg-white p-4 sm:p-5 shadow-sm border border-gray-100 transition-all hover:shadow-md flex flex-col justify-between">
+            <div class="relative flex flex-col justify-between overflow-hidden rounded-xl border border-gray-200 bg-white p-4 shadow-xs sm:p-5">
                 <div class="flex items-center justify-between gap-2">
                     <div class="min-w-0 flex-1">
                         <dt class="text-xs font-semibold text-gray-500 uppercase tracking-wider truncate">Presidents</dt>
-                        <dd class="mt-1 text-2xl sm:text-3xl font-bold tracking-tight text-indigo-600">{{ count($userRoles['president'] ?? []) }}</dd>
+                        <dd class="mt-1 text-2xl font-bold tracking-tight text-indigo-600 tabular-nums sm:text-3xl">{{ count($userRoles['president'] ?? []) }}</dd>
                     </div>
                     <div class="p-2.5 sm:p-3 bg-indigo-50 text-indigo-600 rounded-lg shrink-0">
-                        <svg class="w-5 h-5 sm:w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                        <svg class="h-5 w-5 sm:h-6 sm:w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
                     </div>
                 </div>
                 @if(!empty($userRoles['president']))
-                    <div class="mt-3 pt-3 border-t border-gray-50 max-h-24 overflow-y-auto custom-scrollbar space-y-1.5">
+                    <div class="custom-scrollbar mt-3 max-h-24 space-y-1.5 overflow-y-auto border-t border-gray-100 pt-3">
                         @foreach($userRoles['president'] as $user)
                             <div class="flex justify-between items-center text-xs gap-2">
                                 <span class="font-medium text-gray-700 truncate" title="{{ $user['name'] }}">{{ $user['name'] }}</span>
@@ -90,18 +90,18 @@
             </div>
         
             <!-- Federated Treasurers -->
-            <div class="relative overflow-hidden rounded-xl bg-white p-4 sm:p-5 shadow-sm border border-gray-100 transition-all hover:shadow-md flex flex-col justify-between">
+            <div class="relative flex flex-col justify-between overflow-hidden rounded-xl border border-gray-200 bg-white p-4 shadow-xs sm:p-5">
                 <div class="flex items-center justify-between gap-2">
                     <div class="min-w-0 flex-1">
                         <dt class="text-xs font-semibold text-gray-500 uppercase tracking-wider truncate">Federated Treasurers</dt>
-                        <dd class="mt-1 text-2xl sm:text-3xl font-bold tracking-tight text-indigo-600">{{ count($userRoles['federatedTreasurer'] ?? []) }}</dd>
+                        <dd class="mt-1 text-2xl font-bold tracking-tight text-indigo-600 tabular-nums sm:text-3xl">{{ count($userRoles['federatedTreasurer'] ?? []) }}</dd>
                     </div>
                     <div class="p-2.5 sm:p-3 bg-indigo-50 text-indigo-600 rounded-lg shrink-0">
-                        <svg class="w-5 h-5 sm:w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        <svg class="h-5 w-5 sm:h-6 sm:w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                     </div>
                 </div>
                 @if(!empty($userRoles['federatedTreasurer']))
-                    <div class="mt-3 pt-3 border-t border-gray-50 max-h-24 overflow-y-auto custom-scrollbar space-y-1.5">
+                    <div class="custom-scrollbar mt-3 max-h-24 space-y-1.5 overflow-y-auto border-t border-gray-100 pt-3">
                         @foreach($userRoles['federatedTreasurer'] as $user)
                             <div class="flex justify-between items-center text-xs gap-2">
                                 <span class="font-medium text-gray-700 truncate" title="{{ $user['name'] }}">{{ $user['name'] }}</span>
@@ -113,18 +113,18 @@
             </div>
         
             <!-- Treasurers -->
-            <div class="relative overflow-hidden rounded-xl bg-white p-4 sm:p-5 shadow-sm border border-gray-100 transition-all hover:shadow-md flex flex-col justify-between">
+            <div class="relative flex flex-col justify-between overflow-hidden rounded-xl border border-gray-200 bg-white p-4 shadow-xs sm:p-5">
                 <div class="flex items-center justify-between gap-2">
                     <div class="min-w-0 flex-1">
                         <dt class="text-xs font-semibold text-gray-500 uppercase tracking-wider truncate">Treasurers</dt>
-                        <dd class="mt-1 text-2xl sm:text-3xl font-bold tracking-tight text-indigo-600">{{ count($userRoles['treasurer'] ?? []) }}</dd>
+                        <dd class="mt-1 text-2xl font-bold tracking-tight text-indigo-600 tabular-nums sm:text-3xl">{{ count($userRoles['treasurer'] ?? []) }}</dd>
                     </div>
                     <div class="p-2.5 sm:p-3 bg-indigo-50 text-indigo-600 rounded-lg shrink-0">
-                        <svg class="w-5 h-5 sm:w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                        <svg class="h-5 w-5 sm:h-6 sm:w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
                     </div>
                 </div>
                 @if(!empty($userRoles['treasurer']))
-                    <div class="mt-3 pt-3 border-t border-gray-50 max-h-24 overflow-y-auto custom-scrollbar space-y-1.5">
+                    <div class="custom-scrollbar mt-3 max-h-24 space-y-1.5 overflow-y-auto border-t border-gray-100 pt-3">
                         @foreach($userRoles['treasurer'] as $user)
                             <div class="flex justify-between items-center text-xs gap-2">
                                 <span class="font-medium text-gray-700 truncate" title="{{ $user['name'] }}">{{ $user['name'] }}</span>
@@ -136,14 +136,14 @@
             </div>
         
             <!-- Members (Total Users Example) -->
-            <div class="relative overflow-hidden rounded-xl bg-white p-4 sm:p-5 shadow-sm border border-gray-100 transition-all hover:shadow-md">
+            <div class="relative overflow-hidden rounded-xl border border-gray-200 bg-white p-4 shadow-xs sm:p-5">
                 <div class="flex items-center justify-between gap-2">
                     <div class="min-w-0 flex-1">
                         <dt class="text-xs font-semibold text-gray-500 uppercase tracking-wider truncate">Total Members</dt>
-                        <dd class="mt-1 text-2xl sm:text-3xl font-bold tracking-tight text-indigo-600">{{ $allUsers->count() }}</dd>
+                        <dd class="mt-1 text-2xl font-bold tracking-tight text-indigo-600 tabular-nums sm:text-3xl">{{ $allUsers->count() }}</dd>
                     </div>
                     <div class="p-2.5 sm:p-3 bg-indigo-50 text-indigo-600 rounded-lg shrink-0">
-                        <svg class="w-5 h-5 sm:w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                        <svg class="h-5 w-5 sm:h-6 sm:w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
                     </div>
                 </div>
             </div>
@@ -164,14 +164,14 @@
             <option value="user-based">User Based Access Config</option>
         </x-select> --}}
         <div class="mb-4 max-w-sm">
-            <label for="config-option" class="block mb-2 text-sm font-medium text-gray-900">
+            <label for="config-option" class="mb-1.5 block text-sm font-medium text-gray-700">
               Select Assignment Option
             </label>
             <select 
               name="config-option" 
               id="config-option" 
               onchange="toggleForm(this.value)" 
-              class="block w-full px-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand shadow-xs placeholder:text-body"
+              class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 shadow-xs focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
             >
               {{-- <option value="role-based">Role Based Access Config</option> --}}
               <option value="user-based" selected>User Based Access Config</option>

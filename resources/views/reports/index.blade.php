@@ -16,7 +16,7 @@
         unifiedReportUrl: '{{ route('reports.unified-report-url') }}',
     })"
     x-init="initialize()"
-    class="px-4 py-6 space-y-6">
+    class="space-y-6">
 
     {{-- ========================================================= --}}
     {{-- PAGE HEADER --}}
@@ -24,7 +24,7 @@
 
     <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
-            <h1 class="text-2xl font-bold text-gray-900">
+            <h1 class="text-xl font-semibold tracking-tight text-gray-900 sm:text-2xl">
                 Reports
             </h1>
             <p
@@ -59,13 +59,13 @@
             {{-- <button
                 @click="exportExcel()"
                 :disabled="!hasGenerated"
-                class="px-4 py-2 rounded-lg border border-gray-300 bg-white text-sm hover:bg-gray-50 disabled:opacity-50">
+                class="inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-xs transition hover:bg-gray-50 disabled:opacity-50">
                 Export Excel
             </button>
             <button
                 @click="exportPdf()"
                 :disabled="!hasGenerated"
-                class="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm hover:bg-blue-700 disabled:bg-gray-300">
+                class="inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-xs transition hover:bg-blue-700 disabled:bg-gray-300">
                 Export PDF
             </button> --}}
         </div>
