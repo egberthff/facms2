@@ -13,7 +13,6 @@ Route::middleware(['auth', 'active', 'verified', 'member.active'])
         Route::get('members/my-contributions/{user}', [ContributionDetailsController::class, 'myOwedContributions'])->middleware('can:view own contribution')->name('member.my-contributions');
         Route::get('members/{member}/{type}', [MemberController::class, 'getHistory'])->name('members.history');
         Route::get('profile', [MemberController::class, 'getProfilePage'])->name('members.profile');
-        Route::patch('profile', [MemberController::class, 'updateProfile'])->name('members.profile.update');
         
         Route::get('/notifications/{id}/read', function ($id) {
             $notification = auth()->user()->notifications()->findOrFail($id);

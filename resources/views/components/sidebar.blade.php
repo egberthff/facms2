@@ -34,15 +34,15 @@
 
         <!-- OVERVIEW SECTION -->
         <div class="mb-4">
-            <div class="mb-1.5 px-3 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+            <div class="px-3 mb-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">
                 Overview
             </div>
-            <ul class="space-y-1">
+            <ul class="space-y-2">
                 <li>
                     <a href="{{ route('dashboard') }}"
-                        class="group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-300 transition-colors hover:bg-slate-700/60 hover:text-white">
-                        <x-heroicon-o-home class="h-5 w-5 shrink-0"/>
-                        <span class="truncate">Dashboard</span>
+                        class="flex items-center p-3 rounded-lg text-white hover:bg-slate-700">
+                        <x-heroicon-o-home class="w-5 h-5"/>
+                        <span class="ml-3">Dashboard</span>
                     </a>
                 </li>
             </ul>
@@ -52,22 +52,22 @@
 
         <!-- CLAIMS SECTION -->
         <div class="mb-4">
-            <div class="mb-1.5 px-3 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+            <div class="px-3 mb-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">
                 Claims
             </div>
-            <ul class="space-y-1">
+            <ul class="space-y-2">
                 <li>
                     <a href="{{ route('claim.list') }}"
-                        class="group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-300 transition-colors hover:bg-slate-700/60 hover:text-white">
-                        <x-heroicon-o-document-text class="h-5 w-5 shrink-0"/>
-                        <span class="truncate">All Claims</span>
+                        class="flex items-center p-3 rounded-lg text-white hover:bg-slate-700">
+                        <x-heroicon-o-document-text class="w-5 h-5"/>
+                        <span class="ml-3">All Claims</span>
                     </a>
                 </li>
                 <li>
                     <a href="{{ route('disbursement.index')}}"
-                        class="group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-300 transition-colors hover:bg-slate-700/60 hover:text-white">
-                        <x-heroicon-o-credit-card class="h-5 w-5 shrink-0"/>
-                        <span class="truncate">Disbursement</span>
+                        class="flex items-center p-3 rounded-lg text-white hover:bg-slate-700">
+                        <x-heroicon-o-credit-card class="w-5 h-5"/>
+                        <span class="ml-3">Disbursement</span>
                     </a>
                 </li>
             </ul>
@@ -77,15 +77,15 @@
 
         <!-- CONTRIBUTION SECTION -->
         <div class="mb-4">
-            <div class="mb-1.5 px-3 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+            <div class="px-3 mb-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">
                 Contributions
             </div>
-            <ul class="space-y-1">
+            <ul class="space-y-2">
                 <li>
                     <a href="{{ route('contributions.monitoring') }}"
-                        class="group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-300 transition-colors hover:bg-slate-700/60 hover:text-white">
-                        <x-heroicon-o-chart-bar-square class="h-5 w-5 shrink-0"/>
-                        <span class="truncate">All Contributions</span>
+                        class="flex items-center p-3 rounded-lg text-white hover:bg-slate-700">
+                        <x-heroicon-o-chart-bar-square class="w-5 h-5"/>
+                        <span class="ml-3">All Contributions</span>
                     </a>
                 </li>
             </ul>
@@ -95,40 +95,40 @@
 
         <!-- MANAGEMENT SECTION -->
         <div class="mb-4">
-            <div class="mb-1.5 px-3 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+            <div class="px-3 mb-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">
                 Management
             </div>
-            <ul class="space-y-1">
+            <ul class="space-y-2">
                 @role('President|Treasurer|Federated President|Federated Treasurer')
                 <li>
                     <a href="{{ route('members.index') }}"
-                        class="group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-300 transition-colors hover:bg-slate-700/60 hover:text-white">
-                        <x-heroicon-o-users class="h-5 w-5 shrink-0"/>
-                        <span class="truncate">Members</span>
+                        class="flex items-center p-3 rounded-lg text-white hover:bg-slate-700">
+                        <x-heroicon-o-users class="w-5 h-5"/>
+                        <span class="ml-3">Members</span>
                     </a>
                 </li>
                 @endrole
                 @role('President|Federated President' )
                 <li>
                     <a href="{{ route('admin.permissions.index') }}"
-                        class="group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-300 transition-colors hover:bg-slate-700/60 hover:text-white">
-                        <x-heroicon-o-shield-exclamation class="h-5 w-5 shrink-0"/>
-                        <span class="truncate">Roles & Permissions</span>
+                        class="flex items-center p-3 rounded-lg text-white hover:bg-slate-700">
+                        <x-heroicon-o-shield-exclamation class="w-5 h-5"/>
+                        <span class="ml-3">Roles & Permissions</span>
                     </a>
                 </li>
                 @endrole
                 <li>
                     <a href="{{ route('treasury.index') }}"
-                        class="group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-300 transition-colors hover:bg-slate-700/60 hover:text-white">
-                        <x-heroicon-o-building-library class="h-5 w-5 shrink-0"/>
-                        <span class="truncate">Banking</span>
+                        class="flex items-center p-3 rounded-lg text-white hover:bg-slate-700">
+                        <x-heroicon-o-building-library class="w-5 h-5"/>
+                        <span class="ml-3">Banking</span>
                     </a>
                 </li>
                 <li>
                     <a href="{{ route('reports.index') }}"
-                        class="group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-300 transition-colors hover:bg-slate-700/60 hover:text-white">
-                        <x-heroicon-o-chart-bar class="h-5 w-5 shrink-0"/>
-                        <span class="truncate">Reports</span>
+                        class="flex items-center p-3 rounded-lg text-white hover:bg-slate-700">
+                        <x-heroicon-o-chart-bar class="w-5 h-5"/>
+                        <span class="ml-3">Reports</span>
                     </a>
                 </li>
             </ul>
@@ -138,17 +138,17 @@
 
         <!-- SETTINGS SECTION -->
         <div>
-            <ul class="space-y-1">
+            <ul class="space-y-2">
                 <li>
                     <a href="{{ route('settings.index') }}"
-                        class="group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors
+                        class="flex items-center p-3 rounded-lg transition
                         {{ request()->routeIs('settings.*')
                             ? 'bg-slate-700 text-white'
                             : 'text-white hover:bg-slate-700' }}">
 
-                        <x-heroicon-o-cog-6-tooth class="h-5 w-5 shrink-0"/>
+                        <x-heroicon-o-cog-6-tooth class="w-5 h-5"/>
 
-                        <span class="truncate">
+                        <span class="ml-3">
 
                             Settings
 

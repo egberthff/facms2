@@ -21,15 +21,15 @@
             x-transition:leave="ease-in duration-200"
             x-transition:leave-start="opacity-100 scale-100"
             x-transition:leave-end="opacity-0 scale-95"
-            class="w-full max-w-md transform overflow-hidden rounded-xl border border-gray-100 bg-white p-5 shadow-xl transition-all sm:p-6">
+            class="w-full max-w-md transform overflow-hidden rounded-xl bg-white p-6 shadow-xl transition-all border border-gray-100">
 
             <!-- Modal Header -->
             <div class="flex items-center justify-between border-b border-gray-100 pb-3">
-                <h3 class="text-lg font-semibold text-gray-900">Annual Contribution Setup</h3>
+                <h3 class="text-lg font-bold text-gray-900">Annual Contribution Setup</h3>
                 <button 
                     type="button"
                     @click="openAnnualContributionSetupModal = false" 
-                    class="inline-flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 transition hover:bg-gray-100 hover:text-gray-700">
+                    class="text-gray-400 hover:text-gray-500 rounded-lg p-1 hover:bg-gray-100 transition">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                     </svg>
@@ -55,7 +55,7 @@
                         <select 
                             id="campus_filter"
                             name="campus_filter" 
-                            class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 shadow-xs transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20">
+                            class="w-full text-sm rounded-lg border-gray-300 text-gray-700 bg-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 transition">
                             <option value="">-- Choose a Campus --</option>
                             @foreach($allCampuses as $campus)
                                 <option value="{{ $campus->id }}" {{ $selectedCampusId == $campus->id ? 'selected' : '' }}>
@@ -82,22 +82,22 @@
                             placeholder="2026"
                             @input="contributionYear = contributionYear.slice(0, 4)"
                             @keydown="if(['e', 'E', '+', '-', '.'].includes($event.key)) $event.preventDefault()"
-                            class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-xs transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20">
+                            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 transition">
                     </div>
                     <p class="mt-1 text-xs text-gray-400">Enter a 4-digit numeric year.</p>
                 </div>
 
                 <!-- Modal Actions Footer -->
-                <div class="flex flex-col-reverse gap-2 border-t border-gray-100 pt-4 sm:flex-row sm:items-center sm:justify-end">
+                <div class="flex items-center justify-end gap-x-2 pt-4 border-t border-gray-100">
                     <button 
                         type="button" 
                         @click="openAnnualContributionSetupModal = false" 
-                        class="inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-xs transition hover:bg-gray-50">
+                        class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition">
                         Cancel
                     </button>
                     <button 
                         type="submit" 
-                        class="inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-xs transition hover:bg-blue-700">
+                        class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 shadow-sm transition">
                         Save Setup
                     </button>
                 </div>
@@ -128,12 +128,12 @@
             x-transition:leave="ease-in duration-200"
             x-transition:leave-start="opacity-100 scale-100"
             x-transition:leave-end="opacity-0 scale-95"
-            class="w-full max-w-md transform overflow-hidden rounded-xl border border-gray-100 bg-white p-5 shadow-xl transition-all sm:p-6">
+            class="w-full max-w-md transform overflow-hidden rounded-xl bg-white p-6 shadow-xl transition-all border border-gray-100">
             
             <!-- Modal Header -->
             <div class="flex items-center justify-between border-b border-gray-100 pb-3">
-                <h3 class="text-lg font-semibold text-gray-900">Contribution Adjustment</h3>
-                <button @click="openContributionAdjustmentModal = false" class="inline-flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 transition hover:bg-gray-100 hover:text-gray-700">
+                <h3 class="text-lg font-bold text-gray-900">Contribution Adjustment</h3>
+                <button @click="openContributionAdjustmentModal = false" class="text-gray-400 hover:text-gray-500 rounded-lg p-1 hover:bg-gray-100 transition">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
             </div>
@@ -150,7 +150,7 @@
                         <label class="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1">
                             Campus
                         </label>
-                        <select name="campus_id" required class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 shadow-xs transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20">
+                        <select name="campus_id" required class="w-full text-sm rounded-lg bg-white border-gray-300 text-gray-700 focus:ring-blue-500 focus:border-blue-500 py-2 px-3">
                             <option value="">-- Select Campus --</option>
                             @foreach($allCampuses as $campus)
                                 <option value="{{ $campus->id }}" {{ $selectedCampusId == $campus->id ? 'selected' : '' }}>
@@ -175,7 +175,7 @@
                             type="month" 
                             name="adjustment_month"
                             required
-                            class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-xs focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20">
+                            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
                     </div>
     
                     <!-- Reference Month (Optional) -->
@@ -186,7 +186,7 @@
                         <input 
                             type="month" 
                             name="reference_month"
-                            class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-xs focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20">
+                            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
                     </div>
                 </div>
     
@@ -195,7 +195,7 @@
                     <label class="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1">
                         Adjustment Type
                     </label>
-                    <select name="adjustment_type" required class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 shadow-xs transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20">
+                    <select name="adjustment_type" required class="w-full text-sm rounded-lg bg-white border-gray-300 text-gray-700 focus:ring-blue-500 focus:border-blue-500 py-2 px-3">
                         <option value="">-- Select Type --</option>
                         @foreach(\App\Enums\ContributionAdjustment::cases() as $type)
                             <option value="{{ $type->value }}">{{ $type->name }}</option>
@@ -247,7 +247,7 @@
                             step="0.01"
                             required
                             placeholder="0.00"
-                            class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-xs focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20">
+                            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
                     </div>
                     <p class="mt-1 text-xs text-gray-400">Use standard values for increases. Insert a negative sign (-) to decrease collections.</p>
                 </div>
@@ -261,20 +261,20 @@
                         name="description"
                         rows="3"
                         placeholder="Provide details about the deduction correction..."
-                        class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-xs focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"></textarea>
+                        class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"></textarea>
                 </div>
     
                 <!-- Modal Actions Footer -->
-                <div class="flex flex-col-reverse gap-2 border-t border-gray-100 pt-4 sm:flex-row sm:items-center sm:justify-end">
+                <div class="flex items-center justify-end gap-x-2 pt-4 border-t border-gray-100">
                     <button 
                         type="button" 
                         @click="openContributionAdjustmentModal = false" 
-                        class="inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-xs transition hover:bg-gray-50">
+                        class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition">
                         Cancel
                     </button>
                     <button 
                         type="submit" 
-                        class="inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-xs transition hover:bg-blue-700">
+                        class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 shadow-sm transition">
                         Apply Adjustment
                     </button>
                 </div>
@@ -304,15 +304,15 @@
             x-transition:leave="ease-in duration-200"
             x-transition:leave-start="opacity-100 scale-100"
             x-transition:leave-end="opacity-0 scale-95"
-            class="w-full max-w-md transform overflow-hidden rounded-xl border border-gray-100 bg-white p-5 shadow-xl transition-all sm:p-6">
+            class="w-full max-w-md transform overflow-hidden rounded-xl bg-white p-6 shadow-xl transition-all border border-gray-100">
 
             <!-- Modal Header -->
             <div class="flex items-center justify-between border-b border-gray-100 pb-3">
-                <h3 class="text-lg font-semibold text-gray-900">CNA Share Setup</h3>
+                <h3 class="text-lg font-bold text-gray-900">CNA Share Setup</h3>
                 <button 
                     type="button"
                     @click="openCNAShareSetupModal = false" 
-                    class="inline-flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 transition hover:bg-gray-100 hover:text-gray-700">
+                    class="text-gray-400 hover:text-gray-500 rounded-lg p-1 hover:bg-gray-100 transition">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                     </svg>
@@ -338,7 +338,7 @@
                         <select 
                             id="campus_filter"
                             name="campus_filter" 
-                            class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 shadow-xs transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20">
+                            class="w-full text-sm rounded-lg border-gray-300 text-gray-700 bg-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 transition">
                             <option value="">-- Choose a Campus --</option>
                             @foreach($allCampuses as $campus)
                                 <option value="{{ $campus->id }}" {{ $selectedCampusId == $campus->id ? 'selected' : '' }}>
@@ -365,7 +365,7 @@
                             placeholder="2026"
                             @input="contributionYear = contributionYear.slice(0, 4)"
                             @keydown="if(['e', 'E', '+', '-', '.'].includes($event.key)) $event.preventDefault()"
-                            class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-xs transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20">
+                            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 transition">
                     </div>
                     <p class="mt-1 text-xs text-gray-400">Enter a 4-digit numeric year.</p>
                 </div>
@@ -380,19 +380,19 @@
                             name="contribution_amount"
                             step="0.01"
                             placeholder="0.00"
-                            class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-xs transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20">        
+                            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 transition">        
                 </div>
                 <!-- Modal Actions Footer -->
-                <div class="flex flex-col-reverse gap-2 border-t border-gray-100 pt-4 sm:flex-row sm:items-center sm:justify-end">
+                <div class="flex items-center justify-end gap-x-2 pt-4 border-t border-gray-100">
                     <button 
                         type="button" 
                         @click="openAnnualContributionSetupModal = false" 
-                        class="inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-xs transition hover:bg-gray-50">
+                        class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition">
                         Cancel
                     </button>
                     <button 
                         type="submit" 
-                        class="inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-xs transition hover:bg-blue-700">
+                        class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 shadow-sm transition">
                         Save Setup
                     </button>
                 </div>
@@ -430,7 +430,7 @@
         <!-- Modal Header -->
         <div class="flex items-center justify-between border-b border-gray-100 px-6 py-4">
             <div>
-                <h3 class="text-lg font-semibold text-gray-900">
+                <h3 class="text-lg font-bold text-gray-900">
                     Membership Fee Entry
                 </h3>
 
@@ -442,7 +442,7 @@
             <button
                 type="button"
                 @click="closeMembershipFeeModal()"
-                class="inline-flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 transition hover:bg-gray-100 hover:text-gray-700"
+                class="text-gray-400 hover:text-gray-500 rounded-lg p-1 hover:bg-gray-100 transition"
             >
                 <svg
                     class="w-5 h-5"
@@ -841,7 +841,10 @@
                                 name="paid_at"
                                 x-model="membershipFee.paid_at"
                                 :required="membershipFee.status === 'Paid'"
-                                class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-xs transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                                class="w-full rounded-lg border border-gray-300
+                                       px-3 py-2 text-sm
+                                       focus:border-blue-500 focus:outline-none
+                                       focus:ring-1 focus:ring-blue-500 transition"
                             >
                         </div>
 
@@ -862,7 +865,10 @@
                             name="reference_number"
                             x-model="membershipFee.reference_number"
                             placeholder="Receipt / transaction reference number"
-                            class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-xs transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                            class="w-full rounded-lg border border-gray-300
+                                   px-3 py-2 text-sm
+                                   focus:border-blue-500 focus:outline-none
+                                   focus:ring-1 focus:ring-blue-500 transition"
                         >
                     </div>
 
@@ -900,7 +906,9 @@
                 <button
                     type="button"
                     @click="closeMembershipFeeModal()"
-                    class="inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-xs transition hover:bg-gray-50"
+                    class="px-4 py-2 text-sm font-medium text-gray-700
+                           bg-white border border-gray-300 rounded-lg
+                           hover:bg-gray-50 transition"
                 >
                     Cancel
                 </button>

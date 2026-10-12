@@ -66,7 +66,6 @@ class ClaimService
                 'treatment_start_date' => $data['incidentDate'] ?? null,
                 'treatment_end_date'   => $data['treatmentEndDate'] ?? null,
                 'submitted_at'      => $submittedAt,
-                ...$this->payoutDetails($data),
             ]);
 
             // 2. Handle File Uploads if present
@@ -81,44 +80,6 @@ class ClaimService
             DB::rollBack();
             throw $e; // Rethrow to let the controller handle the HTTP error response
         }
-    }
-
-    /**
-     * Map the submitted payout fields to claim columns for the chosen method,
-     * storing the uploaded payment QR when one was given.
-     */
-    private function payoutDetails(array $data): array
-    {
-        $method = PaymentMethod::find($data['paymentMethod'])?->name;
-
-        $details = match ($method) {
-            'GCash' => [
-                'payout_bank_name'      => null,
-                'payout_account_name'   => $data['gcashName'] ?? null,
-                'payout_account_number' => $data['gcashNumber'] ?? null,
-                'payout_branch'         => null,
-            ],
-            'Bank Transfer' => [
-                'payout_bank_name'      => $data['bank'] ?? null,
-                'payout_account_name'   => $data['accountName'] ?? null,
-                'payout_account_number' => $data['accountNumber'] ?? null,
-                'payout_branch'         => $data['branch'] ?? null,
-            ],
-            default => [],
-        };
-
-        $qr = $data['payoutQr'] ?? null;
-
-        if ($details && $qr instanceof UploadedFile) {
-            $details['payout_qr_path'] = $qr->storeAs(
-                'documents/payout-qr',
-                Str::uuid() . '.' . $qr->extension(),
-                'public'
-            );
-            $details['payout_qr_payload'] = $data['payoutQrPayload'] ?? null;
-        }
-
-        return $details;
     }
 
     /**

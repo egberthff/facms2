@@ -29,18 +29,18 @@
             x-transition:leave="ease-in duration-200"
             x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
             x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-            class="relative w-full max-w-2xl transform overflow-hidden rounded-2xl border border-slate-100 bg-white p-4 shadow-xl transition-all sm:p-6">
+            class="relative w-full max-w-2xl transform overflow-hidden rounded-2xl bg-white p-6 shadow-2xl transition-all border border-slate-100">
 
             <!-- Modal Header -->
             <div class="flex items-center justify-between border-b border-slate-100 pb-4 mb-5">
                 <div>
                     <!-- Dynamic Title Based on Payment Status -->
-                    <h3 class="text-lg font-semibold text-slate-900"> 
+                    <h3 class="text-lg font-bold text-slate-900"> 
                         Annual Contribution Details
                     </h3>
                     <p class="text-xs text-slate-500 mt-0.5" x-text="'Coverage Period: Calendar Year ' + (activeAnnual.contribution_year || new Date().getFullYear())"></p>
                 </div>
-                <button @click="openAnnualModal = false" class="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-700">
+                <button @click="openAnnualModal = false" class="text-slate-400 hover:text-slate-600 transition p-1.5 rounded-lg hover:bg-slate-50">
                     <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                 </button>
             </div>
@@ -60,7 +60,7 @@
                          :class="activeAnnual.status === 'Paid' ? 'bg-emerald-50/50 border-emerald-100' : 'bg-slate-50/50 border-slate-100'">
                         <span class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1"
                               x-text="activeAnnual.status === 'Paid' || activeAnnual.status === 'Verified' ? 'Contribution Settled' : 'Total Amount Due'"></span>
-                               <p class="text-lg font-bold tracking-tight tabular-nums sm:text-xl" 
+                               <p class="text-xl font-black" 
                                :class="activeAnnual.status === 'Paid' || activeAnnual.status === 'Verified' ? 'text-emerald-700' : 'text-slate-900'"
                                x-text="'₱' + Number(activeAnnual.amount_paid || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })">
                             </p>
@@ -109,39 +109,39 @@
             </div> <!-- End of Scrollable Body Component Wrapper -->
 
             <!-- Modal Action Footer Buttons Area -->
-            <div class="mt-5 flex flex-col-reverse gap-2 border-t border-slate-100 pt-4 sm:flex-row sm:justify-end">
+            <div class="flex justify-end gap-2 border-t border-slate-100 pt-4 mt-5">
                 <button 
                     type="button" 
                     @click="openAnnualModal = false" 
-                    class="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-xs transition hover:bg-slate-50">
+                    class="px-5 py-2 text-sm font-semibold text-slate-600 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl transition">
                     Close Sheet
                 </button>
 
                 <!-- Primary Action: Process the outstanding baseline fee -->
-                {{-- <template x-if="activeAnnual.status !== 'Paid' && activeAnnual.status !== 'Failed'">
+                <template x-if="activeAnnual.status !== 'Paid' && activeAnnual.status !== 'Failed'">
                     <form :action="'/annual-contributions/' + activeAnnual.id + '/pay'" method="POST" class="inline">
                         @csrf
                         @method('PATCH')
                         <button 
                             type="submit" 
-                            class="inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-xs transition hover:bg-blue-700">
+                            class="px-5 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-sm transition">
                             Settle Contribution ₱<span x-text="Number(activeAnnual.amount_paid).toLocaleString('en-US', { minimumFractionDigits: 2 })"></span>
                         </button>
                     </form>
-                </template> --}}
+                </template>
 
                 <!-- Secondary Action: Print Receipt for Verified Records -->
-                {{-- <template x-if="activeAnnual.status === 'Paid'">
+                <template x-if="activeAnnual.status === 'Paid'">
                     <button 
                         type="button" 
                         @click="window.print()" 
-                        class="inline-flex items-center justify-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-100">
+                        class="px-5 py-2 text-sm font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-xl transition flex items-center gap-1.5">
                         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 012-2h2a2 2 0 012 2v4M5 10h14" />
                         </svg>
                         Print Payment Token
                     </button>
-                </template> --}}
+                </template>
             </div>
         </div>
     </div>

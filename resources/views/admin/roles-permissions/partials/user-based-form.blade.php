@@ -6,7 +6,7 @@
     <div class="relative">
         <input type="text" 
                id="user-autocomplete-input" 
-               class="w-full rounded-lg border border-slate-300 bg-white p-2.5 text-sm shadow-xs outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20" 
+               class="w-full p-2.5 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all" 
                placeholder="Type employee ID, name, email, or campus assignment..." 
                oninput="handleUserRealtimeSearch(this.value)"
                autocomplete="off">
@@ -38,7 +38,7 @@
         </li>
     </ul>
             
-    <div class="p-4 sm:p-6">
+    <div class="p-6">
         <!-- Form Panel 1: Setup Permissions Matrix -->
         <div id="setup-permissions" class="tab-panel hidden">
             <form id="user-permissions-form" action="{{ route('admin.users.sync-access') }}" data-action-type="permission-assignment" class="space-y-4 hidden" onsubmit="handleRolePermissionUpdate(event)">
@@ -48,13 +48,13 @@
                 <input type="hidden" name="user_id" id="target-user-id-field-permission">
                 <input type='hidden' name='action_type' value="permission">
 
-                <div class="mb-5 rounded-r-lg border-l-4 border-blue-500 bg-slate-50 p-4">
+                <div class="bg-slate-50 p-4 border-l-4 border-blue-500 mb-5 rounded-r">
                     <h4 class="m-0 text-slate-800 font-medium">Fine-Grained Matrix Control: <span id="display-target-username-permission" class="text-blue-600 font-bold"></span></h4>
                 </div>
 
                 <div class="permission-grid grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 my-4">
                     @foreach($permissions as $permission)
-                        <label class="flex cursor-pointer items-center rounded-lg border border-slate-200 bg-white p-2.5 transition-colors hover:bg-slate-50">
+                        <label class="flex items-center p-2.5 border border-slate-100 bg-white cursor-pointer rounded hover:bg-slate-50 transition-colors">
                             <input type="checkbox" 
                                    name="permissions[]" 
                                    class="user-permission-checkbox h-4 w-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
@@ -64,7 +64,7 @@
                     @endforeach
                 </div>
 
-                <button type="submit" class="inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-xs transition hover:bg-blue-700 focus-visible:outline-2 focus-visible:outline-blue-600">
+                <button type="submit" class="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-600">
                     Save Changes
                 </button>
             </form>
@@ -79,7 +79,7 @@
                 <input type="hidden" name="user_id" id="target-user-id-field-role">
                 <input type='hidden' name='action_type' value="role">
 
-                <div class="mb-5 rounded-r-lg border-l-4 border-blue-500 bg-slate-50 p-4">
+                <div class="bg-slate-50 p-4 border-l-4 border-blue-500 mb-5 rounded-r">
                     <h4 class="m-0 text-slate-800 font-medium">Role Assignment Control: <span id="display-target-username-role" class="text-blue-600 font-bold"></span></h4>
                 </div>
 
@@ -88,7 +88,7 @@
                         @if(str_contains($role->name, 'Federated') && !$isFederated)
                            @continue
                         @endif
-                        <label class="flex cursor-pointer items-center rounded-lg border border-slate-200 bg-white p-2.5 transition-colors hover:bg-slate-50">
+                        <label class="flex items-center p-2.5 border border-slate-100 bg-white cursor-pointer rounded hover:bg-slate-50 transition-colors">
                             <input type="radio" 
                                    name="role" 
                                    class="user-role-checkbox h-4 w-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
@@ -98,7 +98,7 @@
                     @endforeach
                 </div>
 
-                <button type="submit" class="inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-xs transition hover:bg-blue-700 focus-visible:outline-2 focus-visible:outline-blue-600">
+                <button type="submit" class="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-600">
                     Save Changes
                 </button>
             </form>

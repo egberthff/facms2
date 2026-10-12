@@ -47,10 +47,6 @@ import Chart from 'chart.js/auto';
 window.Chart = Chart;
 
 import './report-center';
-import './dashboard-charts';
-import { readPaymentQr } from './payment-qr';
-
-window.readPaymentQr = readPaymentQr;
 import { all } from 'axios';
 
 document.addEventListener('alpine:init', () => {
@@ -307,7 +303,7 @@ window.updateClaimStatus = function(claimId, status, claimData = {}) {
                                 <input id="disbursement-amount" type="number" step="0.01" min="0" value="${claimData.approved_amount ?? claimData.requested_amount ?? ''}" class="swal2-input" />
                             </label>
                             <label class="block text-sm">
-                                <span class="mb-1 block font-semibold text-slate-700">Reference Code <span class="text-red-500">*</span></span>
+                                <span class="mb-1 block font-semibold text-slate-700">Reference Code</span>
                                 <input id="disbursement-reference" type="text" class="swal2-input" />
                             </label>
                             <label class="block text-sm">
@@ -315,8 +311,8 @@ window.updateClaimStatus = function(claimId, status, claimData = {}) {
                                 <textarea id="disbursement-remarks" class="swal2-textarea" rows="3"></textarea>
                             </label>
                             <label class="block text-sm">
-                                <span class="mb-1 block font-semibold text-slate-700">Proof / Receipt (optional — JPG, PNG or PDF, max 2MB)</span>
-                                <input id="disbursement-proof" type="file" accept=".jpg,.jpeg,.png,.pdf" class="swal2-file" />
+                                <span class="mb-1 block font-semibold text-slate-700">Proof / Receipt</span>
+                                <input id="disbursement-proof" type="file" class="swal2-file" />
                             </label>
                         </div>
                     `,
@@ -324,48 +320,27 @@ window.updateClaimStatus = function(claimId, status, claimData = {}) {
                     showCancelButton: true,
                     confirmButtonColor: '#2563eb',
                     cancelButtonColor: '#d33',
-                    confirmButtonText: 'Confirm disbursement',
-                    focusConfirm: false,
-                    preConfirm: () => {
-                        const amount = document.getElementById('disbursement-amount')?.value?.trim();
-                        const referenceNumber = document.getElementById('disbursement-reference')?.value?.trim() || '';
-                        const remarks = document.getElementById('disbursement-remarks')?.value?.trim() || '';
-                        const proofFile = document.getElementById('disbursement-proof')?.files?.[0] || null;
-
-                        if (!amount) {
-                            Swal.showValidationMessage('Amount is required.');
-                            return false;
-                        }
-
-                        if (!referenceNumber) {
-                            Swal.showValidationMessage('Reference code is required.');
-                            return false;
-                        }
-
-                        if (proofFile) {
-                            if (!/\.(jpe?g|png|pdf)$/i.test(proofFile.name)) {
-                                Swal.showValidationMessage('Proof must be a JPG, PNG or PDF file.');
-                                return false;
-                            }
-
-                            if (proofFile.size > 2 * 1024 * 1024) {
-                                Swal.showValidationMessage('Proof file must not exceed 2MB.');
-                                return false;
-                            }
-                        }
-
-                        return {
-                            status: normalizedStatus,
-                            amount,
-                            reference_number: referenceNumber,
-                            payment_remarks: remarks,
-                            proof_file: proofFile,
-                        };
-                    }
+                    confirmButtonText: 'Confirm disbursement'
                 }).then((result) => {
                     if (!result.isConfirmed) return;
 
-                    sendStatusRequest(claimId, normalizedStatus, result.value);
+                    const amount = document.getElementById('disbursement-amount')?.value?.trim();
+                    const referenceNumber = document.getElementById('disbursement-reference')?.value?.trim() || '';
+                    const remarks = document.getElementById('disbursement-remarks')?.value?.trim() || '';
+                    const proofFile = document.getElementById('disbursement-proof')?.files?.[0] || null;
+
+                    if (!amount) {
+                        Swal.showValidationMessage('Amount is required.');
+                        return;
+                    }
+
+                    sendStatusRequest(claimId, normalizedStatus, {
+                        status: normalizedStatus,
+                        amount,
+                        reference_number: referenceNumber,
+                        payment_remarks: remarks,
+                        proof_file: proofFile,
+                    });
                 });
 
                 return;
@@ -686,16 +661,9 @@ window.updateClaimStatus = function(claimId, status, claimData = {}) {
                 },
                 body: formData
             })
-            .then(async response => {
-                const payload = await response.json().catch(() => ({}));
-
-                if (!response.ok) {
-                    // Surface validation errors (422) instead of a generic failure
-                    const firstError = payload.errors ? Object.values(payload.errors).flat()[0] : null;
-                    throw new Error(firstError || payload.message || 'Something went wrong while updating.');
-                }
-
-                return payload;
+            .then(response => {
+                if (!response.ok) throw new Error('Network response was not ok');
+                return response.json();
             })
             .then(data => {
                 // 3. Show success alert and handle UI update
@@ -711,7 +679,7 @@ window.updateClaimStatus = function(claimId, status, claimData = {}) {
                 window.location.reload(); 
             })
             .catch(error => {
-                Swal.fire('Error!', error.message || 'Something went wrong while updating.', 'error');
+                Swal.fire('Error!', 'Something went wrong while updating.', 'error');
                 console.error(error);
             });
         }

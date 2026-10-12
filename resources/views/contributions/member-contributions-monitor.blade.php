@@ -1,5 +1,5 @@
 <x-app-layout>
-<div class="mx-auto space-y-4" 
+<div class="mx-auto p-4" 
     x-data="{ 
             currentStatus: 'all', 
             statuses: ['all', ...{{ json_encode(array_column(App\Enums\ContributionStatus::cases(), 'value')) }}], 
@@ -31,7 +31,7 @@
     <!-- ========================================= -->
     <!-- CLAIMS LIST CARD -->
     <!-- ========================================= -->
-    <div class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xs">
+    <div class="bg-white rounded-2xl shadow-xm">
         <!-- Header filter -->
         @include('contributions.partials.member.filter') 
         

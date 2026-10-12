@@ -6,17 +6,17 @@
 
 ])
 
-<div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+<div class="mb-6 flex justify-between items-center">
 
     <div>
 
-        <h1 class="text-xl font-semibold tracking-tight text-gray-900 sm:text-2xl">
+        <h1 class="text-2xl font-bold">
 
             {{ $title }}
 
         </h1>
 
-        <p class="mt-1 text-sm text-gray-500">
+        <p class="text-gray-500 mt-1">
 
             {{ $description }}
 
@@ -24,7 +24,7 @@
 
     </div>
 
-    <div class="flex flex-wrap items-center gap-2">
+    <div>
 
         {{ $actions ?? '' }}
 

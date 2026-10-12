@@ -3,20 +3,19 @@
         filePreviewOpen: false,
         filePreviewUrl: '',
         filePreviewName: '',
-        filePreviewIsImage: false,
         zoom: 1,
 
-        // Callers may pass { image: true } when neither the name nor the URL has an extension (e.g. blob URLs)
         get isImage() {
-            return this.filePreviewIsImage
-                || [this.filePreviewName, this.filePreviewUrl].some(source =>
-                    /\.(jpg|jpeg|png|gif|webp|bmp|svg)$/.test((source || '').split('?')[0].toLowerCase()));
+            const source = (this.filePreviewName || this.filePreviewUrl || '')
+                .split('?')[0]
+                .toLowerCase();
+
+            return /\.(jpg|jpeg|png|gif|webp|bmp|svg)$/.test(source);
         },
 
         openPreview(event) {
             this.filePreviewUrl = event.detail.url;
             this.filePreviewName = event.detail.name || 'File preview';
-            this.filePreviewIsImage = !!event.detail.image;
             this.zoom = 1;
             this.filePreviewOpen = true;
         },
@@ -25,7 +24,6 @@
             this.filePreviewOpen = false;
             this.filePreviewUrl = '';
             this.filePreviewName = '';
-            this.filePreviewIsImage = false;
             this.zoom = 1;
         },
 

@@ -1,34 +1,34 @@
 <table class="dt-table min-w-full divide-y divide-slate-200">
-    <thead class="sticky top-0 z-10">
+    <thead class="bg-slate-100 sticky top-0 z-10 text-md-center font-semibold text-slate-700">
         <tr>
             {{-- <th class="w-14 px-5 py-4">
                 <input
                     type="checkbox"
                     class="rounded border-slate-300">
             </th> --}}
-            <th class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider">
+            <th class="px-5 py-4 text-center text-md font-bold uppercase tracking-wdier text-slate-600">
                 Claim
             </th>
-            <th class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider">
+            <th class="px-5 py-4 text-center text-md font-bold uppercase tracking-wdier text-slate-600">
                 Member
             </th>
-            <th class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider">
+            <th class="px-5 py-4 text-center text-md font-bold uppercase tracking-wdier text-slate-600">
                 Amount
             </th>
-            <th class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider">
+            <th class="px-5 py-4 text-center text-md font-bold uppercase tracking-wider text-slate-600">
                 Submitted
             </th>
-            <th class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider">
+            <th class="px-5 py-4 text-center text-md font-bold uppercase tracking-wider text-slate-600">
                 Status
             </th>
-            <th class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider">
+            <th class="px-5 py-4 text-center text-md font-bold uppercase tracking-wider text-slate-600">
                 Action
             </th>
         </tr>
     </thead>
     <tbody class="divide-y divide-slate-100 bg-white">   
         @forelse($claims as $claim)
-        <tr class="text-center transition-colors duration-150 hover:bg-blue-50/40">
+        <tr class="hover:bg-blue-50/40 transition-colors text-center duration-150 even:bg-slate-50/30">
             <!-- ============================================== -->
             <!-- SELECT -->
             <!-- ============================================== -->
@@ -75,7 +75,7 @@
             <!-- AMOUNT -->
             <!-- ============================================== -->
             <td class="px-5 py-4 text-right">
-                <div class="text-base font-semibold text-emerald-600 tabular-nums">
+                <div class="text-lg font-bold text-emerald-600">
                     ₱{{ number_format($claim->requested_amount,2) }}
                 </div>
                 <div class="text-xs text-slate-500">
@@ -110,8 +110,8 @@
                     };
                 @endphp
                 <span
-                    class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset {{ $statusClasses }}">
-                    <span class="h-1.5 w-1.5 rounded-full bg-current opacity-75"></span>
+                    class="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold ring-1 ring-inset {{ $statusClasses }}">
+                    <span class="h-2 w-2 rounded-full bg-current opacity-75"></span>
                     {{ $claim->status }}
                 </span>
             </td>
@@ -124,7 +124,7 @@
                     class="relative inline-block text-left">
                     <button
                         @click="open=!open"
-                        class="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 shadow-xs transition hover:bg-slate-50">
+                        class="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-100 transition">
                         Actions
                         <svg
                             class="w-4 h-4"
@@ -143,8 +143,8 @@
                         x-show="open"
                         @click.away="open=false"
                         x-transition
-                        class="absolute right-0 z-50 mt-2 w-52 origin-top-right rounded-xl bg-white text-left shadow-lg ring-1 ring-slate-200">
-                        <div class="py-1 z-999">
+                        class="absolute right-0 mt-2 w-52 origin-top-right rounded-xl bg-white shadow-xl ring-1 ring-slate-200 z-50">
+                        <div class="py-2 z-999">
                             <button
                                 @click="
                                     activeClaim = @js($claim);

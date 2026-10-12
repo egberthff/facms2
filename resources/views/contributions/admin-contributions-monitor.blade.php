@@ -1,5 +1,5 @@
 <x-app-layout>
-    <div class="mx-auto space-y-6" x-data="{
+    <div class="p-6 mx-auto space-y-6" x-data="{
         search: '',
         paymentMethods: @js($paymentMethods),
         batches: @js($batches),
@@ -162,14 +162,14 @@
         },
     }" @close-fee-modal.window="closeMembershipFeeModal()">
 
-    <div class="flex flex-col gap-4 border-b border-gray-200 pb-5 md:flex-row md:items-center md:justify-between dark:border-zinc-800" x-data="{ openActions: false }">
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-gray-200 dark:border-zinc-800 pb-5" x-data="{ openActions: false }">
         <div>
-            <h1 class="text-xl font-semibold tracking-tight text-gray-900 dark:text-white">Contribution Batch Monitoring</h1>
-            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Review each contribution batch, its collectible value, collected amount, and detailed member contributions.</p>
+            <h1 class="text-xl font-bold text-gray-900 dark:text-white">Contribution Batch Monitoring</h1>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Review each contribution batch, its collectible value, collected amount, and detailed member contributions.</p>
         </div>
         
         <!-- Action Control Section -->
-        <div class="relative w-full md:w-auto">
+        <div class="relative mt-4 md:mt-0 w-full md:w-auto">
             <!-- Main Trigger Button -->
             <button 
                 @click="openActions = !openActions"
@@ -195,7 +195,7 @@
                 x-transition:leave="transition ease-in duration-75"
                 x-transition:leave-start="transform opacity-100 scale-100"
                 x-transition:leave-end="transform opacity-0 scale-95"
-                class="absolute right-0 mt-2 w-full md:w-56 rounded-xl bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 shadow-lg ring-1 ring-black/5 z-50 divide-y divide-gray-100 dark:divide-zinc-800"
+                class="absolute right-0 mt-2 w-full md:w-56 rounded-xl bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 shadow-lg ring-1 ring-black ring-opacity-5 z-50 divide-y divide-gray-100 dark:divide-zinc-800"
                 style="display: none;">
                 
                 <div class="py-1">
@@ -223,10 +223,10 @@
         </div>
     </div>
     
-     {{-- <div class="flex flex-col gap-4 border-b border-gray-200 pb-5 md:flex-row md:items-center md:justify-between dark:border-zinc-800">
+     {{-- <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-gray-200 dark:border-zinc-800 pb-5">
             <div>
-                <h1 class="text-xl font-semibold tracking-tight text-gray-900 dark:text-white">Contribution Batch Monitoring</h1>
-                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Review each contribution batch, its collectible value, collected amount, and detailed member contributions.</p>
+                <h1 class="text-xl font-bold text-gray-900 dark:text-white">Contribution Batch Monitoring</h1>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Review each contribution batch, its collectible value, collected amount, and detailed member contributions.</p>
             </div>
             <div>
                 <button 

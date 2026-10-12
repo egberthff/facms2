@@ -6,10 +6,10 @@
 
 ])
 
-<div class="px-4 py-14 text-center sm:py-16">
+<div class="py-20 text-center">
 
     <svg
-        class="mx-auto h-12 w-12 text-gray-300"
+        class="mx-auto w-20 h-20 text-gray-300"
         fill="none"
         stroke="currentColor"
         viewBox="0 0 24 24">
@@ -22,13 +22,13 @@
 
     </svg>
 
-    <h3 class="mt-4 text-base font-semibold text-gray-900">
+    <h3 class="mt-4 text-lg font-semibold">
 
         {{ $title }}
 
     </h3>
 
-    <p class="mx-auto mt-1 max-w-sm text-sm text-gray-500">
+    <p class="text-gray-500 mt-2">
 
         {{ $description }}
 

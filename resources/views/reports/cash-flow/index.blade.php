@@ -1,19 +1,19 @@
 <x-app-layout>
-    <div class="mx-auto max-w-6xl space-y-6">
+    <div class="max-w-6xl mx-auto px-4 py-6 space-y-6">
         <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
-                <h1 class="text-xl font-semibold tracking-tight text-gray-900 sm:text-2xl">Campus Cash Flow</h1>
+                <h1 class="text-2xl font-bold text-gray-900">Campus Cash Flow</h1>
                 <p class="text-sm text-gray-500">Funds received from the FFA, campus disbursements and cash on hand per period. Each finalized period's cash on hand carries over as the next period's forwarded balance.</p>
             </div>
-            <a href="{{ route('reports.index') }}" class="shrink-0 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 shadow-xs">Back to Reports</a>
+            <a href="{{ route('reports.index') }}" class="shrink-0 rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700">Back to Reports</a>
         </div>
 
         @if(session('success'))
-            <div class="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">{{ session('success') }}</div>
+            <div class="rounded-md bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-700">{{ session('success') }}</div>
         @endif
 
         @if($errors->any())
-            <div class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            <div class="rounded-md bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
                 <ul class="list-disc pl-5">
                     @foreach($errors->all() as $error)
                         <li>{{ $error }}</li>
@@ -25,8 +25,8 @@
         @if($canViewAll)
             <form method="GET" action="{{ route('reports.cash-flow.index') }}" class="flex flex-wrap items-end gap-3 bg-white rounded-xl border border-gray-200 p-4">
                 <div class="min-w-64">
-                    <label for="campus_filter" class="mb-1.5 block text-sm font-medium text-gray-700">Campus</label>
-                    <select id="campus_filter" name="campus_filter" onchange="this.form.submit()" class="border mt-1 block w-full rounded-lg border-gray-300 text-sm px-3 py-2">
+                    <label for="campus_filter" class="block text-sm font-medium text-gray-700">Campus</label>
+                    <select id="campus_filter" name="campus_filter" onchange="this.form.submit()" class="mt-1 block w-full rounded-lg border-gray-300 text-sm">
                         <option value="">All campuses</option>
                         @foreach($campuses as $campus)
                             <option value="{{ $campus->id }}" @selected($selectedCampusId === $campus->id)>{{ $campus->campus_name }}</option>
@@ -44,21 +44,21 @@
 
                 <div class="grid gap-4 md:grid-cols-4">
                     <div>
-                        <label class="mb-1.5 block text-sm font-medium text-gray-700">From</label>
-                        <input type="date" name="period_from" value="{{ old('period_from', $suggestedFrom) }}" class="mt-1 block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-xs" required>
+                        <label class="block text-sm font-medium text-gray-700">From</label>
+                        <input type="date" name="period_from" value="{{ old('period_from', $suggestedFrom) }}" class="mt-1 w-full rounded-lg border-gray-300" required>
                     </div>
                     <div>
-                        <label class="mb-1.5 block text-sm font-medium text-gray-700">As of</label>
-                        <input type="date" name="period_to" value="{{ old('period_to', now()->toDateString()) }}" class="mt-1 block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-xs" required>
+                        <label class="block text-sm font-medium text-gray-700">As of</label>
+                        <input type="date" name="period_to" value="{{ old('period_to', now()->toDateString()) }}" class="mt-1 w-full rounded-lg border-gray-300" required>
                     </div>
                     @if($needsOpeningBalance)
                         <div>
-                            <label class="mb-1.5 block text-sm font-medium text-gray-700">Opening (forwarded) balance</label>
-                            <input type="number" name="opening_balance" step="0.01" value="{{ old('opening_balance') }}" class="mt-1 block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-xs" required>
+                            <label class="block text-sm font-medium text-gray-700">Opening (forwarded) balance</label>
+                            <input type="number" name="opening_balance" step="0.01" value="{{ old('opening_balance') }}" class="mt-1 w-full rounded-lg border-gray-300" required>
                         </div>
                         <div>
-                            <label class="mb-1.5 block text-sm font-medium text-gray-700">Balance as of</label>
-                            <input type="text" name="opening_label" value="{{ old('opening_label') }}" placeholder="December 2025" class="mt-1 block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-xs">
+                            <label class="block text-sm font-medium text-gray-700">Balance as of</label>
+                            <input type="text" name="opening_label" value="{{ old('opening_label') }}" placeholder="December 2025" class="mt-1 w-full rounded-lg border-gray-300">
                         </div>
                     @endif
                 </div>
@@ -72,7 +72,7 @@
                         @endif
                         Approved FFA transfers and released medical assistance in the range are added automatically.
                     </p>
-                    <button type="submit" class="shrink-0 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white shadow-xs transition hover:bg-blue-700">Create draft</button>
+                    <button type="submit" class="shrink-0 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-blue-700">Create draft</button>
                 </div>
             </form>
         @elseif($canViewAll && !$selectedCampusId)
@@ -109,9 +109,9 @@
                                 <td class="px-4 py-3 text-right font-semibold text-gray-900">{{ number_format((float) $period->cash_on_hand, 2) }}</td>
                                 <td class="px-4 py-3">
                                     @if($period->isFinalized())
-                                        <span class="rounded-full bg-green-50 px-2.5 py-0.5 text-xs font-semibold text-green-700 ring-1 ring-inset ring-green-600/20">Finalized</span>
+                                        <span class="rounded-full bg-green-100 px-2.5 py-1 text-xs font-semibold text-green-700">Finalized</span>
                                     @else
-                                        <span class="rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-700 ring-1 ring-inset ring-amber-600/20">Draft</span>
+                                        <span class="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-700">Draft</span>
                                     @endif
                                 </td>
                                 <td class="px-4 py-3 text-right">

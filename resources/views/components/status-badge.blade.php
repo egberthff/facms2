@@ -6,24 +6,24 @@
 
 $colors = [
 
-'Active'=>'bg-green-50 text-green-700 ring-green-600/20',
+'Active'=>'bg-green-100 text-green-800',
 
-'Inactive'=>'bg-gray-50 text-gray-600 ring-gray-500/20',
+'Inactive'=>'bg-gray-100 text-gray-800',
 
-'Pending'=>'bg-amber-50 text-amber-700 ring-amber-600/20',
+'Pending'=>'bg-yellow-100 text-yellow-800',
 
-'Approved'=>'bg-green-50 text-green-700 ring-green-600/20',
+'Approved'=>'bg-green-100 text-green-800',
 
-'Rejected'=>'bg-red-50 text-red-700 ring-red-600/20',
+'Rejected'=>'bg-red-100 text-red-800',
 
-'Paid'=>'bg-blue-50 text-blue-700 ring-blue-600/20',
+'Paid'=>'bg-blue-100 text-blue-800',
 
 ];
 
 @endphp
 
 <span
-class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset {{ $colors[$status] ?? 'bg-gray-50 text-gray-600 ring-gray-500/20' }}">
+class="px-3 py-1 rounded-full text-xs font-medium {{ $colors[$status] ?? 'bg-gray-100 text-gray-700' }}">
 
 {{ $status }}
 
