@@ -373,14 +373,14 @@ window.updateClaimStatus = function(claimId, status, claimData = {}) {
 
          window.markContributionAsPaid = async function(id, tag, paymentMethods = []) {
             if (!id) return;
-        console.log(paymentMethods);
             let postUrl = "";
-            switch (tag) {
+            const type = (tag || '').trim().toLowerCase();
+            switch (type) {
                 case 'claims':
                     postUrl = `/contributions/details/${id}/mark-paid`;
                     break;
         
-                case 'annual':
+                case 'annual due':
                     postUrl = `/contributions/annual-contributions/${id}/mark-paid`;
                     break;
         
@@ -402,7 +402,7 @@ window.updateClaimStatus = function(claimId, status, claimData = {}) {
             }
         
             let requestData = {};
-            if (tag === 'membership fee') {
+            if (type === 'membership fee') {
                 const paymentMethodOptions = paymentMethods
                     .map(method => `
                         <option value="${method.id}">

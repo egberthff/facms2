@@ -36,7 +36,7 @@
         @include('contributions.partials.member.filter') 
         
         <!-- Table -->
-        <div class="overflow-x-auto">
+        <div class="overflow-x-auto xl:overflow-x-hidden px-2 sm:px-6">
             @if($contribution_type === 'annual due')
                 <!-- ANNUAL CONTRIBUTION TABLE -->
                 @include('contributions.partials.member.annual-table')

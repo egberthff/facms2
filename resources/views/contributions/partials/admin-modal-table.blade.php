@@ -75,8 +75,7 @@
                                                 <button type="button" @click="selectDetail(detail)" class="block w-full text-xs font-semibold text-blue-600 hover:text-blue-700">View Full Details</button>
                                                 <button
                                                     type="button"
-                                                    @click="
-                                                    window.markContributionAsPaid(
+                                                    @click="window.markContributionAsPaid(
                                                         detail.id,
                                                         contributionType,
                                                         JSON.parse(JSON.stringify(paymentMethods))
