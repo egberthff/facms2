@@ -354,15 +354,21 @@ class ReportService
 
     protected function disbursementSummary(array $filters): array
     {
-        $baseQuery = $this->buildClaimQuery($filters)
-            ->where('status', 'Disbursed');
+        // The report fixes the status itself, so a leftover status filter must not cancel it out
+        $filters['status'] = null;
 
-        $releasedCount = $baseQuery->count();
+        // Releases are dated by when they were disbursed, not when the claim was submitted
+        $releases = fn (array $filters) => $this->buildClaimQuery($filters, 'disbursed_at')
+            ->where('status', ClaimStatus::Disbursed->value);
+
+        $baseQuery = $releases($filters);
+
+        $releasedCount = (clone $baseQuery)->count();
         $amountReleased = (float) (clone $baseQuery)->sum('approved_amount');
         $averageReleased = $releasedCount > 0 ? $amountReleased / $releasedCount : 0.0;
 
         $pendingReleaseCount = $this->buildClaimQuery($filters)
-            ->where('status', 'Approved')
+            ->where('status', ClaimStatus::Approved->value)
             ->count();
 
         $rows = Campus::query()
@@ -370,20 +376,15 @@ class ReportService
             ->when(!empty($filters['campus_id']), function ($query) use ($filters) {
                 return $query->where('id', $filters['campus_id']);
             })
+            // ->when(!empty($filters['date_from']), function ($query) use ($filters) {
+            //     return $query->whereBetween('disbursed_at', [$filters['date_from'], $filters['date_to']]);
+            // })
             ->get()
-            ->map(function ($campus) use ($filters) {
-                $campusClaims = Claim::whereHas('member', function ($query) use ($campus) {
-                        return $query->where('campus_id', $campus->id);
-                    })
-                    ->when(!empty($filters['claim_type']), function ($query) use ($filters) {
-                        return $query->where('claim_type_id', $filters['claim_type']);
-                    })
-                    ->when(!empty($filters['member_id']), function ($query) use ($filters) {
-                        return $query->where('member_id', $filters['member_id']);
-                    });
+            ->map(function ($campus) use ($filters, $releases) {
+                $campusReleases = $releases([...$filters, 'campus_id' => $campus->id]);
 
-                $released = (clone $campusClaims)->where('status', 'Disbursed')->count();
-                $amount = (float) (clone $campusClaims)->where('status', 'Disbursed')->sum('approved_amount');
+                $released = (clone $campusReleases)->count();
+                $amount = (float) (clone $campusReleases)->sum('approved_amount');
                 $average = $released > 0 ? $amount / $released : 0.0;
 
                 return [
@@ -1676,7 +1677,11 @@ class ReportService
     |--------------------------------------------------------------------------
     */
 
-    private function buildClaimQuery(array $filters)
+    /**
+     * The date range applies to $dateColumn: submission date by default, or e.g.
+     * disbursed_at when a report is about releases.
+     */
+    private function buildClaimQuery(array $filters, string $dateColumn = 'submitted_at')
     {
         return Claim::query()
             ->when(!empty($filters['campus_id']), function ($query) use ($filters) {
@@ -1693,11 +1698,11 @@ class ReportService
             ->when(!empty($filters['status']), function ($query) use ($filters) {
                 return $query->where('status', $filters['status']);
             })
-            ->when(!empty($filters['date_from']), function ($query) use ($filters) {
-                return $query->whereDate('submitted_at', '>=', $filters['date_from']);
+            ->when(!empty($filters['date_from']), function ($query) use ($filters, $dateColumn) {
+                return $query->whereDate($dateColumn, '>=', $filters['date_from']);
             })
-            ->when(!empty($filters['date_to']), function ($query) use ($filters) {
-                return $query->whereDate('submitted_at', '<=', $filters['date_to']);
+            ->when(!empty($filters['date_to']), function ($query) use ($filters, $dateColumn) {
+                return $query->whereDate($dateColumn, '<=', $filters['date_to']);
             });
     }
 
@@ -1764,7 +1769,10 @@ class ReportService
                 // ['label' => 'Campus', 'value' => $campusName],
                 ['label' => 'Status', 'value' => $status],
             ],
-            'disbursement-summary', 'faculty-deduction-summary' => [
+            'disbursement-summary' => [
+                ['label' => 'Released', 'value' => $dateRange],
+            ],
+            'faculty-deduction-summary' => [
                 // ['label' => 'Campus', 'value' => $campusName],
                 // ['label' => 'Date Range', 'value' => $dateRange],
             ],
