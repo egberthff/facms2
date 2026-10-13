@@ -15,6 +15,51 @@
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
     <body class="font-sans antialiased text-slate-900 bg-slate-100">
+        @if ($stacked)
+        <div class="min-h-screen flex flex-col items-center p-4 sm:p-6 lg:p-10">
+            <div class="w-full max-w-2xl bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-200">
+
+                <!-- Brand Header -->
+                <div class="bg-linear-to-br from-indigo-900 via-violet-950 to-slate-900 px-6 py-8 sm:px-10 text-white relative overflow-hidden">
+                    <!-- Subtle decorative background patterns -->
+                    <div class="absolute -right-10 -bottom-10 w-40 h-40 bg-yellow-500 rounded-full opacity-10 blur-2xl"></div>
+                    <div class="absolute -left-10 -top-10 w-40 h-40 bg-violet-500 rounded-full opacity-20 blur-2xl"></div>
+
+                    <span class="absolute top-4 right-4 z-10 text-[10px] font-bold uppercase tracking-widest bg-white/10 px-3 py-1 rounded-full text-yellow-400 backdrop-blur-sm border border-white/5">
+                        FACMS v2.0
+                    </span>
+
+                    <div class="relative z-10 flex flex-col items-center text-center">
+                        <div class="h-20 w-20 rounded-full bg-white p-2 shadow-lg border-2 border-violet-400/30 flex items-center justify-center">
+                            <img src="{{ asset('storage/images/logo/bisu_logo.png') }}" alt="Bohol Island State University Logo" class="object-contain max-h-full">
+                        </div>
+
+                        <h1 class="mt-4 text-lg font-bold tracking-tight text-gray-100 uppercase">
+                            Bohol Island State University
+                        </h1>
+                        <p class="text-xs text-violet-300 tracking-wider font-semibold mt-1">
+                            Balilihan Campus · Magsija Balilihan Bohol
+                        </p>
+
+                        <div class="w-12 h-1 bg-yellow-400 rounded mt-4 mb-3"></div>
+
+                        <h2 class="text-sm sm:text-base font-medium text-gray-200">
+                            Faculty Association Claims Monitoring System
+                        </h2>
+                    </div>
+                </div>
+
+                <!-- Form Slot -->
+                <div class="px-6 py-8 sm:px-10 sm:py-10">
+                    {{ $slot }}
+                </div>
+            </div>
+
+            <p class="mt-6 text-xs text-slate-500 text-center">
+                &copy; {{ date('Y') }} BISU Faculty Association. All rights reserved.
+            </p>
+        </div>
+        @else
         <div class="min-h-screen flex flex-col justify-center items-center p-4 sm:p-6 lg:p-8">
             <div class="w-full max-w-4xl bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col md:flex-row md:min-h-[550px] border border-slate-200">
                 
@@ -67,5 +112,6 @@
 
             </div>
         </div>
+        @endif
     </body>
 </html>

@@ -7,6 +7,7 @@ use App\Http\Requests\Auth\RegisterRequest;
 use App\Models\Campus;
 use App\Services\MemberService;
 use Illuminate\Auth\Events\Registered;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
@@ -29,7 +30,7 @@ class RegisteredUserController extends Controller
     /**
      * Handle an incoming self-service registration request.
      */
-    public function store(RegisterRequest $request, MemberService $memberService): RedirectResponse
+    public function store(RegisterRequest $request, MemberService $memberService): RedirectResponse|JsonResponse
     {
         $user = $memberService->registerSelfServiceMember($request->validated());
 
@@ -39,6 +40,14 @@ class RegisteredUserController extends Controller
         Auth::login($user);
 
         $request->session()->regenerate();
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Your account has been created. Please check your email to verify your address.',
+                'redirect' => route('verification.notice'),
+            ]);
+        }
 
         return redirect()->route('verification.notice');
     }
