@@ -118,12 +118,36 @@
             <!-- ============================================== -->
             <!-- ACTION -->
             <!-- ============================================== -->
-            <td class="px-5 py-4 text-center z-50">
+            <td class="px-5 py-4 text-center">
+                {{-- The menu is position:fixed so the table's overflow container can't clip it --}}
                 <div
-                    x-data="{ open:false }"
+                    x-data="{
+                        open: false,
+                        style: '',
+                        toggle() {
+                            if (this.open) { this.open = false; return; }
+                            this.style = 'visibility:hidden';
+                            this.open = true;
+                            this.$nextTick(() => {
+                                const r = this.$refs.trigger.getBoundingClientRect();
+                                const h = this.$refs.menu.offsetHeight;
+                                const w = this.$refs.menu.offsetWidth;
+                                // Open upward when there isn't room below (e.g. the last rows)
+                                const up = window.innerHeight - r.bottom < h + 12 && r.top > h + 12;
+                                const top = up ? r.top - h - 8 : r.bottom + 8;
+                                const left = Math.max(8, Math.min(r.right - w, window.innerWidth - w - 8));
+                                this.style = `top:${top}px;left:${left}px`;
+                            });
+                        },
+                    }"
+                    @click.outside="open = false"
+                    @scroll.window.capture="open = false"
+                    @resize.window="open = false"
                     class="relative inline-block text-left">
                     <button
-                        @click="open=!open"
+                        type="button"
+                        x-ref="trigger"
+                        @click="toggle()"
                         class="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 shadow-xs transition hover:bg-slate-50">
                         Actions
                         <svg
@@ -140,18 +164,20 @@
                     </button>
 
                     <div
+                        x-ref="menu"
                         x-show="open"
-                        @click.away="open=false"
                         x-transition
-                        class="absolute right-0 z-50 mt-2 w-52 origin-top-right rounded-xl bg-white text-left shadow-lg ring-1 ring-slate-200">
-                        <div class="py-1 z-999">
+                        :style="style"
+                        x-cloak
+                        class="fixed z-50 w-52 origin-top-right rounded-xl bg-white text-left shadow-lg ring-1 ring-slate-200">
+                        <div class="py-1">
                             <button
                                 @click="
                                     activeClaim = @js($claim);
                                     openModal = true;
                                     open = false;
                                 "
-                                class="flex w-full items-center px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-100 z-50">
+                                class="flex w-full items-center px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-100">
                                 <x-heroicon-o-eye class="size-6 text-blue-600" />
                                 <span class="ml-3">View Details</span>
                             </button>
@@ -167,20 +193,20 @@
                                         }));
                                         open = false;
                                     "
-                                    class="flex w-full items-center px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-100 z-50">
+                                    class="flex w-full items-center px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-100">
                                     <x-heroicon-o-printer class="size-6 text-emerald-600" />
                                     <span class="ml-3">Print Forms</span>
                                 </button>
                             @elseif($userRole === 'President' && strtolower(trim($claim->status ?? '')) === 'pending')
                                     <button
                                         @click="updateClaimStatus('{{ $claim->id }}', 'Approved', @js($claim))"
-                                        class="flex w-full items-center px-4 py-2.5 text-sm text-blue-700 hover:bg-blue-50 z-50">
+                                        class="flex w-full items-center px-4 py-2.5 text-sm text-blue-700 hover:bg-blue-50">
                                         <x-heroicon-o-check class="size-5 text-blue-500" />
                                         <span class="ml-3">Approve</span>
                                     </button>
                                     <button
                                         @click="updateClaimStatus('{{ $claim->id }}', 'Rejected', @js($claim))"
-                                        class="flex w-full items-center px-4 py-2.5 text-sm text-rose-700 hover:bg-rose-50" z-50>
+                                        class="flex w-full items-center px-4 py-2.5 text-sm text-rose-700 hover:bg-rose-50">
                                         <x-heroicon-o-x-mark class="size-5 text-rose-500" />
                                         <span class="ml-3">Reject</span>
                                     </button>
@@ -188,14 +214,14 @@
                                 @if(strtolower(trim($claim->status ?? '')) === 'approved')
                                 <button
                                     @click="updateClaimStatus('{{ $claim->id }}', 'For Review FP', @js($claim))"
-                                    class="flex w-full items-center px-4 py-2.5 text-sm text-blue-700 hover:bg-blue-50 z-50">
+                                    class="flex w-full items-center px-4 py-2.5 text-sm text-blue-700 hover:bg-blue-50">
                                     <x-heroicon-o-arrow-path class="size-5 text-blue-500" />
                                     <span class="ml-3">Forward to FP</span>
                                 </button>
                                 @elseif(strtolower(trim($claim->status ?? '')) === 'for disbursement')
                                 <button
                                     @click="updateClaimStatus('{{ $claim->id }}', 'Disbursed', @js($claim))"
-                                    class="flex w-full items-center px-4 py-2.5 text-sm text-emerald-700 hover:bg-emerald-50 z-50">
+                                    class="flex w-full items-center px-4 py-2.5 text-sm text-emerald-700 hover:bg-emerald-50">
                                     <x-heroicon-o-credit-card class="size-5 text-emerald-500" />
                                     <span class="ml-3">Mark as Disbursed</span>
                                 </button>
@@ -203,14 +229,14 @@
                             @elseif($userRole === 'Federated President' && strtolower(trim($claim->status ?? '')) === 'for review fp')
                                 <button
                                     @click="updateClaimStatus('{{ $claim->id }}', 'Processing', @js($claim))"
-                                    class="flex w-full items-center px-4 py-2.5 text-sm text-amber-700 hover:bg-amber-50 z-50">
+                                    class="flex w-full items-center px-4 py-2.5 text-sm text-amber-700 hover:bg-amber-50">
                                     <x-heroicon-o-arrow-path class="size-5 text-amber-500" />
                                     <span class="ml-3">Processing</span>
                                 </button>
                             @elseif($userRole === 'Federated Treasurer' && strtolower(trim($claim->status ?? '')) === 'processing')
                                 <button
                                     @click="updateClaimStatus('{{ $claim->id }}', 'For Disbursement', @js($claim))"
-                                    class="flex w-full items-center px-4 py-2.5 text-sm text-emerald-700 hover:bg-emerald-50 z-50">
+                                    class="flex w-full items-center px-4 py-2.5 text-sm text-emerald-700 hover:bg-emerald-50">
                                     <x-heroicon-o-credit-card class="size-5 text-emerald-500" />
                                     <span class="ml-3">For Disbursement</span>
                                 </button>
