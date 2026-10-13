@@ -19,6 +19,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Database\Eloquent\Collection;
 use App\Services\TreasuryLedgerService;
+use App\Services\MemberClaimCycleService;
 use Exception;
 
 class ClaimService
@@ -186,7 +187,7 @@ class ClaimService
     {
         return [
             'title'              => 'Submit Claim',
-            'claimTypes'         => ClaimType::all(),
+            'claimTypes'         => ClaimType::where('is_active', true)->get(),
             'paymentMethods'     => PaymentMethod::all(),
             'paymentMethodBanks' => ['BDO', 'BPI', 'PNB', 'LandBank', 'Metrobank'], // Fixed typo: Mentrobank -> Metrobank
         ];
