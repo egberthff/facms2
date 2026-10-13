@@ -48,15 +48,12 @@ class SettingController extends Controller
         $committeeSettings = $selectedCampusId
             ? $settings->whereIn('setting_key', self::COMMITTEE_KEYS)->sortBy(fn ($setting) => array_search($setting->setting_key, self::COMMITTEE_KEYS))
             : collect();
-        $signatorySettings = $selectedCampusId
-            ? $settings->whereIn('setting_key', self::SIGNATORY_KEYS)->sortBy(fn ($setting) => array_search($setting->setting_key, self::SIGNATORY_KEYS))
-            : collect();
         $committeeMembers = Member::withoutGlobalScopes()
-            ->whereIn('id', $committeeSettings->merge($signatorySettings)->pluck('setting_value')->filter())
+            ->whereIn('id', $committeeSettings->pluck('setting_value')->filter())
             ->get()
             ->keyBy('id');
 
-        return view('settings.index', compact('settings', 'allCampuses', 'selectedCampusId', 'isPresident', 'cyclesByCampus', 'claimTypes', 'committeeSettings', 'signatorySettings', 'committeeMembers'));
+        return view('settings.index', compact('settings', 'allCampuses', 'selectedCampusId', 'isPresident', 'cyclesByCampus', 'claimTypes', 'committeeSettings', 'committeeMembers'));
     }
 
     /**
@@ -69,15 +66,7 @@ class SettingController extends Controller
     ];
 
     /**
-     * Campus Cash Flow report signatories (member ids). Prepared by falls back to the campus Treasurer.
-     */
-    public const SIGNATORY_KEYS = [
-        'cash_flow_prepared_by',
-        'cash_flow_checked_by',
-    ];
-
-    /**
-     * Search members of one campus for the member-picker slots (Committee on Claims, report signatories).
+     * Search members of one campus for the Committee on Claims slots.
      */
     public function searchCommitteeMembers(Request $request)
     {
@@ -189,11 +178,6 @@ class SettingController extends Controller
                         $fail('This member is already assigned to another Committee on Claims position.');
                     }
                 },
-            ],
-            'cash_flow_prepared_by', 'cash_flow_checked_by' => [
-                'nullable',
-                'string',
-                Rule::exists('members', 'id')->where('campus_id', $setting->campus_id)->whereNull('deleted_at'),
             ],
             default => ['required', 'string'],
         };
@@ -344,8 +328,8 @@ class SettingController extends Controller
                 $value = number_format((float) $liveSetting->setting_value + (float) $value, 2, '.', '');
             }
 
-            // Committee and signatory assignments are not cycle-bound: no historical snapshot, empty value clears the slot
-            if (in_array($setting->setting_key, [...self::COMMITTEE_KEYS, ...self::SIGNATORY_KEYS], true)) {
+            // Committee assignments are not cycle-bound: no historical snapshot, empty value clears the slot
+            if (in_array($setting->setting_key, self::COMMITTEE_KEYS, true)) {
                 $liveSetting->update(['setting_value' => $value ?? '']);
                 return;
             }

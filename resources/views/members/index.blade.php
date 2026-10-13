@@ -73,7 +73,7 @@
         </div>
          
 
-        <div class="w-full">
+        <div class="w-full">  
             @include('members.partials.members-table')
         </div>
     </div>

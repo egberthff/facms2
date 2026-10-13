@@ -101,11 +101,36 @@
                                         </div>
                                     </div>
                                 </td> --}}
-                                <td class="px-6 py-4 whitespace-nowrap text-right relative" x-data="{ open: false }">
-                                    <div class="relative inline-block text-left">
+                                <td class="px-6 py-4 whitespace-nowrap text-right relative">
+                                    {{-- The menu is position:fixed so the table's overflow container can't clip it --}}
+                                    <div
+                                        x-data="{
+                                            open: false,
+                                            style: '',
+                                            toggle() {
+                                                if (this.open) { this.open = false; return; }
+                                                this.style = 'visibility:hidden';
+                                                this.open = true;
+                                                this.$nextTick(() => {
+                                                    const r = this.$refs.trigger.getBoundingClientRect();
+                                                    const h = this.$refs.menu.offsetHeight;
+                                                    const w = this.$refs.menu.offsetWidth;
+                                                    // Open upward when there isn't room below (e.g. the last rows)
+                                                    const up = window.innerHeight - r.bottom < h + 12 && r.top > h + 12;
+                                                    const top = up ? r.top - h - 8 : r.bottom + 8;
+                                                    const left = Math.max(8, Math.min(r.right - w, window.innerWidth - w - 8));
+                                                    this.style = `top:${top}px;left:${left}px`;
+                                                });
+                                            },
+                                        }"
+                                        @click.outside="open = false"
+                                        @scroll.window.capture="open = false"
+                                        @resize.window="open = false"
+                                        class="relative inline-block text-left">
                                         <!-- Dropdown Trigger Button -->
-                                        <button 
-                                            @click="open = !open" 
+                                        <button
+                                            x-ref="trigger"
+                                            @click="toggle()"
                                             @keydown.escape.window="open = false"
                                             type="button" 
                                             class="inline-flex justify-center items-center gap-x-2 rounded-lg bg-white dark:bg-gray-800 px-3.5 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/80 transition-all duration-150"
@@ -124,17 +149,18 @@
                                         </button>            
                                 
                                         <!-- Dropdown Panel -->
-                                        <div 
-                                            x-show="open" 
-                                            @click.away="open = false" 
-                                            x-transition:enter="transition ease-out duration-100" 
-                                            x-transition:enter-start="transform opacity-0 scale-95" 
-                                            x-transition:enter-end="transform opacity-100 scale-100" 
-                                            x-transition:leave="transition ease-in duration-75" 
-                                            x-transition:leave-start="transform opacity-100 scale-100" 
-                                            x-transition:leave-end="transform opacity-0 scale-95" 
-                                            class="absolute right-0 z-50 mt-2 w-56 origin-top-right rounded-xl bg-white dark:bg-gray-800 shadow-xl ring-1 ring-gray-900/5 dark:ring-gray-700 focus:outline-none py-1.5 overflow-hidden" 
-                                            style="display: none;"
+                                        <div
+                                            x-ref="menu"
+                                            x-show="open"
+                                            x-cloak
+                                            :style="style"
+                                            x-transition:enter="transition ease-out duration-100"
+                                            x-transition:enter-start="transform opacity-0 scale-95"
+                                            x-transition:enter-end="transform opacity-100 scale-100"
+                                            x-transition:leave="transition ease-in duration-75"
+                                            x-transition:leave-start="transform opacity-100 scale-100"
+                                            x-transition:leave-end="transform opacity-0 scale-95"
+                                            class="fixed z-50 w-56 origin-top-right rounded-xl bg-white dark:bg-gray-800 shadow-xl ring-1 ring-gray-900/5 dark:ring-gray-700 focus:outline-none py-1.5 overflow-hidden"
                                         >
                                             <!-- View Claims Option -->
                                             <button 
