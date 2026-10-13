@@ -15,7 +15,7 @@
     $cardDescription = $cardDescription ?? "Search this campus's members to assign the committee. Assigned names print as signatories on claim Forms 1 & 2.";
 @endphp
 
-<x-settings-section :title="$cardTitle" :description="$cardDescription">
+<x-settings-section :title="$cardTitle" :description="$cardDescription" :clip="false">
     <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
         @foreach($committeeSettings as $setting)
             @php
@@ -120,7 +120,7 @@
                                 class="block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-xs focus:border-blue-500 focus:ring-blue-500 disabled:bg-slate-100"
                             />
 
-                            <div x-show="open" x-transition x-cloak class="absolute left-0 right-0 top-full z-20 mt-1 max-h-60 overflow-y-auto rounded-lg border border-slate-200 bg-white shadow-lg">
+                            <div x-show="open" x-transition x-cloak class="absolute left-0 right-0 top-full z-30 mt-1 max-h-60 overflow-y-auto rounded-lg border border-slate-200 bg-white shadow-lg">
                                 <template x-if="loading">
                                     <p class="px-3 py-2 text-sm text-slate-400">Searching...</p>
                                 </template>
