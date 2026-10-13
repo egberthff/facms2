@@ -7,6 +7,7 @@ use App\Models\CollectionSummaryItem;
 use App\Models\CollectionSummaryPeriod;
 use App\Models\User;
 use App\Services\CashFlowService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -88,15 +89,15 @@ class CashFlowController extends Controller
         return view('reports.cash-flow.print', $this->service->printableData($period));
     }
 
-    public function refresh(CollectionSummaryPeriod $period): RedirectResponse
+    public function refresh(Request $request, CollectionSummaryPeriod $period): JsonResponse|RedirectResponse
     {
         $this->authorizeManage($period);
         $this->service->refresh($period);
 
-        return back()->with('success', 'Funds and medical assistance releases refreshed from the system.');
+        return $this->done($request, 'Funds and medical assistance releases refreshed from the system.');
     }
 
-    public function updateOpeningBalance(Request $request, CollectionSummaryPeriod $period): RedirectResponse
+    public function updateOpeningBalance(Request $request, CollectionSummaryPeriod $period): JsonResponse|RedirectResponse
     {
         $this->authorizeManage($period);
 
@@ -107,38 +108,40 @@ class CashFlowController extends Controller
 
         $this->service->updateOpeningBalance($period, (float) $validated['opening_balance'], $validated['opening_label'] ?? null);
 
-        return back()->with('success', 'Forwarded balance updated.');
+        return $this->done($request, 'Forwarded balance updated.');
     }
 
-    public function finalize(CollectionSummaryPeriod $period): RedirectResponse
+    public function finalize(Request $request, CollectionSummaryPeriod $period): JsonResponse|RedirectResponse
     {
         $this->authorizeManage($period);
         $this->service->finalize($period, Auth::user());
 
-        return back()->with('success', 'Cash flow finalized. Manual lines were posted to the campus treasury ledger.');
+        return $this->done($request, 'Cash flow finalized. Manual lines were posted to the campus treasury ledger.');
     }
 
-    public function destroy(CollectionSummaryPeriod $period): RedirectResponse
+    public function destroy(Request $request, CollectionSummaryPeriod $period): JsonResponse|RedirectResponse
     {
         $this->authorizeManage($period);
         $campusId = $period->campus_id;
         $this->service->deleteDraft($period);
 
-        return redirect()
-            ->route('reports.cash-flow.index', ['campus_filter' => $campusId])
-            ->with('success', 'Cash flow draft deleted.');
+        return $this->done(
+            $request,
+            'Cash flow draft deleted.',
+            route('reports.cash-flow.index', ['campus_filter' => $campusId]),
+        );
     }
 
-    public function storeItem(Request $request, CollectionSummaryPeriod $period): RedirectResponse
+    public function storeItem(Request $request, CollectionSummaryPeriod $period): JsonResponse|RedirectResponse
     {
         $this->authorizeManage($period);
 
         $this->service->addManualItem($period, $request->validate($this->itemRules()));
 
-        return back()->with('success', 'Line added.');
+        return $this->done($request, 'Line added.');
     }
 
-    public function updateItem(Request $request, CollectionSummaryItem $item): RedirectResponse
+    public function updateItem(Request $request, CollectionSummaryItem $item): JsonResponse|RedirectResponse
     {
         $this->authorizeManage($item->summary);
 
@@ -148,15 +151,27 @@ class CashFlowController extends Controller
 
         $this->service->updateItem($item, $request->validate($rules));
 
-        return back()->with('success', 'Line updated.');
+        return $this->done($request, 'Line updated.');
     }
 
-    public function destroyItem(CollectionSummaryItem $item): RedirectResponse
+    public function destroyItem(Request $request, CollectionSummaryItem $item): JsonResponse|RedirectResponse
     {
         $this->authorizeManage($item->summary);
         $this->service->deleteItem($item);
 
-        return back()->with('success', 'Line removed.');
+        return $this->done($request, 'Line removed.');
+    }
+
+    /**
+     * The editor submits over fetch and expects JSON; plain form posts keep the redirect.
+     */
+    private function done(Request $request, string $message, ?string $redirect = null): JsonResponse|RedirectResponse
+    {
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true, 'message' => $message, 'redirect' => $redirect]);
+        }
+
+        return ($redirect ? redirect($redirect) : back())->with('success', $message);
     }
 
     private function itemRules(): array

@@ -213,9 +213,9 @@
             </div>
 
             <!-- Pagination Section -->
-            <div class="mt-4">
+            {{-- <div class="mt-4">
                 {{ $entries->appends(request()->query())->links() }}
-            </div>
+            </div> --}}
         </div>
 
     </div>

@@ -194,6 +194,26 @@ class CampusCashFlowTest extends TestCase
             ->assertSeeText('Julie Bitasolo');
     }
 
+    public function test_the_editor_gets_json_responses_with_field_errors(): void
+    {
+        $period = $this->createSampleDraft();
+
+        $this->actingAs($this->treasurer)
+            ->postJson(route('reports.cash-flow.items.store', $period), ['section' => 'disbursements', 'label' => '', 'amount' => 0])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['label', 'amount']);
+
+        $this->actingAs($this->treasurer)
+            ->postJson(route('reports.cash-flow.items.store', $period), ['section' => 'disbursements', 'label' => 'Snacks', 'amount' => 250.50])
+            ->assertOk()
+            ->assertJson(['success' => true, 'message' => 'Line added.', 'redirect' => null]);
+
+        $this->actingAs($this->treasurer)
+            ->deleteJson(route('reports.cash-flow.destroy', $period))
+            ->assertOk()
+            ->assertJson(['success' => true, 'redirect' => route('reports.cash-flow.index', ['campus_filter' => $this->campus->id])]);
+    }
+
     private function createSampleDraft(): CollectionSummaryPeriod
     {
         $this->actingAs($this->treasurer)
