@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Campus;
 use App\Services\DashboardService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -18,7 +19,7 @@ class DashboardController extends Controller
     /**
      * Handles the root routing entry point to the dashboard layouts.
      */
-    public function index()
+    public function index(Request $request)
     {
         $user = Auth::user();
 
@@ -27,7 +28,20 @@ class DashboardController extends Controller
             return view('dashboard.member', $data);
         }
 
-        $data = $this->dashboardService->getAdminMetrics();
+        $allCampuses = null;
+        $selectedCampusId = null;
+
+        if ($user->can('view all campus data')) {
+            $allCampuses = Campus::where('is_active', true)->get();
+            $campusFilter = $request->input('campus_filter');
+            // Unknown or inactive campuses fall back to the global view
+            $selectedCampusId = $allCampuses->contains('id', $campusFilter) ? (string) $campusFilter : null;
+        }
+
+        $data = $this->dashboardService->getAdminMetrics($user, $selectedCampusId);
+        $data['allCampuses'] = $allCampuses;
+        $data['selectedCampusId'] = $selectedCampusId;
+
         return view('dashboard.admin', $data);
     }
 
