@@ -82,6 +82,15 @@
         searchingMember: false,
         submittingMembershipFee: false,
 
+        // Field name => message, shown under each membership fee input
+        membershipErrors: {},
+
+        clearMembershipError(name) {
+            if (name && this.membershipErrors[name]) {
+                this.membershipErrors[name] = '';
+            }
+        },
+
         membershipFee: {
             amount: '',
             status: '',
@@ -134,6 +143,7 @@
         selectMember(member) {
             this.selectedMember = member;
             this.memberResults = [];
+            this.clearMembershipError('member_id');
 
             this.memberSearch = member.name;
         },
@@ -147,6 +157,7 @@
         closeMembershipFeeModal() {
             this.openMembershipFeeModal = false;
 
+            this.membershipErrors = {};
             this.memberSearch = '';
             this.memberResults = [];
             this.selectedMember = null;

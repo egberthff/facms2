@@ -20,6 +20,10 @@ use App\Services\EmailService;
 use App\Services\ContributionService;
 use Illuminate\Http\JsonResponse;
 use App\Services\DashboardService;
+use App\Models\MembershipFee;
+use App\Enums\MembershipFeeStatus;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 // 1. Move the enum here (outside of the class)
 // enum MembershipStatus: string
@@ -400,10 +404,21 @@ class MemberController extends Controller
         );
     }
 
-    public function pay(string $id, Request $request): JsonResponse  
+    public function pay(string $id, Request $request): JsonResponse
     {
-        $data = $request->all();
-        \Log::error(print_r($data, true));
+        // Validated outside the try so the catch below can't turn a 422 into a 404
+        $data = $request->validate([
+            'payment_method_id' => ['required', 'uuid', 'exists:payment_methods,id'],
+            'reference_number' => ['required', 'string', 'max:255', Rule::unique('membership_fees', 'reference_number')->ignore($id)],
+        ]);
+
+        // Marking paid posts a ledger credit, so never do it twice
+        if (MembershipFee::whereKey($id)->where('status', MembershipFeeStatus::Paid->value)->exists()) {
+            throw ValidationException::withMessages([
+                'status' => 'This membership fee is already marked as paid.',
+            ]);
+        }
+
         try {
             $updatedDetail = $this->contributionService->markAsPaid($id, 'membership_fee', $data);
  
