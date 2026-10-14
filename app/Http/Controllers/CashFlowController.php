@@ -47,7 +47,7 @@ class CashFlowController extends Controller
         ]);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request): JsonResponse|RedirectResponse
     {
         $user = Auth::user();
         abort_unless($user->can('manage funds'), 403);
@@ -68,7 +68,7 @@ class CashFlowController extends Controller
 
         $period = $this->service->createDraft($validated, $user);
 
-        return redirect()->route('reports.cash-flow.show', $period)->with('success', 'Cash flow draft created.');
+        return $this->done($request, 'Cash flow draft created.', route('reports.cash-flow.show', $period));
     }
 
     public function show(CollectionSummaryPeriod $period): View
