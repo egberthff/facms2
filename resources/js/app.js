@@ -279,25 +279,104 @@ window.updateClaimStatus = function(claimId, status, claimData = {}) {
             const isDisbursed = normalizedStatus.toLowerCase() === 'disbursed';
 
             if (isDisbursed) {
+                // Server field key => modal input id
+                const fields = {
+                    amount: 'disbursement-amount',
+                    reference_number: 'disbursement-reference',
+                    payment_remarks: 'disbursement-remarks',
+                    proof_file: 'disbursement-proof',
+                };
+
+                const getValues = () => ({
+                    amount: document.getElementById(fields.amount)?.value?.trim() || '',
+                    reference_number: document.getElementById(fields.reference_number)?.value?.trim() || '',
+                    payment_remarks: document.getElementById(fields.payment_remarks)?.value?.trim() || '',
+                    proof_file: document.getElementById(fields.proof_file)?.files?.[0] || null,
+                });
+
+                const clearFieldError = (field) => {
+                    document.getElementById(fields[field])?.classList.remove('error-border');
+                    const message = document.getElementById(`${fields[field]}-error`);
+                    if (message) {
+                        message.textContent = '';
+                        message.classList.add('hidden');
+                    }
+                };
+
+                /**
+                 * Replace the field errors, then focus the first invalid
+                 * one. Returns true when there are no errors.
+                 */
+                const setFieldErrors = (errors) => {
+                    Swal.resetValidationMessage();
+
+                    Object.keys(fields).forEach((field) => {
+                        clearFieldError(field);
+
+                        if (errors[field]) {
+                            document.getElementById(fields[field])?.classList.add('error-border');
+                            const message = document.getElementById(`${fields[field]}-error`);
+                            message.textContent = errors[field];
+                            message.classList.remove('hidden');
+                        }
+                    });
+
+                    const firstInvalid = Object.keys(fields).find((field) => errors[field]);
+                    if (firstInvalid) {
+                        document.getElementById(fields[firstInvalid])?.focus();
+                        return false;
+                    }
+
+                    return true;
+                };
+
+                const validate = (values) => {
+                    const errors = {};
+
+                    if (!values.amount) {
+                        errors.amount = 'Please enter the disbursement amount.';
+                    } else if (isNaN(Number(values.amount)) || Number(values.amount) <= 0) {
+                        errors.amount = 'Amount must be greater than zero.';
+                    }
+
+                    if (!values.reference_number) {
+                        errors.reference_number = 'Please enter the reference code.';
+                    }
+
+                    if (values.proof_file) {
+                        if (!/\.(jpe?g|png|pdf)$/i.test(values.proof_file.name)) {
+                            errors.proof_file = 'Proof must be a JPG, PNG or PDF file.';
+                        } else if (values.proof_file.size > 2 * 1024 * 1024) {
+                            errors.proof_file = 'Proof file must not exceed 2MB.';
+                        }
+                    }
+
+                    return errors;
+                };
+
                 Swal.fire({
                     title: 'Prepare disbursement',
                     html: `
                         <div class="text-left space-y-3">
                             <label class="block text-sm">
-                                <span class="mb-1 block font-semibold text-slate-700">Amount</span>
+                                <span class="mb-1 block font-semibold text-slate-700">Amount <span class="text-red-500">*</span></span>
                                 <input id="disbursement-amount" type="number" step="0.01" min="0" value="${claimData.approved_amount ?? claimData.requested_amount ?? ''}" class="swal2-input" />
+                                <p id="disbursement-amount-error" class="mt-1.5 text-xs text-red-600 hidden"></p>
                             </label>
                             <label class="block text-sm">
                                 <span class="mb-1 block font-semibold text-slate-700">Reference Code <span class="text-red-500">*</span></span>
                                 <input id="disbursement-reference" type="text" class="swal2-input" />
+                                <p id="disbursement-reference-error" class="mt-1.5 text-xs text-red-600 hidden"></p>
                             </label>
                             <label class="block text-sm">
                                 <span class="mb-1 block font-semibold text-slate-700">Remarks</span>
                                 <textarea id="disbursement-remarks" class="swal2-textarea" rows="3"></textarea>
+                                <p id="disbursement-remarks-error" class="mt-1.5 text-xs text-red-600 hidden"></p>
                             </label>
                             <label class="block text-sm">
                                 <span class="mb-1 block font-semibold text-slate-700">Proof / Receipt (optional — JPG, PNG or PDF, max 2MB)</span>
                                 <input id="disbursement-proof" type="file" accept=".jpg,.jpeg,.png,.pdf" class="swal2-file" />
+                                <p id="disbursement-proof-error" class="mt-1.5 text-xs text-red-600 hidden"></p>
                             </label>
                         </div>
                     `,
@@ -307,46 +386,64 @@ window.updateClaimStatus = function(claimId, status, claimData = {}) {
                     cancelButtonColor: '#d33',
                     confirmButtonText: 'Confirm disbursement',
                     focusConfirm: false,
-                    preConfirm: () => {
-                        const amount = document.getElementById('disbursement-amount')?.value?.trim();
-                        const referenceNumber = document.getElementById('disbursement-reference')?.value?.trim() || '';
-                        const remarks = document.getElementById('disbursement-remarks')?.value?.trim() || '';
-                        const proofFile = document.getElementById('disbursement-proof')?.files?.[0] || null;
+                    showLoaderOnConfirm: true,
+                    allowOutsideClick: () => !Swal.isLoading(),
+                    didOpen: () => {
+                        // Typing in a field clears its error
+                        Object.keys(fields).forEach((field) => {
+                            const input = document.getElementById(fields[field]);
+                            input?.addEventListener('input', () => clearFieldError(field));
+                            input?.addEventListener('change', () => clearFieldError(field));
+                        });
+                    },
+                    preConfirm: async () => {
+                        const values = getValues();
 
-                        if (!amount) {
-                            Swal.showValidationMessage('Amount is required.');
+                        if (!setFieldErrors(validate(values))) {
                             return false;
                         }
 
-                        if (!referenceNumber) {
-                            Swal.showValidationMessage('Reference code is required.');
+                        try {
+                            const { ok, payload } = await postClaimStatus(claimId, normalizedStatus, {
+                                status: normalizedStatus,
+                                ...values,
+                            });
+
+                            if (ok) {
+                                return payload;
+                            }
+
+                            // Field validation errors: show them under their inputs, keep the modal open
+                            if (payload.errors) {
+                                const errors = {};
+                                Object.entries(payload.errors).forEach(([field, messages]) => {
+                                    errors[field] = [].concat(messages)[0];
+                                });
+
+                                // Errors for fields not in the modal still need to be seen
+                                const unmapped = Object.keys(errors).find((field) => !fields[field]);
+                                setFieldErrors(errors);
+                                if (unmapped) {
+                                    Swal.showValidationMessage(errors[unmapped]);
+                                }
+                                return false;
+                            }
+
+                            Swal.showValidationMessage(payload.message || 'Something went wrong while updating.');
+                            return false;
+                        } catch (error) {
+                            Swal.showValidationMessage('Something went wrong while updating. Please try again.');
                             return false;
                         }
-
-                        if (proofFile) {
-                            if (!/\.(jpe?g|png|pdf)$/i.test(proofFile.name)) {
-                                Swal.showValidationMessage('Proof must be a JPG, PNG or PDF file.');
-                                return false;
-                            }
-
-                            if (proofFile.size > 2 * 1024 * 1024) {
-                                Swal.showValidationMessage('Proof file must not exceed 2MB.');
-                                return false;
-                            }
-                        }
-
-                        return {
-                            status: normalizedStatus,
-                            amount,
-                            reference_number: referenceNumber,
-                            payment_remarks: remarks,
-                            proof_file: proofFile,
-                        };
                     }
                 }).then((result) => {
                     if (!result.isConfirmed) return;
 
-                    sendStatusRequest(claimId, normalizedStatus, result.value);
+                    Swal.fire({
+                        title: 'SUCCESS',
+                        icon: 'success',
+                        text: result.value?.message || 'Claim marked as disbursed.',
+                    }).then(() => window.location.reload());
                 });
 
                 return;
@@ -644,7 +741,11 @@ window.updateClaimStatus = function(claimId, status, claimData = {}) {
 //     });
 // };
 
- window.sendStatusRequest = function(claimId, status, extraData = {}) {
+ /**
+  * POST a claim status update. Resolves to { ok, payload } so callers can
+  * decide how to surface validation errors.
+  */
+ window.postClaimStatus = async function(claimId, status, extraData = {}) {
             const normalizedStatus = String(status || '').trim();
             const formData = new FormData();
             // (status.toLowerCase().trim() === 'disbursed') ?  formData.append('_method', 'POST') : formData.append('_method', 'PUT');
@@ -658,19 +759,25 @@ window.updateClaimStatus = function(claimId, status, claimData = {}) {
             if (extraData.reference_number) formData.append('reference_number', extraData.reference_number);
             if (extraData.payment_remarks) formData.append('payment_remarks', extraData.payment_remarks);
             if (extraData.proof_file) formData.append('proof_file', extraData.proof_file);
-           console.log(Object.fromEntries(formData.entries()));
-            fetch(`/claims/${claimId}`, {
+
+            const response = await fetch(`/claims/${claimId}`, {
                 method: 'POST',
                 headers: {
                     'Accept': 'application/json',
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                 },
                 body: formData
-            })
-            .then(async response => {
-                const payload = await response.json().catch(() => ({}));
+            });
 
-                if (!response.ok) {
+            const payload = await response.json().catch(() => ({}));
+
+            return { ok: response.ok, payload };
+        }
+
+ window.sendStatusRequest = function(claimId, status, extraData = {}) {
+            postClaimStatus(claimId, status, extraData)
+            .then(({ ok, payload }) => {
+                if (!ok) {
                     // Surface validation errors (422) instead of a generic failure
                     const firstError = payload.errors ? Object.values(payload.errors).flat()[0] : null;
                     throw new Error(firstError || payload.message || 'Something went wrong while updating.');

@@ -63,14 +63,14 @@
                     {{-- @foreach ($yearOptions as $year)
                         <option value="{{ $year }}" {{ ($filters['year'] ?? '') == $year ? 'selected' : '' }}>{{ $year }}</option>
                     @endforeach --}}
-                    <template x-for="year in Array.from({length: new Date().getFullYear() - 2010 + 1}, (_, i) => new Date().getFullYear() - i)">
-                        <option :value="year" x-text="year"></option>
-                    </template>
+                    @foreach (range(now()->year, 2010) as $year)
+                        <option value="{{ $year }}" {{ (string) ($filters['year'] ?? '') === (string) $year ? 'selected' : '' }}>{{ $year }}</option>
+                    @endforeach
                 </select>
                 <select name="claim_type" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-xs focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 sm:w-auto">
                     <option value="">All claim types</option>
                     @foreach ($claimTypeOptions as $claimType)
-                        <option value="{{ $claimType['id'] }}" {{ ($filters['claim_type']['id'] ?? '') == $claimType['id'] ? 'selected' : '' }}>{{ $claimType['name'] }}</option>
+                        <option value="{{ $claimType['id'] }}" {{ ($filters['claim_type'] ?? '') == $claimType['id'] ? 'selected' : '' }}>{{ $claimType['name'] }}</option>
                     @endforeach
                 </select>
                 <select name="status" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-xs focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 sm:w-auto">
@@ -78,15 +78,6 @@
                     <option value="released" {{ ($filters['status'] ?? '') === 'released' ? 'selected' : '' }}>Released</option>
                     <option value="pending" {{ ($filters['status'] ?? '') === 'pending' ? 'selected' : '' }}>Pending</option>
                 </select>
-                @if($isPresident)
-                <input type="hidden" name="campus_filter" value="{{ $selectedCampusId }}">
-                    {{-- <select name="campus_filter" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-xs focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 sm:w-auto">
-                        <option value="">All Campuses</option>
-                        @foreach($allCampuses as $campus)
-                            <option value="{{ $campus->id }}" {{ ($selectedCampusId ?? '') == $campus->id ? 'selected' : '' }}>{{ $campus->acronym }}</option>
-                        @endforeach
-                    </select> --}}
-                @endif
                 <button type="submit" class="inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-xs transition hover:bg-blue-700">Apply</button>
                 <a href="{{ route('disbursement.index') }}" class="inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-xs transition hover:bg-gray-50">Reset</a>
             </form>
