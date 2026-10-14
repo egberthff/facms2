@@ -24,10 +24,10 @@ class DashboardService
     /**
      * Get data tailored for the Admin / Management dashboard.
      */
-    public function getAdminMetrics(?User $user = null): array
+    public function getAdminMetrics(?User $user = null, ?string $selectedCampusId = null): array
     {
         $user ??= Auth::user();
-        $campusId = $this->campusIdFor($user);
+        $campusId = $this->campusIdFor($user, $selectedCampusId);
 
         $statusCounts = $this->claimsQuery($campusId)
             ->selectRaw('status, COUNT(*) as total')
@@ -39,7 +39,9 @@ class DashboardService
 
         return [
             'title'          => 'Admin',
-            'members'        => Member::count(),
+            'members'        => Member::query()
+                ->when($campusId !== null, fn (Builder $query) => $query->where('campus_id', $campusId))
+                ->count(),
             'pendingClaims'  => $statusCounts->get(ClaimStatus::Pending->value, 0),
             'approvedClaims' => $statusCounts->get(ClaimStatus::Approved->value, 0),
             'disbursedClaims'=> $statusCounts->get(ClaimStatus::Disbursed->value, 0),
@@ -57,13 +59,14 @@ class DashboardService
     }
 
     /**
-     * The campus the user is limited to, or null when they may see every campus.
+     * The campus the dashboard is scoped to, or null for every campus.
+     * Federated users may narrow to a selected campus; everyone else is limited to their own.
      * Mirrors CampusMemberScope; an unassigned user gets '' so every query comes back empty.
      */
-    private function campusIdFor(?User $user): ?string
+    private function campusIdFor(?User $user, ?string $selectedCampusId = null): ?string
     {
         if (!$user || $user->can('view all campus data')) {
-            return null;
+            return filled($selectedCampusId) ? (string) $selectedCampusId : null;
         }
 
         return $user->member()->withoutGlobalScopes()->value('campus_id') ?? '';

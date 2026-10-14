@@ -45,7 +45,12 @@
                         <p x-show="errors.entry_date" x-text="errors.entry_date" x-cloak class="mt-1.5 text-xs text-red-600"></p>
                     </div>
                     <div class="md:col-span-2">
-                        <input type="number" name="amount" step="0.01" min="0.01" value="{{ $item->amount }}" placeholder="Amount" :class="{ 'error-border': errors.amount }" class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-xs">
+                        <div class="relative">
+                            <span class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-500">₱</span>
+                            <input type="text" inputmode="decimal" name="amount" data-amount value="{{ number_format((float) $item->amount, 2) }}" placeholder="Amount"
+                                x-on:input="formatAmountInput($el)"
+                                :class="{ 'error-border': errors.amount }" class="block w-full rounded-lg border border-gray-300 bg-white pl-7 pr-3 py-2 text-sm shadow-xs tabular-nums">
+                        </div>
                         <p x-show="errors.amount" x-text="errors.amount" x-cloak class="mt-1.5 text-xs text-red-600"></p>
                     </div>
                 @endif

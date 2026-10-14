@@ -37,28 +37,51 @@
         @endif
 
         @if($canManage)
-            <form method="POST" action="{{ route('reports.cash-flow.store') }}" class="bg-white rounded-xl border border-gray-200 p-4 space-y-4">
+            <form method="POST" action="{{ route('reports.cash-flow.store') }}" class="bg-white rounded-xl border border-gray-200 p-4 space-y-4" novalidate
+                x-data="cashFlowForm({
+                    validate: cashFlowRules.period,
+                    confirm: (v, h) => ({
+                        icon: 'question',
+                        title: 'Create this draft?',
+                        html: 'A cash flow draft will be created for <b>' + h.date(v.period_from) + ' – ' + h.date(v.period_to) + '</b>'
+                            + ('opening_balance' in v ? ', starting with a forwarded balance of <b>P' + h.money(v.opening_balance) + '</b>'
+                                + (v.opening_label.trim() ? ' as of <b>' + h.esc(v.opening_label.trim()) + '</b>' : '') : '')
+                            + '.<br><br>Approved FFA transfers and released medical assistance in the range will be added automatically.',
+                        confirmText: 'Yes, create draft',
+                        loadingText: 'Creating the draft and pulling FFA transfers and medical releases...',
+                    }),
+                })"
+                @submit.prevent="submit" @input="clearError($event.target.name)" @change="clearError($event.target.name)">
                 @csrf
                 <input type="hidden" name="campus_id" value="{{ $selectedCampusId }}">
                 <h2 class="text-lg font-semibold text-gray-900">New period</h2>
 
                 <div class="grid gap-4 md:grid-cols-4">
                     <div>
-                        <label class="mb-1.5 block text-sm font-medium text-gray-700">From</label>
-                        <input type="date" name="period_from" value="{{ old('period_from', $suggestedFrom) }}" class="mt-1 block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-xs" required>
+                        <label class="mb-1.5 block text-sm font-medium text-gray-700">From <span class="text-red-500">*</span></label>
+                        <input type="date" name="period_from" value="{{ old('period_from', $suggestedFrom) }}" :class="{ 'error-border': errors.period_from }" class="mt-1 block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-xs">
+                        <p x-show="errors.period_from" x-text="errors.period_from" x-cloak class="mt-1.5 text-xs text-red-600"></p>
                     </div>
                     <div>
-                        <label class="mb-1.5 block text-sm font-medium text-gray-700">As of</label>
-                        <input type="date" name="period_to" value="{{ old('period_to', now()->toDateString()) }}" class="mt-1 block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-xs" required>
+                        <label class="mb-1.5 block text-sm font-medium text-gray-700">As of <span class="text-red-500">*</span></label>
+                        <input type="date" name="period_to" value="{{ old('period_to', now()->toDateString()) }}" :class="{ 'error-border': errors.period_to }" class="mt-1 block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-xs">
+                        <p x-show="errors.period_to" x-text="errors.period_to" x-cloak class="mt-1.5 text-xs text-red-600"></p>
                     </div>
                     @if($needsOpeningBalance)
                         <div>
-                            <label class="mb-1.5 block text-sm font-medium text-gray-700">Opening (forwarded) balance</label>
-                            <input type="number" name="opening_balance" step="0.01" value="{{ old('opening_balance') }}" class="mt-1 block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-xs" required>
+                            <label class="mb-1.5 block text-sm font-medium text-gray-700">Opening (forwarded) balance <span class="text-red-500">*</span></label>
+                            <div class="relative mt-1">
+                                <span class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-500">₱</span>
+                                <input type="text" inputmode="decimal" name="opening_balance" data-amount value="{{ old('opening_balance') }}" placeholder="0.00"
+                                    x-on:input="formatAmountInput($el, { negative: true })"
+                                    :class="{ 'error-border': errors.opening_balance }" class="block w-full rounded-lg border border-gray-300 bg-white pl-7 pr-3 py-2 text-sm shadow-xs tabular-nums">
+                            </div>
+                            <p x-show="errors.opening_balance" x-text="errors.opening_balance" x-cloak class="mt-1.5 text-xs text-red-600"></p>
                         </div>
                         <div>
                             <label class="mb-1.5 block text-sm font-medium text-gray-700">Balance as of</label>
-                            <input type="text" name="opening_label" value="{{ old('opening_label') }}" placeholder="December 2025" class="mt-1 block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-xs">
+                            <input type="text" name="opening_label" value="{{ old('opening_label') }}" placeholder="December 2025" :class="{ 'error-border': errors.opening_label }" class="mt-1 block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-xs">
+                            <p x-show="errors.opening_label" x-text="errors.opening_label" x-cloak class="mt-1.5 text-xs text-red-600"></p>
                         </div>
                     @endif
                 </div>
@@ -128,4 +151,6 @@
             </div>
         </div>
     </div>
+
+    @include('reports.cash-flow.partials.form-scripts')
 </x-app-layout>

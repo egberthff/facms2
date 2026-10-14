@@ -124,6 +124,50 @@ document.addEventListener('DOMContentLoaded', () => {
     // Datatables
     document.querySelectorAll(".dt-table:not([data-datatable-defer])").forEach(initializeDataTable);
 
+    // Settings amount / whole-number inputs (claim-style typing)
+    document.querySelectorAll('[data-amount-format]').forEach((input) => {
+        input.value = formatAmountValue(input.value);
+    });
+
+    document.addEventListener('input', (event) => {
+        const input = event.target;
+
+        if (input.matches?.('[data-amount-format]')) {
+            // Restore the caret after re-formatting by counting the digits before it.
+            const caret = input.selectionStart ?? input.value.length;
+            const digitsBeforeCaret = input.value.slice(0, caret).replace(/[^\d.]/g, '').length;
+
+            input.value = formatAmountValue(input.value);
+
+            let position = 0;
+            for (let seen = 0; position < input.value.length && seen < digitsBeforeCaret; position++) {
+                if (/[\d.]/.test(input.value[position])) seen++;
+            }
+            input.setSelectionRange(position, position);
+        } else if (input.matches?.('[data-integer]')) {
+            input.value = input.value.replace(/\D/g, '');
+        }
+
+        // Typing in a settings field clears its error
+        const form = input.closest?.('.setting-ajax-form, .cycle-config-form');
+        if (form && input.name) clearSettingsFieldError(form, input.name);
+    });
+
+    document.addEventListener('change', (event) => {
+        const form = event.target.closest?.('.setting-ajax-form, .cycle-config-form');
+        if (form && event.target.name) clearSettingsFieldError(form, event.target.name);
+    });
+
+    document.addEventListener('focusout', (event) => {
+        const input = event.target;
+        if (!input.matches?.('[data-amount-format]') || input.value === '') return;
+
+        const amount = Number(input.value.replace(/,/g, ''));
+        if (Number.isFinite(amount)) {
+            input.value = amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+    });
+
     //Submit system setting config
      document.addEventListener('submit', async function (event) {
         const form = event.target.closest('.setting-ajax-form');
@@ -141,6 +185,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 icon: 'warning',
                 confirmButtonColor: '#2563eb'
             });
+            return;
+        }
+
+        // Field validation: show errors under their inputs before asking to confirm
+        if (!setSettingsFormErrors(form, validateSettingsForm(form))) {
             return;
         }
 
@@ -169,7 +218,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // 4. Capture fields (Including Laravel's hidden _token and _method fields)
         const actionUrl = form.getAttribute('action');
-        const formData = new FormData(form);
+        const formData = settingsFormData(form);
 
         fetch(actionUrl, {
             method: 'POST', // Laravel uses method spoofing POST with hidden input _method: 'PUT'
@@ -212,17 +261,19 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('Settings Form Submission Error:', error);
 
             if (error && error.data) {
-                // If inline error processing function exists, activate field styling highlights
-                // if (error.status === 422 && error.data.errors && typeof displayValidationErrors === 'function') {
-                //     try {
-                //         displayValidationErrors(error.data.errors);
-                //     } catch (uiError) {
-                //         console.error('Error rendering inline settings indicators:', uiError);
-                //     }
-                // }
+                // Field validation errors: show them under their inputs
+                let customErrorMessage = error.data.message || 'Please review input parameters and retry.';
 
-                // EXTRACT BACKEND MESSAGES Dynamically
-                const customErrorMessage = error.data.message || 'Please review input parameters and retry.';
+                if (error.status === 422 && error.data.errors) {
+                    const unmatched = showSettingsServerErrors(form, error.data.errors);
+
+                    if (!unmatched.length) {
+                        Swal.close();
+                        return;
+                    }
+
+                    customErrorMessage = unmatched.join(' ');
+                }
 
                 Swal.fire({
                     title: error.status === 422 ? 'Validation Failed' : 'Update Failed',
@@ -279,25 +330,104 @@ window.updateClaimStatus = function(claimId, status, claimData = {}) {
             const isDisbursed = normalizedStatus.toLowerCase() === 'disbursed';
 
             if (isDisbursed) {
+                // Server field key => modal input id
+                const fields = {
+                    amount: 'disbursement-amount',
+                    reference_number: 'disbursement-reference',
+                    payment_remarks: 'disbursement-remarks',
+                    proof_file: 'disbursement-proof',
+                };
+
+                const getValues = () => ({
+                    amount: document.getElementById(fields.amount)?.value?.trim() || '',
+                    reference_number: document.getElementById(fields.reference_number)?.value?.trim() || '',
+                    payment_remarks: document.getElementById(fields.payment_remarks)?.value?.trim() || '',
+                    proof_file: document.getElementById(fields.proof_file)?.files?.[0] || null,
+                });
+
+                const clearFieldError = (field) => {
+                    document.getElementById(fields[field])?.classList.remove('error-border');
+                    const message = document.getElementById(`${fields[field]}-error`);
+                    if (message) {
+                        message.textContent = '';
+                        message.classList.add('hidden');
+                    }
+                };
+
+                /**
+                 * Replace the field errors, then focus the first invalid
+                 * one. Returns true when there are no errors.
+                 */
+                const setFieldErrors = (errors) => {
+                    Swal.resetValidationMessage();
+
+                    Object.keys(fields).forEach((field) => {
+                        clearFieldError(field);
+
+                        if (errors[field]) {
+                            document.getElementById(fields[field])?.classList.add('error-border');
+                            const message = document.getElementById(`${fields[field]}-error`);
+                            message.textContent = errors[field];
+                            message.classList.remove('hidden');
+                        }
+                    });
+
+                    const firstInvalid = Object.keys(fields).find((field) => errors[field]);
+                    if (firstInvalid) {
+                        document.getElementById(fields[firstInvalid])?.focus();
+                        return false;
+                    }
+
+                    return true;
+                };
+
+                const validate = (values) => {
+                    const errors = {};
+
+                    if (!values.amount) {
+                        errors.amount = 'Please enter the disbursement amount.';
+                    } else if (isNaN(Number(values.amount)) || Number(values.amount) <= 0) {
+                        errors.amount = 'Amount must be greater than zero.';
+                    }
+
+                    if (!values.reference_number) {
+                        errors.reference_number = 'Please enter the reference code.';
+                    }
+
+                    if (values.proof_file) {
+                        if (!/\.(jpe?g|png|pdf)$/i.test(values.proof_file.name)) {
+                            errors.proof_file = 'Proof must be a JPG, PNG or PDF file.';
+                        } else if (values.proof_file.size > 2 * 1024 * 1024) {
+                            errors.proof_file = 'Proof file must not exceed 2MB.';
+                        }
+                    }
+
+                    return errors;
+                };
+
                 Swal.fire({
                     title: 'Prepare disbursement',
                     html: `
                         <div class="text-left space-y-3">
                             <label class="block text-sm">
-                                <span class="mb-1 block font-semibold text-slate-700">Amount</span>
+                                <span class="mb-1 block font-semibold text-slate-700">Amount <span class="text-red-500">*</span></span>
                                 <input id="disbursement-amount" type="number" step="0.01" min="0" value="${claimData.approved_amount ?? claimData.requested_amount ?? ''}" class="swal2-input" />
+                                <p id="disbursement-amount-error" class="mt-1.5 text-xs text-red-600 hidden"></p>
                             </label>
                             <label class="block text-sm">
                                 <span class="mb-1 block font-semibold text-slate-700">Reference Code <span class="text-red-500">*</span></span>
                                 <input id="disbursement-reference" type="text" class="swal2-input" />
+                                <p id="disbursement-reference-error" class="mt-1.5 text-xs text-red-600 hidden"></p>
                             </label>
                             <label class="block text-sm">
                                 <span class="mb-1 block font-semibold text-slate-700">Remarks</span>
                                 <textarea id="disbursement-remarks" class="swal2-textarea" rows="3"></textarea>
+                                <p id="disbursement-remarks-error" class="mt-1.5 text-xs text-red-600 hidden"></p>
                             </label>
                             <label class="block text-sm">
                                 <span class="mb-1 block font-semibold text-slate-700">Proof / Receipt (optional — JPG, PNG or PDF, max 2MB)</span>
                                 <input id="disbursement-proof" type="file" accept=".jpg,.jpeg,.png,.pdf" class="swal2-file" />
+                                <p id="disbursement-proof-error" class="mt-1.5 text-xs text-red-600 hidden"></p>
                             </label>
                         </div>
                     `,
@@ -307,46 +437,64 @@ window.updateClaimStatus = function(claimId, status, claimData = {}) {
                     cancelButtonColor: '#d33',
                     confirmButtonText: 'Confirm disbursement',
                     focusConfirm: false,
-                    preConfirm: () => {
-                        const amount = document.getElementById('disbursement-amount')?.value?.trim();
-                        const referenceNumber = document.getElementById('disbursement-reference')?.value?.trim() || '';
-                        const remarks = document.getElementById('disbursement-remarks')?.value?.trim() || '';
-                        const proofFile = document.getElementById('disbursement-proof')?.files?.[0] || null;
+                    showLoaderOnConfirm: true,
+                    allowOutsideClick: () => !Swal.isLoading(),
+                    didOpen: () => {
+                        // Typing in a field clears its error
+                        Object.keys(fields).forEach((field) => {
+                            const input = document.getElementById(fields[field]);
+                            input?.addEventListener('input', () => clearFieldError(field));
+                            input?.addEventListener('change', () => clearFieldError(field));
+                        });
+                    },
+                    preConfirm: async () => {
+                        const values = getValues();
 
-                        if (!amount) {
-                            Swal.showValidationMessage('Amount is required.');
+                        if (!setFieldErrors(validate(values))) {
                             return false;
                         }
 
-                        if (!referenceNumber) {
-                            Swal.showValidationMessage('Reference code is required.');
+                        try {
+                            const { ok, payload } = await postClaimStatus(claimId, normalizedStatus, {
+                                status: normalizedStatus,
+                                ...values,
+                            });
+
+                            if (ok) {
+                                return payload;
+                            }
+
+                            // Field validation errors: show them under their inputs, keep the modal open
+                            if (payload.errors) {
+                                const errors = {};
+                                Object.entries(payload.errors).forEach(([field, messages]) => {
+                                    errors[field] = [].concat(messages)[0];
+                                });
+
+                                // Errors for fields not in the modal still need to be seen
+                                const unmapped = Object.keys(errors).find((field) => !fields[field]);
+                                setFieldErrors(errors);
+                                if (unmapped) {
+                                    Swal.showValidationMessage(errors[unmapped]);
+                                }
+                                return false;
+                            }
+
+                            Swal.showValidationMessage(payload.message || 'Something went wrong while updating.');
+                            return false;
+                        } catch (error) {
+                            Swal.showValidationMessage('Something went wrong while updating. Please try again.');
                             return false;
                         }
-
-                        if (proofFile) {
-                            if (!/\.(jpe?g|png|pdf)$/i.test(proofFile.name)) {
-                                Swal.showValidationMessage('Proof must be a JPG, PNG or PDF file.');
-                                return false;
-                            }
-
-                            if (proofFile.size > 2 * 1024 * 1024) {
-                                Swal.showValidationMessage('Proof file must not exceed 2MB.');
-                                return false;
-                            }
-                        }
-
-                        return {
-                            status: normalizedStatus,
-                            amount,
-                            reference_number: referenceNumber,
-                            payment_remarks: remarks,
-                            proof_file: proofFile,
-                        };
                     }
                 }).then((result) => {
                     if (!result.isConfirmed) return;
 
-                    sendStatusRequest(claimId, normalizedStatus, result.value);
+                    Swal.fire({
+                        title: 'SUCCESS',
+                        icon: 'success',
+                        text: result.value?.message || 'Claim marked as disbursed.',
+                    }).then(() => window.location.reload());
                 });
 
                 return;
@@ -644,7 +792,11 @@ window.updateClaimStatus = function(claimId, status, claimData = {}) {
 //     });
 // };
 
- window.sendStatusRequest = function(claimId, status, extraData = {}) {
+ /**
+  * POST a claim status update. Resolves to { ok, payload } so callers can
+  * decide how to surface validation errors.
+  */
+ window.postClaimStatus = async function(claimId, status, extraData = {}) {
             const normalizedStatus = String(status || '').trim();
             const formData = new FormData();
             // (status.toLowerCase().trim() === 'disbursed') ?  formData.append('_method', 'POST') : formData.append('_method', 'PUT');
@@ -658,19 +810,25 @@ window.updateClaimStatus = function(claimId, status, claimData = {}) {
             if (extraData.reference_number) formData.append('reference_number', extraData.reference_number);
             if (extraData.payment_remarks) formData.append('payment_remarks', extraData.payment_remarks);
             if (extraData.proof_file) formData.append('proof_file', extraData.proof_file);
-           console.log(Object.fromEntries(formData.entries()));
-            fetch(`/claims/${claimId}`, {
+
+            const response = await fetch(`/claims/${claimId}`, {
                 method: 'POST',
                 headers: {
                     'Accept': 'application/json',
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                 },
                 body: formData
-            })
-            .then(async response => {
-                const payload = await response.json().catch(() => ({}));
+            });
 
-                if (!response.ok) {
+            const payload = await response.json().catch(() => ({}));
+
+            return { ok: response.ok, payload };
+        }
+
+ window.sendStatusRequest = function(claimId, status, extraData = {}) {
+            postClaimStatus(claimId, status, extraData)
+            .then(({ ok, payload }) => {
+                if (!ok) {
                     // Surface validation errors (422) instead of a generic failure
                     const firstError = payload.errors ? Object.values(payload.errors).flat()[0] : null;
                     throw new Error(firstError || payload.message || 'Something went wrong while updating.');
@@ -1138,12 +1296,159 @@ window.updateClaimStatus = function(claimId, status, claimData = {}) {
         return false;
     };
 
+/* =====================================================
+ * SETTINGS FORM VALIDATION (claim submission pattern)
+ * Rules come from the field attributes: required, maxlength,
+ * data-amount-format (+ data-positive, data-max), data-integer (+ data-min, data-max).
+ * ===================================================== */
+
+// Keeps only digits and one decimal point (max 2 decimals), then groups the whole part with commas.
+function formatAmountValue(value) {
+    const cleaned = String(value ?? '').replace(/[^\d.]/g, '');
+    const [whole, ...decimals] = cleaned.split('.');
+    const grouped = whole.replace(/^0+(?=\d)/, '').replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+
+    return cleaned.includes('.') ? `${grouped || '0'}.${decimals.join('').slice(0, 2)}` : grouped;
+}
+
+function validateSettingsForm(form) {
+    const errors = {};
+    const fields = form.querySelectorAll('input[name]:not([type="hidden"]):not([type="checkbox"]):not(:disabled), select[name]:not(:disabled), textarea[name]:not(:disabled)');
+
+    fields.forEach((field) => {
+        if (errors[field.name]) return;
+
+        const label = field.dataset.label || 'value';
+        const value = field.value.trim();
+
+        if (value === '') {
+            if (field.required) {
+                errors[field.name] = field.tagName === 'SELECT' ? `Please select the ${label}.` : `Please enter the ${label}.`;
+            }
+            return;
+        }
+
+        if (field.hasAttribute('data-amount-format')) {
+            const raw = value.replace(/,/g, '');
+
+            if (!/^\d+(\.\d{1,2})?$/.test(raw)) {
+                errors[field.name] = 'Enter a valid amount with up to 2 decimal places.';
+            } else if (field.hasAttribute('data-positive') && Number(raw) <= 0) {
+                errors[field.name] = `The ${label} must be greater than zero.`;
+            } else if (field.dataset.max && Number(raw) > Number(field.dataset.max)) {
+                errors[field.name] = `The ${label} may not be greater than ${Number(field.dataset.max).toLocaleString('en-US')}.`;
+            }
+            return;
+        }
+
+        if (field.hasAttribute('data-integer')) {
+            const min = field.dataset.min !== undefined ? Number(field.dataset.min) : null;
+            const max = field.dataset.max !== undefined ? Number(field.dataset.max) : null;
+
+            if (!/^\d+$/.test(value)) {
+                errors[field.name] = `The ${label} must be a whole number.`;
+            } else if ((min !== null && Number(value) < min) || (max !== null && Number(value) > max)) {
+                errors[field.name] = `The ${label} must be between ${min} and ${max}.`;
+            }
+            return;
+        }
+
+        if (field.maxLength > 0 && value.length > field.maxLength) {
+            errors[field.name] = `The ${label} may not be longer than ${field.maxLength} characters.`;
+        }
+    });
+
+    return errors;
+}
+
+function clearSettingsFieldError(form, name) {
+    form.querySelectorAll(`[name="${name}"]:not([type="hidden"])`).forEach((el) => el.classList.remove('error-border'));
+
+    const message = form.querySelector(`[data-error-for="${name}"]`);
+    if (message) {
+        message.textContent = '';
+        message.classList.add('hidden');
+    }
+}
+
+/**
+ * Replace the form's field errors and focus the first invalid one.
+ * Returns true when there are no errors.
+ */
+function setSettingsFormErrors(form, errors) {
+    form.querySelectorAll('[data-error-for]').forEach((el) => clearSettingsFieldError(form, el.dataset.errorFor));
+
+    let firstInvalid = null;
+
+    Object.entries(errors).forEach(([name, message]) => {
+        if (!message) return;
+
+        const input = form.querySelector(`[name="${name}"]:not([type="hidden"])`);
+        input?.classList.add('error-border');
+
+        const target = form.querySelector(`[data-error-for="${name}"]`);
+        if (target) {
+            target.textContent = message;
+            target.classList.remove('hidden');
+        }
+
+        firstInvalid ??= input || target;
+    });
+
+    if (firstInvalid) {
+        firstInvalid.focus?.();
+        firstInvalid.scrollIntoView?.({ behavior: 'smooth', block: 'center' });
+        return false;
+    }
+
+    return true;
+}
+
+/**
+ * Show server-side (422) errors under their fields. Returns the messages
+ * that have no place on this form, so the caller can still show them.
+ */
+function showSettingsServerErrors(form, serverErrors) {
+    const fieldErrors = {};
+    const unmatched = [];
+
+    Object.entries(serverErrors).forEach(([name, messages]) => {
+        const message = [].concat(messages)[0];
+
+        if (form.querySelector(`[data-error-for="${name}"]`)) {
+            fieldErrors[name] = message;
+        } else {
+            unmatched.push(message);
+        }
+    });
+
+    setSettingsFormErrors(form, fieldErrors);
+
+    return unmatched;
+}
+
+// Amount fields show thousands separators; send the raw number.
+function settingsFormData(form) {
+    const formData = new FormData(form);
+
+    form.querySelectorAll('[data-amount-format][name]').forEach((input) => {
+        if (!input.disabled) formData.set(input.name, input.value.replace(/,/g, '').trim());
+    });
+
+    return formData;
+}
+
 window.saveCycleConfig = function (event, formElement) {
     // 1. Properly stop the browser from reloading the page
     event.preventDefault();
 
+    // Field validation: show errors under their inputs before asking to confirm
+    if (!setSettingsFormErrors(formElement, validateSettingsForm(formElement))) {
+        return;
+    }
+
     // 2. Build FormData using the passed form element context
-    const formData = new FormData(formElement);
+    const formData = settingsFormData(formElement);
     const actionUrl = formElement.action;
 
     // 3. For logging FormData, console.log(formData) often prints empty. 
@@ -1216,11 +1521,24 @@ window.saveCycleConfig = function (event, formElement) {
 
                 // Check if we caught a structured server error response
                 if (error && error.data) {
+                    let errorMessage = error.data.message || 'Please check your inputs and try again.';
+
+                    // Field validation errors: show them under their inputs
+                    if (error.status === 422 && error.data.errors) {
+                        const unmatched = showSettingsServerErrors(formElement, error.data.errors);
+
+                        if (!unmatched.length) {
+                            Swal.close();
+                            return;
+                        }
+
+                        errorMessage = unmatched.join(' ');
+                    }
 
                     // 2. ERROR POPUP (Displays whatever custom message the server sent)
                     Swal.fire({
                         title: error.status === 422 ? 'Validation Failed' : 'Action Failed',
-                        text: error.data.message || 'Please check your inputs and try again.',
+                        text: errorMessage,
                         icon: error.status === 403 ? 'warning' : 'error',
                         confirmButtonColor: '#2563eb'
                     });

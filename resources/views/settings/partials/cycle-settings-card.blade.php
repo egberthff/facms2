@@ -60,7 +60,7 @@
             <span class="shrink-0 rounded-full bg-white px-2 py-0.5 text-[10px] font-semibold text-slate-500 ring-1 ring-slate-200">{{ optional($cycleSetting->campus)->acronym ?? 'Campus' }}</span>
         </div>
 
-        <form method="POST" action="{{ route('settings.update', $cycleSetting) }}" class="mt-auto space-y-1.5" onsubmit="saveCycleConfig(event, this)">
+        <form method="POST" action="{{ route('settings.update', $cycleSetting) }}" class="cycle-config-form mt-auto space-y-1.5" onsubmit="saveCycleConfig(event, this)" novalidate>
             @csrf
             @method('PUT')
             <input type="hidden" name="campus_filter" value="{{ $selectedCampusId ?? '' }}">
@@ -71,9 +71,10 @@
 
             <label for="cycle-years" class="block text-[11px] font-semibold uppercase tracking-wide text-slate-500">Number of years</label>
             <div class="flex gap-2">
-                <input id="cycle-years" name="cycle_years" type="number" min="1" max="20" value="{{ old('cycle_years', optional($yearsSetting)->setting_value) }}" required @disabled(!$canEdit || $cycleLocked) class="block min-w-0 flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-xs focus:border-blue-500 focus:ring-blue-500 disabled:bg-slate-100">
+                <input id="cycle-years" name="cycle_years" type="text" inputmode="numeric" data-integer data-min="1" data-max="20" maxlength="2" data-label="number of years" value="{{ old('cycle_years', optional($yearsSetting)->setting_value) }}" required @disabled(!$canEdit || $cycleLocked) class="block min-w-0 flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-xs focus:border-blue-500 focus:ring-blue-500 disabled:bg-slate-100">
                 <button type="submit" @disabled(!$canEdit || $cycleLocked) class="shrink-0 rounded-lg bg-blue-600 px-3.5 py-2 text-sm font-semibold text-white shadow-xs transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-slate-300">{{ $cycleLocked ? 'Locked' : ($canEdit ? 'Save' : 'Select campus') }}</button>
             </div>
+            <p data-error-for="cycle_years" class="mt-1.5 text-xs text-red-600 hidden"></p>
             <p class="text-xs text-slate-400">
                 @if($cycleLocked)
                     Locked because a claims cycle has already been initialized.

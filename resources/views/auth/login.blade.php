@@ -12,7 +12,16 @@
     <!-- Session Flash Status (e.g., password reset messages) -->
     <x-auth-session-status class="mt-4" :status="session('status')" />
 
-    <form method="POST" action="{{ route('login') }}" class="mt-6 space-y-5">
+    <form
+        id="login-form"
+        method="POST"
+        action="{{ route('login') }}"
+        class="mt-6 space-y-5"
+        novalidate
+        x-data="loginForm(@js((object) collect($errors->getMessages())->map(fn ($messages) => $messages[0])->all()))"
+        @input="clearError($event.target.name)"
+        @change="clearError($event.target.name)"
+        @submit.prevent="submitForm">
         @csrf
 
         <!-- Email Address Entry Field -->
@@ -22,13 +31,14 @@
                 <x-text-input id="email" class="block w-full px-4 py-2.5 border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 text-sm transition duration-150 ease-in-out" 
                     type="email" 
                     name="email" 
-                    :value="old('email')" 
-                    required 
+                    :value="old('email')"
+                    x-bind:class="{ 'error-border': errors.email }"
+                    required
                     autofocus 
                     autocomplete="username" 
                     placeholder="username@bisu.edu.ph" />
             </div>
-            <x-input-error :messages="$errors->get('email')" class="mt-1.5 text-xs text-red-500" />
+            <p id="email-error" x-show="errors.email" x-text="errors.email" x-cloak class="mt-1.5 text-xs text-red-600"></p>
         </div>
 
         <!-- Password Entry Field -->
@@ -41,7 +51,8 @@
                 <x-text-input id="password" class="block w-full pl-4 pr-12 py-2.5 border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 text-sm transition duration-150 ease-in-out"
                     type="password"
                     name="password"
-                    required 
+                    x-bind:class="{ 'error-border': errors.password }"
+                    required
                     autocomplete="current-password" 
                     placeholder="••••••••" />
 
@@ -59,7 +70,7 @@
                 </button>
             </div>
 
-            <x-input-error :messages="$errors->get('password')" class="mt-1.5 text-xs text-red-500" />
+            <p id="password-error" x-show="errors.password" x-text="errors.password" x-cloak class="mt-1.5 text-xs text-red-600"></p>
         </div>
 
         <!-- Remember Me checkbox & Forgot Password link -->
@@ -78,8 +89,12 @@
 
         <!-- Submit Action Button -->
         <div class="pt-2">
-            <button type="submit" class="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-semibold text-white bg-[#1e293b] hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 transition duration-150 ease-in-out transform active:scale-[0.98]">
-                {{ __('Sign In') }}
+            <button type="submit" x-bind:disabled="loading" class="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-semibold text-white bg-[#1e293b] hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 transition duration-150 ease-in-out transform active:scale-[0.98] disabled:opacity-80 disabled:cursor-wait">
+                <svg x-show="loading" style="display: none;" class="animate-spin -ml-1 mr-2 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                </svg>
+                <span x-text="loading ? '{{ __('Signing in...') }}' : '{{ __('Sign In') }}'">{{ __('Sign In') }}</span>
             </button>
         </div>
         
@@ -118,6 +133,150 @@
                 eyeIcon.classList.remove('hidden');
                 eyeOffIcon.classList.add('hidden');
             }
+        }
+
+        function loginForm(initialErrors = {}) {
+
+            return {
+
+                /* =====================================================
+                 * VALIDATION ERRORS (field name => message)
+                 * ===================================================== */
+
+                errors: { ...initialErrors },
+
+                loading: false,
+
+                init() {
+                    // Errors from a non-JS fallback submit: focus the first one
+                    if (Object.keys(this.errors).length) {
+                        this.focusFirstError();
+                    }
+                },
+
+                async submitForm() {
+
+                    if (!this.validate()) {
+                        return;
+                    }
+
+                    const form = document.getElementById('login-form');
+                    const formData = new FormData(form);
+
+                    this.loading = true;
+
+                    try {
+                        const response = await fetch(form.action, {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                                'Accept': 'application/json',
+                                'X-Requested-With': 'XMLHttpRequest',
+                            },
+                            body: formData
+                        });
+
+                        const data = await response.json();
+
+                        if (!response.ok) {
+                            throw data;
+                        }
+
+                        // Keep the button spinning until the next page loads
+                        window.location.href = data.redirect;
+
+                    } catch (error) {
+                        this.loading = false;
+
+                        // Field validation errors (incl. wrong credentials / throttling): show them under their inputs
+                        if (error && error.errors) {
+                            form.querySelector('[name="password"]').value = '';
+                            this.showServerErrors(error.errors);
+                            return;
+                        }
+
+                        let errorMessage = 'Something went wrong. Please try again.';
+                        if (error && error.message) {
+                            errorMessage = error.message;
+                        }
+
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Oops...',
+                            text: errorMessage
+                        });
+                    }
+                },
+
+                /* =====================================================
+                 * VALIDATION
+                 * ===================================================== */
+
+                validate() {
+
+                    const value = (name) => (document.querySelector(`#login-form [name="${name}"]`)?.value || '').trim();
+                    const errors = {};
+
+                    if (!value('email')) {
+                        errors.email = 'Please enter your email address.';
+                    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value('email'))) {
+                        errors.email = 'Please enter a valid email address.';
+                    }
+
+                    if (!value('password')) {
+                        errors.password = 'Please enter your password.';
+                    }
+
+                    return this.setErrors(errors);
+                },
+
+                /**
+                 * Replace all field errors, then focus the first invalid
+                 * one. Returns true when the form has no errors.
+                 */
+                setErrors(errors) {
+                    this.errors = errors;
+
+                    if (Object.keys(errors).length) {
+                        this.focusFirstError();
+                        return false;
+                    }
+
+                    return true;
+                },
+
+                focusFirstError() {
+                    this.$nextTick(() => {
+                        const form = document.getElementById('login-form');
+                        const first = Array.from(form.elements).find(el => el.name && this.errors[el.name]);
+
+                        if (first) {
+                            first.focus();
+                        }
+                    });
+                },
+
+                clearError(name) {
+                    if (name && this.errors[name]) {
+                        this.errors[name] = '';
+                    }
+                },
+
+                /**
+                 * Show server-side (422) validation errors under their fields.
+                 */
+                showServerErrors(serverErrors) {
+                    const errors = {};
+
+                    Object.entries(serverErrors).forEach(([field, messages]) => {
+                        errors[field] = [].concat(messages)[0];
+                    });
+
+                    this.setErrors(errors);
+                },
+
+            }
+
         }
     </script>
 </x-guest-layout>

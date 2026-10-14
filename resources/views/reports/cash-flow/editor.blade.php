@@ -133,7 +133,12 @@
                         </div>
                         <div>
                             <label class="block text-xs font-medium text-gray-600">Amount</label>
-                            <input type="number" name="opening_balance" step="0.01" value="{{ $period->forwarded_balance }}" :class="{ 'error-border': errors.opening_balance }" class="mt-1 w-36 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-xs">
+                            <div class="relative mt-1">
+                                <span class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-500">₱</span>
+                                <input type="text" inputmode="decimal" name="opening_balance" data-amount value="{{ $money($period->forwarded_balance) }}"
+                                    x-on:input="formatAmountInput($el, { negative: true })"
+                                    :class="{ 'error-border': errors.opening_balance }" class="w-40 rounded-lg border border-gray-300 bg-white pl-7 pr-3 py-2 text-sm shadow-xs tabular-nums">
+                            </div>
                             <p x-show="errors.opening_balance" x-text="errors.opening_balance" x-cloak class="mt-1.5 max-w-48 text-xs text-red-600"></p>
                         </div>
                         <button type="submit" class="mt-5 rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white shadow-xs transition hover:bg-blue-700">Save</button>
@@ -236,7 +241,12 @@
                     </div>
                     <div class="md:col-span-2">
                         <label class="mb-1.5 block text-sm font-medium text-gray-700">Amount <span class="text-red-500">*</span></label>
-                        <input type="number" name="amount" step="0.01" min="0.01" value="{{ old('amount') }}" :class="{ 'error-border': errors.amount }" class="mt-1 block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-xs">
+                        <div class="relative mt-1">
+                            <span class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-500">₱</span>
+                            <input type="text" inputmode="decimal" name="amount" data-amount value="{{ old('amount') }}" placeholder="0.00"
+                                x-on:input="formatAmountInput($el)"
+                                :class="{ 'error-border': errors.amount }" class="block w-full rounded-lg border border-gray-300 bg-white pl-7 pr-3 py-2 text-sm shadow-xs tabular-nums">
+                        </div>
                         <p x-show="errors.amount" x-text="errors.amount" x-cloak class="mt-1.5 text-xs text-red-600"></p>
                     </div>
                     <div class="md:col-span-2 md:pt-7">
@@ -263,196 +273,5 @@
 
     <x-file-preview-modal />
 
-    <script>
-        /**
-         * Client-side rules mirroring CashFlowController. Each returns { field: message }.
-         */
-        window.cashFlowRules = (() => {
-            const amountError = (value, { positive = false } = {}) => {
-                const raw = String(value ?? '').trim();
-
-                if (raw === '') return 'Please enter the amount.';
-                if (!/^-?\d+(\.\d{1,2})?$/.test(raw)) return 'Enter a valid amount with up to 2 decimal places.';
-                if (positive && Number(raw) <= 0) return 'Amount must be greater than zero.';
-
-                return '';
-            };
-
-            const maxLength = (value, max, label) =>
-                String(value ?? '').trim().length > max ? `${label} may not be longer than ${max} characters.` : '';
-
-            return {
-                openingBalance(values) {
-                    return {
-                        opening_balance: amountError(values.opening_balance),
-                        opening_label: maxLength(values.opening_label, 100, 'The "balance as of" label'),
-                    };
-                },
-
-                // System lines only send label and notes; amount and date are checked when present
-                item(values) {
-                    const errors = {};
-
-                    if ('section' in values && !['funds', 'disbursements'].includes(values.section)) {
-                        errors.section = 'Please select a section.';
-                    }
-
-                    if (!String(values.label ?? '').trim()) {
-                        errors.label = 'Please enter a description.';
-                    } else {
-                        errors.label = maxLength(values.label, 255, 'Description');
-                    }
-
-                    if ('amount' in values) {
-                        errors.amount = amountError(values.amount, { positive: true });
-                    }
-
-                    if (values.entry_date && Number.isNaN(Date.parse(values.entry_date))) {
-                        errors.entry_date = 'Please enter a valid date.';
-                    }
-
-                    errors.notes = maxLength(values.notes, 255, 'Note');
-
-                    return errors;
-                },
-            };
-        })();
-
-        /**
-         * Confirms with SweetAlert, shows field errors inline (client and server 422),
-         * then submits over fetch and reloads on success.
-         */
-        window.cashFlowForm = function ({ confirm, validate = () => ({}) } = {}) {
-            const helpers = {
-                esc: (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]),
-                money: (value) => Number(value ?? 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-                date: (value) => new Date(`${value}T00:00:00`).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
-            };
-
-            return {
-                errors: {},
-
-                clearError(name) {
-                    if (name && this.errors[name]) {
-                        this.errors[name] = '';
-                    }
-                },
-
-                /**
-                 * Replace the form's errors and focus the first invalid field.
-                 * Returns true when there are no errors.
-                 */
-                setErrors(errors) {
-                    this.errors = Object.fromEntries(Object.entries(errors).filter(([, message]) => message));
-
-                    const firstInvalid = Object.keys(this.errors)[0];
-
-                    if (firstInvalid) {
-                        this.$nextTick(() => this.$root.querySelector(`[name="${firstInvalid}"]`)?.focus());
-                        return false;
-                    }
-
-                    return true;
-                },
-
-                /**
-                 * Show 422 errors under their fields. Returns the messages that have
-                 * no field on this form (e.g. "period is finalized").
-                 */
-                showServerErrors(serverErrors) {
-                    const fieldErrors = {};
-                    const unmatched = [];
-
-                    Object.entries(serverErrors).forEach(([key, messages]) => {
-                        const message = [].concat(messages)[0];
-
-                        if (this.$root.querySelector(`[name="${key}"]:not([type="hidden"])`)) {
-                            fieldErrors[key] = message;
-                        } else {
-                            unmatched.push(message);
-                        }
-                    });
-
-                    this.setErrors(fieldErrors);
-
-                    return unmatched;
-                },
-
-                async submit(event) {
-                    const form = event.target;
-                    const formData = new FormData(form);
-                    const values = Object.fromEntries(formData.entries());
-
-                    if (!this.setErrors(validate(values))) {
-                        return;
-                    }
-
-                    const options = typeof confirm === 'function' ? confirm(values, helpers) : confirm;
-
-                    const result = await Swal.fire({
-                        icon: options.icon || 'question',
-                        title: options.title,
-                        html: options.html,
-                        showCancelButton: true,
-                        confirmButtonText: options.confirmText || 'Yes, continue',
-                        cancelButtonText: 'Cancel',
-                        confirmButtonColor: options.color || '#2563eb',
-                        cancelButtonColor: '#64748b',
-                        focusCancel: options.icon === 'warning',
-                    });
-
-                    if (!result.isConfirmed) return;
-
-                    Swal.fire({
-                        title: 'Please wait',
-                        text: options.loadingText || 'Saving your changes...',
-                        allowOutsideClick: false,
-                        allowEscapeKey: false,
-                        didOpen: () => Swal.showLoading(),
-                    });
-
-                    try {
-                        const response = await fetch(form.action, {
-                            method: 'POST', // PUT and DELETE are spoofed through the form's _method field
-                            headers: {
-                                'Accept': 'application/json',
-                                'X-Requested-With': 'XMLHttpRequest',
-                            },
-                            body: formData,
-                        });
-
-                        const payload = await response.json().catch(() => ({}));
-
-                        if (response.status === 422 && payload.errors) {
-                            const unmatched = this.showServerErrors(payload.errors);
-
-                            if (unmatched.length) {
-                                Swal.fire({ icon: 'error', title: 'Action not allowed', text: unmatched.join(' '), confirmButtonColor: '#2563eb' });
-                            } else {
-                                Swal.close();
-                            }
-
-                            return;
-                        }
-
-                        if (!response.ok) {
-                            throw new Error(response.status === 403
-                                ? 'You are not allowed to change this cash flow period.'
-                                : (payload.message || 'Something went wrong. Please try again.'));
-                        }
-
-                        await Swal.fire({ icon: 'success', title: 'Success!', text: payload.message, confirmButtonColor: '#2563eb' });
-
-                        if (payload.redirect) {
-                            window.location.href = payload.redirect;
-                        } else {
-                            window.location.reload();
-                        }
-                    } catch (error) {
-                        Swal.fire({ icon: 'error', title: 'Error', text: error.message || 'Something went wrong. Please try again.', confirmButtonColor: '#2563eb' });
-                    }
-                },
-            };
-        };
-    </script>
+    @include('reports.cash-flow.partials.form-scripts')
 </x-app-layout>

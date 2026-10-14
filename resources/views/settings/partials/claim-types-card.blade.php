@@ -6,29 +6,36 @@
                 <p class="mt-0.5 text-xs leading-5 text-slate-500">New types become available on the claim form when marked active.</p>
             </div>
 
-            <form method="POST" action="{{ route('settings.claim-types.store') }}" class="setting-ajax-form space-y-3" data-can-edit="true" data-confirm-text="Add this claim type? It will be available to all campuses.">
+            <form method="POST" action="{{ route('settings.claim-types.store') }}" class="setting-ajax-form space-y-3" data-can-edit="true" novalidate data-confirm-text="Add this claim type? It will be available to all campuses.">
                 @csrf
                 <input type="hidden" name="campus_filter" value="{{ $selectedCampusId ?? '' }}">
 
                 <div>
                     <label for="claim-type-name" class="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">Name</label>
-                    <input id="claim-type-name" name="name" type="text" maxlength="100" data-title-case value="{{ old('name') }}" required placeholder="e.g. Outpatient" class="block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-xs focus:border-blue-500 focus:ring-blue-500">
+                    <input id="claim-type-name" name="name" type="text" maxlength="100" data-title-case data-label="claim type name" value="{{ old('name') }}" required placeholder="e.g. Outpatient" class="block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-xs focus:border-blue-500 focus:ring-blue-500">
+                    <p data-error-for="name" class="mt-1.5 text-xs text-red-600 hidden"></p>
                 </div>
 
                 <div class="grid gap-3 sm:grid-cols-2">
                     <div>
                         <label for="claim-type-document" class="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">Required document</label>
-                        <input id="claim-type-document" name="required_document" type="text" maxlength="255" value="{{ old('required_document') }}" required placeholder="e.g. Medical Certificate" class="block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-xs focus:border-blue-500 focus:ring-blue-500">
+                        <input id="claim-type-document" name="required_document" type="text" maxlength="255" data-label="required document" value="{{ old('required_document') }}" required placeholder="e.g. Medical Certificate" class="block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-xs focus:border-blue-500 focus:ring-blue-500">
+                        <p data-error-for="required_document" class="mt-1.5 text-xs text-red-600 hidden"></p>
                     </div>
                     <div>
                         <label for="claim-type-amount" class="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">Required amount</label>
-                        <input id="claim-type-amount" name="required_amount" type="text" inputmode="decimal" autocomplete="off" placeholder="0.00" data-amount-format value="{{ old('required_amount') }}" required class="block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-xs focus:border-blue-500 focus:ring-blue-500">
+                        <div class="relative">
+                            <span class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-500">₱</span>
+                            <input id="claim-type-amount" name="required_amount" type="text" inputmode="decimal" autocomplete="off" placeholder="0.00" data-amount-format data-positive data-max="99999999.99" data-label="required amount" value="{{ old('required_amount') }}" required class="block w-full rounded-lg border border-slate-300 bg-white pl-7 pr-3 py-2 text-sm text-slate-900 shadow-xs tabular-nums focus:border-blue-500 focus:ring-blue-500">
+                        </div>
+                        <p data-error-for="required_amount" class="mt-1.5 text-xs text-red-600 hidden"></p>
                     </div>
                 </div>
 
                 <div>
                     <label for="claim-type-description" class="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">Description <span class="font-normal normal-case text-slate-400">(optional)</span></label>
-                    <textarea id="claim-type-description" name="description" rows="2" maxlength="1000" class="block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-xs focus:border-blue-500 focus:ring-blue-500">{{ old('description') }}</textarea>
+                    <textarea id="claim-type-description" name="description" rows="2" maxlength="1000" data-label="description" class="block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-xs focus:border-blue-500 focus:ring-blue-500">{{ old('description') }}</textarea>
+                    <p data-error-for="description" class="mt-1.5 text-xs text-red-600 hidden"></p>
                 </div>
 
                 <div class="flex flex-col gap-3 border-t border-slate-200 pt-3 sm:flex-row sm:items-center sm:justify-between">
@@ -77,7 +84,7 @@
                         </tr>
                         <tr id="claim-type-edit-{{ $claimType->id }}" class="hidden bg-blue-50/20">
                             <td colspan="5" class="px-3 py-3">
-                                <form method="POST" action="{{ route('settings.claim-types.update', $claimType) }}" class="setting-ajax-form space-y-3" data-can-edit="true" data-confirm-text="Save changes to this claim type? The amount and status apply to claims that have not been processed yet.">
+                                <form method="POST" action="{{ route('settings.claim-types.update', $claimType) }}" class="setting-ajax-form space-y-3" data-can-edit="true" novalidate data-confirm-text="Save changes to this claim type? The amount and status apply to claims that have not been processed yet.">
                                     @csrf
                                     @method('PUT')
                                     <input type="hidden" name="campus_filter" value="{{ $selectedCampusId ?? '' }}">
@@ -85,21 +92,28 @@
                                     <div class="grid gap-3 sm:grid-cols-3">
                                         <div>
                                             <label for="claim-type-name-{{ $claimType->id }}" class="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">Name</label>
-                                            <input id="claim-type-name-{{ $claimType->id }}" name="name" type="text" maxlength="100" data-title-case value="{{ $claimType->name }}" required class="block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-xs focus:border-blue-500 focus:ring-blue-500">
+                                            <input id="claim-type-name-{{ $claimType->id }}" name="name" type="text" maxlength="100" data-title-case data-label="claim type name" value="{{ $claimType->name }}" required class="block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-xs focus:border-blue-500 focus:ring-blue-500">
+                                            <p data-error-for="name" class="mt-1.5 text-xs text-red-600 hidden"></p>
                                         </div>
                                         <div>
                                             <label for="claim-type-document-{{ $claimType->id }}" class="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">Required document</label>
-                                            <input id="claim-type-document-{{ $claimType->id }}" name="required_document" type="text" maxlength="255" value="{{ $claimType->required_document }}" required class="block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-xs focus:border-blue-500 focus:ring-blue-500">
+                                            <input id="claim-type-document-{{ $claimType->id }}" name="required_document" type="text" maxlength="255" data-label="required document" value="{{ $claimType->required_document }}" required class="block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-xs focus:border-blue-500 focus:ring-blue-500">
+                                            <p data-error-for="required_document" class="mt-1.5 text-xs text-red-600 hidden"></p>
                                         </div>
                                         <div>
                                             <label for="claim-type-amount-{{ $claimType->id }}" class="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">Required amount</label>
-                                            <input id="claim-type-amount-{{ $claimType->id }}" name="required_amount" type="text" inputmode="decimal" autocomplete="off" placeholder="0.00" data-amount-format value="{{ number_format((float) $claimType->required_amount, 2) }}" required class="block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-xs focus:border-blue-500 focus:ring-blue-500">
+                                            <div class="relative">
+                                                <span class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-500">₱</span>
+                                                <input id="claim-type-amount-{{ $claimType->id }}" name="required_amount" type="text" inputmode="decimal" autocomplete="off" placeholder="0.00" data-amount-format data-positive data-max="99999999.99" data-label="required amount" value="{{ number_format((float) $claimType->required_amount, 2) }}" required class="block w-full rounded-lg border border-slate-300 bg-white pl-7 pr-3 py-2 text-sm text-slate-900 shadow-xs tabular-nums focus:border-blue-500 focus:ring-blue-500">
+                                            </div>
+                                            <p data-error-for="required_amount" class="mt-1.5 text-xs text-red-600 hidden"></p>
                                         </div>
                                     </div>
 
                                     <div>
                                         <label for="claim-type-description-{{ $claimType->id }}" class="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">Description <span class="font-normal normal-case text-slate-400">(optional)</span></label>
-                                        <textarea id="claim-type-description-{{ $claimType->id }}" name="description" rows="2" maxlength="1000" class="block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-xs focus:border-blue-500 focus:ring-blue-500">{{ $claimType->description }}</textarea>
+                                        <textarea id="claim-type-description-{{ $claimType->id }}" name="description" rows="2" maxlength="1000" data-label="description" class="block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-xs focus:border-blue-500 focus:ring-blue-500">{{ $claimType->description }}</textarea>
+                                        <p data-error-for="description" class="mt-1.5 text-xs text-red-600 hidden"></p>
                                     </div>
 
                                     <div class="flex flex-col gap-3 border-t border-slate-200 pt-3 sm:flex-row sm:items-center sm:justify-between">
@@ -129,46 +143,11 @@
 
 <script>
     (() => {
-        // Keeps only digits and one decimal point (max 2 decimals), then groups the whole part with commas.
-        const formatAmount = (value) => {
-            const cleaned = value.replace(/[^\d.]/g, '');
-            const [whole, ...decimals] = cleaned.split('.');
-            const grouped = whole.replace(/^0+(?=\d)/, '').replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-
-            return cleaned.includes('.') ? `${grouped || '0'}.${decimals.join('').slice(0, 2)}` : grouped;
-        };
-
         const toTitleCase = (value) => value
             .replace(/\s+/g, ' ')
             .trim()
             .toLowerCase()
             .replace(/(^|[\s\-\/(])(\p{L})/gu, (match, separator, letter) => separator + letter.toUpperCase());
-
-        document.querySelectorAll('[data-amount-format]').forEach((input) => {
-            input.value = formatAmount(input.value);
-
-            input.addEventListener('input', () => {
-                // Restore the caret after re-formatting by counting the digits before it.
-                const caret = input.selectionStart ?? input.value.length;
-                const digitsBeforeCaret = input.value.slice(0, caret).replace(/[^\d.]/g, '').length;
-
-                input.value = formatAmount(input.value);
-
-                let position = 0;
-                for (let seen = 0; position < input.value.length && seen < digitsBeforeCaret; position++) {
-                    if (/[\d.]/.test(input.value[position])) seen++;
-                }
-                input.setSelectionRange(position, position);
-            });
-
-            input.addEventListener('blur', () => {
-                if (input.value === '') return;
-                const amount = Number(input.value.replace(/,/g, ''));
-                if (Number.isFinite(amount)) {
-                    input.value = amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                }
-            });
-        });
 
         document.querySelectorAll('[data-title-case]').forEach((input) => {
             input.addEventListener('blur', () => {

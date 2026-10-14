@@ -12,7 +12,7 @@
     @endphp
 
     {{-- Reopen the form after a failed save so the errors are visible --}}
-    <div class="mx-auto max-w-7xl space-y-6" x-data="{ editing: {{ $errors->any() ? 'true' : 'false' }} }">
+    <div class="mx-auto max-w-7xl space-y-6" x-data="profileForm({ editing: @js($errors->any()), errors: @js((object) collect($errors->getMessages())->map(fn ($messages) => $messages[0])->all()) })">
 
         <!-- 1. Hero Overview Card -->
         <div class="flex flex-col gap-4 overflow-hidden rounded-xl border border-gray-200 bg-white p-5 shadow-xs sm:p-6 md:flex-row md:items-center md:justify-between">
@@ -46,7 +46,8 @@
             </div>
         </div>
 
-        <form method="POST" action="{{ route('members.profile.update') }}" x-ref="profileForm">
+        <form id="profile-form" method="POST" action="{{ route('members.profile.update') }}" x-ref="profileForm" novalidate
+            @submit.prevent="submitForm" @input="clearError($event.target.name)" @change="clearError($event.target.name)">
             @csrf
             @method('PATCH')
 
@@ -61,12 +62,12 @@
                                 <label for="gender" class="{{ $labelClass }}">{{ __('Gender') }}</label>
                                 <span x-show="!editing" class="{{ $valueClass }}">{{ $member->gender ?? '—' }}</span>
                                 <div x-show="editing" x-cloak>
-                                    <select id="gender" name="gender" class="{{ $inputClass }}">
+                                    <select id="gender" name="gender" required :class="{ 'error-border': errors.gender }" class="{{ $inputClass }}">
                                         @foreach(['Male', 'Female'] as $gender)
                                             <option value="{{ $gender }}" @selected(old('gender', $member->gender) === $gender)>{{ $gender }}</option>
                                         @endforeach
                                     </select>
-                                    @error('gender') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                                    <p id="gender-error" x-show="errors.gender" x-text="errors.gender" x-cloak class="mt-1.5 text-xs text-red-600"></p>
                                 </div>
                             </div>
                             <div>
@@ -74,8 +75,8 @@
                                 <span x-show="!editing" class="{{ $valueClass }}">{{ $member->birth_date?->format('F d, Y') ?? '—' }}</span>
                                 <div x-show="editing" x-cloak>
                                     <input id="birth_date" type="date" name="birth_date" max="{{ now()->subDay()->toDateString() }}"
-                                        value="{{ old('birth_date', $member->birth_date?->format('Y-m-d')) }}" class="{{ $inputClass }}">
-                                    @error('birth_date') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                                        value="{{ old('birth_date', $member->birth_date?->format('Y-m-d')) }}" :class="{ 'error-border': errors.birth_date }" class="{{ $inputClass }}">
+                                    <p id="birth_date-error" x-show="errors.birth_date" x-text="errors.birth_date" x-cloak class="mt-1.5 text-xs text-red-600"></p>
                                 </div>
                             </div>
                             <div>
@@ -83,8 +84,8 @@
                                 <span x-show="!editing" class="{{ $valueClass }}">{{ $member->contact_number ?? '—' }}</span>
                                 <div x-show="editing" x-cloak>
                                     <input id="contact_number" type="tel" name="contact_number" maxlength="20" required
-                                        value="{{ old('contact_number', $member->contact_number) }}" class="{{ $inputClass }}">
-                                    @error('contact_number') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                                        value="{{ old('contact_number', $member->contact_number) }}" :class="{ 'error-border': errors.contact_number }" class="{{ $inputClass }}">
+                                    <p id="contact_number-error" x-show="errors.contact_number" x-text="errors.contact_number" x-cloak class="mt-1.5 text-xs text-red-600"></p>
                                 </div>
                             </div>
                             <div>
@@ -96,8 +97,8 @@
                                 <label for="address" class="{{ $labelClass }}">{{ __('Home Address') }}</label>
                                 <span x-show="!editing" class="{{ $valueClass }} leading-relaxed">{{ $member->address ?? '—' }}</span>
                                 <div x-show="editing" x-cloak>
-                                    <textarea id="address" name="address" rows="2" required class="{{ $inputClass }}">{{ old('address', $member->address) }}</textarea>
-                                    @error('address') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                                    <textarea id="address" name="address" rows="2" required :class="{ 'error-border': errors.address }" class="{{ $inputClass }}">{{ old('address', $member->address) }}</textarea>
+                                    <p id="address-error" x-show="errors.address" x-text="errors.address" x-cloak class="mt-1.5 text-xs text-red-600"></p>
                                 </div>
                             </div>
                         </div>
@@ -150,8 +151,9 @@
                             <div x-show="editing" x-cloak>
                                 <label for="gcash_number" class="{{ $labelClass }}">{{ __('GCash Registered Number') }}</label>
                                 <input id="gcash_number" type="tel" name="gcash_number" inputmode="numeric" maxlength="11" placeholder="09XXXXXXXXX"
-                                    value="{{ old('gcash_number', $member->gcash_number) }}" class="{{ $inputClass }} font-mono">
-                                @error('gcash_number') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                                    x-on:input="$event.target.value = $event.target.value.replace(/\D/g, '')"
+                                    value="{{ old('gcash_number', $member->gcash_number) }}" :class="{ 'error-border': errors.gcash_number }" class="{{ $inputClass }} font-mono">
+                                <p id="gcash_number-error" x-show="errors.gcash_number" x-text="errors.gcash_number" x-cloak class="mt-1.5 text-xs text-red-600"></p>
                             </div>
 
                             <div>
@@ -161,8 +163,8 @@
                                 </span>
                                 <div x-show="editing" x-cloak>
                                     <input id="gcash_account_name" type="text" name="gcash_account_name" maxlength="255" placeholder="Name registered on GCash"
-                                        value="{{ old('gcash_account_name', $member->gcash_account_name) }}" class="{{ $inputClass }}">
-                                    @error('gcash_account_name') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                                        value="{{ old('gcash_account_name', $member->gcash_account_name) }}" :class="{ 'error-border': errors.gcash_account_name }" class="{{ $inputClass }}">
+                                    <p id="gcash_account_name-error" x-show="errors.gcash_account_name" x-text="errors.gcash_account_name" x-cloak class="mt-1.5 text-xs text-red-600"></p>
                                 </div>
                             </div>
                         </div>
@@ -187,15 +189,222 @@
 
             <!-- Save bar, only while editing -->
             <div x-show="editing" x-cloak class="mt-6 flex flex-col-reverse gap-3 rounded-xl border border-gray-200 bg-white p-4 shadow-xs sm:flex-row sm:items-center sm:justify-end">
-                <button type="button" @click="$refs.profileForm.reset(); editing = false"
+                <button type="button" @click="$refs.profileForm.reset(); errors = {}; editing = false"
                     class="inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-xs transition hover:bg-gray-50">
                     Cancel
                 </button>
-                <button type="submit"
-                    class="inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-xs transition hover:bg-blue-700">
+                <button type="submit" :disabled="loading"
+                    class="inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-xs transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60">
                     Save Changes
                 </button>
             </div>
         </form>
     </div>
+
+    <script>
+        function profileForm({ editing = false, errors = {} } = {}) {
+
+            return {
+
+                editing,
+
+                /* =====================================================
+                 * VALIDATION ERRORS (field name => message)
+                 * ===================================================== */
+
+                errors: { ...errors },
+
+                loading: false,
+
+                init() {
+                    // Errors from a non-JS fallback submit: focus the first one
+                    if (Object.keys(this.errors).length) {
+                        this.focusFirstError();
+                    }
+                },
+
+                async submitForm() {
+
+                    if (!this.validate()) {
+                        return;
+                    }
+
+                    const form = document.getElementById('profile-form');
+                    const formData = new FormData(form);
+
+                    const result = await Swal.fire({
+                        title: 'Save profile changes?',
+                        text: 'Your contact and GCash payout details will be updated.',
+                        icon: 'question',
+                        showCancelButton: true,
+                        confirmButtonColor: '#2563eb',
+                        cancelButtonColor: '#64748b',
+                        confirmButtonText: 'Yes, save changes'
+                    });
+
+                    if (!result.isConfirmed) {
+                        return;
+                    }
+
+                    this.loading = true;
+
+                    Swal.fire({
+                        title: 'Saving your profile...',
+                        text: 'Please wait.',
+                        allowOutsideClick: false,
+                        allowEscapeKey: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
+
+                    try {
+                        const response = await fetch(form.action, {
+                            method: 'POST', // PATCH is spoofed through the form's _method field
+                            headers: {
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                                'Accept': 'application/json',
+                                'X-Requested-With': 'XMLHttpRequest',
+                            },
+                            body: formData
+                        });
+
+                        const data = await response.json();
+
+                        if (!response.ok) {
+                            throw data;
+                        }
+
+                        // Convert the loader into the success state; OK reloads with the new values
+                        Swal.hideLoading();
+                        Swal.update({
+                            icon: 'success',
+                            title: 'Profile updated',
+                            text: data.message,
+                            showConfirmButton: true,
+                            confirmButtonText: 'OK'
+                        });
+
+                        Swal.getConfirmButton().addEventListener('click', () => {
+                            window.location.href = data.redirect || window.location.href;
+                        });
+
+                    } catch (error) {
+                        this.loading = false;
+
+                        // Field validation errors: show them under their inputs
+                        if (error && error.errors) {
+                            Swal.close();
+                            this.showServerErrors(error.errors);
+                            return;
+                        }
+
+                        let errorMessage = 'Something went wrong. Please try again.';
+                        if (error && error.message) {
+                            errorMessage = error.message;
+                        }
+
+                        Swal.hideLoading();
+                        Swal.update({
+                            icon: 'error',
+                            title: 'Oops...',
+                            text: errorMessage,
+                            showConfirmButton: true,
+                            allowOutsideClick: true,
+                            allowEscapeKey: true
+                        });
+                    }
+                },
+
+                /* =====================================================
+                 * VALIDATION (mirrors UpdateOwnProfileRequest)
+                 * ===================================================== */
+
+                validate() {
+
+                    const value = (name) => (document.querySelector(`#profile-form [name="${name}"]`)?.value || '').trim();
+                    const errors = {};
+
+                    if (!['Male', 'Female'].includes(value('gender'))) {
+                        errors.gender = 'Please select your gender.';
+                    }
+
+                    if (value('birth_date') && value('birth_date') >= new Date().toLocaleDateString('en-CA')) {
+                        errors.birth_date = 'The birth date must be a date in the past.';
+                    }
+
+                    if (!value('contact_number')) {
+                        errors.contact_number = 'Please enter your contact number.';
+                    } else if (value('contact_number').length > 20) {
+                        errors.contact_number = 'Contact number may not be longer than 20 characters.';
+                    }
+
+                    if (!value('address')) {
+                        errors.address = 'Please enter your home address.';
+                    }
+
+                    if (value('gcash_number') && !/^09\d{9}$/.test(value('gcash_number'))) {
+                        errors.gcash_number = 'Enter an 11-digit mobile number starting with 09.';
+                    }
+
+                    if (value('gcash_number') && !value('gcash_account_name')) {
+                        errors.gcash_account_name = 'Enter the name registered to this GCash number.';
+                    } else if (value('gcash_account_name').length > 255) {
+                        errors.gcash_account_name = 'Account name may not be longer than 255 characters.';
+                    }
+
+                    return this.setErrors(errors);
+                },
+
+                /**
+                 * Replace all field errors, then focus the first invalid
+                 * one. Returns true when the form has no errors.
+                 */
+                setErrors(errors) {
+                    this.errors = errors;
+
+                    if (Object.keys(errors).length) {
+                        this.editing = true;
+                        this.focusFirstError();
+                        return false;
+                    }
+
+                    return true;
+                },
+
+                focusFirstError() {
+                    this.$nextTick(() => {
+                        const form = document.getElementById('profile-form');
+                        const first = Array.from(form.elements).find(el => el.name && this.errors[el.name]);
+
+                        if (first) {
+                            first.focus();
+                            first.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }
+                    });
+                },
+
+                clearError(name) {
+                    if (name && this.errors[name]) {
+                        this.errors[name] = '';
+                    }
+                },
+
+                /**
+                 * Show server-side (422) validation errors under their fields.
+                 */
+                showServerErrors(serverErrors) {
+                    const errors = {};
+
+                    Object.entries(serverErrors).forEach(([field, messages]) => {
+                        errors[field] = [].concat(messages)[0];
+                    });
+
+                    this.setErrors(errors);
+                },
+
+            }
+
+        }
+    </script>
 </x-app-layout>
