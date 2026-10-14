@@ -461,9 +461,13 @@
         </div>
 
         <form
+            id="membership-fee-form"
             method="POST"
             action="{{ route('members.membership-fees-store') }}"
-            @submit="window.submitMembershipFee($event)"
+            novalidate
+            @submit.prevent="window.submitMembershipFee.call($data, $event)"
+            @input="clearMembershipError($event.target.name)"
+            @change="clearMembershipError($event.target.name)"
         >
             @csrf
 
@@ -490,6 +494,7 @@
                             @keydown.escape="memberResults = []"
                             autocomplete="off"
                             placeholder="Search employee number or member name..."
+                            :class="{ 'error-border': membershipErrors.member_id }"
                             class="w-full rounded-lg border border-gray-300 px-3 py-2 pr-10 text-sm
                                    focus:border-blue-500 focus:outline-none focus:ring-1
                                    focus:ring-blue-500 transition"
@@ -580,6 +585,7 @@
                     >
                         No matching members found.
                     </p>
+                    <p x-show="membershipErrors.member_id" x-text="membershipErrors.member_id" x-cloak class="mt-1.5 text-xs text-red-600"></p>
                 </div>
 
 
@@ -728,44 +734,18 @@
                                     type="text"
                                     name="amount"
                                     x-model="membershipFee.amount"
-                                    min="0"
-                                    inputMode='decimal'
-                                    step="0.01"
-                                    x-on:input="
-                                        let value = $event.target.value.replace(/[^0-9]/g, '');
-
-                                        if (value === '') {
-                                            amount = '';
-                                            $event.target.value = '';
-                                            return;
-                                        }
-
-                                        amount = value;
-                                        $event.target.value = Number(value).toLocaleString('en-US');
-                                    "
-
-                                    x-on:paste="
-                                        setTimeout(() => {
-                                            let value = $event.target.value.replace(/[^0-9,]/g, '');
-
-                                            if (value === '') {
-                                                amount = '';
-                                                $event.target.value = '';
-                                                return;
-                                            }
-
-                                            amount = value;
-                                            $event.target.value = Number(value).toLocaleString('en-US');
-                                        }, 0);
-                                    "
+                                    inputmode="decimal"
+                                    autocomplete="off"
+                                    data-amount-format
                                     placeholder="0.00"
-                                    required
+                                    :class="{ 'error-border': membershipErrors.amount }"
                                     class="w-full rounded-lg border border-gray-300
-                                           py-2 pl-8 pr-3 text-sm
+                                           py-2 pl-8 pr-3 text-sm tabular-nums
                                            focus:border-blue-500 focus:outline-none
                                            focus:ring-1 focus:ring-blue-500 transition"
                                 >
                             </div>
+                            <p x-show="membershipErrors.amount" x-text="membershipErrors.amount" x-cloak class="mt-1.5 text-xs text-red-600"></p>
                         </div>
 
                         <!-- Payment Status -->
@@ -781,7 +761,7 @@
                                 id="membership_fee_status"
                                 name="status"
                                 x-model="membershipFee.status"
-                                required
+                                :class="{ 'error-border': membershipErrors.status }"
                                 class="w-full rounded-lg border border-gray-300 bg-white
                                        px-3 py-2 text-sm text-gray-700
                                        focus:border-blue-500 focus:outline-none
@@ -795,6 +775,7 @@
                                     </option>
                                 @endforeach
                             </select>
+                            <p x-show="membershipErrors.status" x-text="membershipErrors.status" x-cloak class="mt-1.5 text-xs text-red-600"></p>
                         </div>
 
                         <!-- Payment Method -->
@@ -803,14 +784,14 @@
                                 for="membership_payment_method"
                                 class="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1"
                             >
-                                Payment Method <span class="text-red-500">*</span>
+                                Payment Method <span x-show="membershipFee.status === 'Paid'" class="text-red-500">*</span>
                             </label>
 
                             <select
                                 id="membership_payment_method"
                                 name="payment_method_id"
                                 x-model="membershipFee.payment_method_id"
-                                required
+                                :class="{ 'error-border': membershipErrors.payment_method_id }"
                                 class="w-full rounded-lg border border-gray-300 bg-white
                                        px-3 py-2 text-sm text-gray-700
                                        focus:border-blue-500 focus:outline-none
@@ -824,6 +805,7 @@
                                     </option>
                                 @endforeach
                             </select>
+                            <p x-show="membershipErrors.payment_method_id" x-text="membershipErrors.payment_method_id" x-cloak class="mt-1.5 text-xs text-red-600"></p>
                         </div>
 
                         <!-- Payment Date -->
@@ -832,7 +814,7 @@
                                 for="membership_paid_at"
                                 class="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1"
                             >
-                                Payment Date
+                                Payment Date <span x-show="membershipFee.status === 'Paid'" class="text-red-500">*</span>
                             </label>
 
                             <input
@@ -840,9 +822,10 @@
                                 type="date"
                                 name="paid_at"
                                 x-model="membershipFee.paid_at"
-                                :required="membershipFee.status === 'Paid'"
+                                :class="{ 'error-border': membershipErrors.paid_at }"
                                 class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-xs transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                             >
+                            <p x-show="membershipErrors.paid_at" x-text="membershipErrors.paid_at" x-cloak class="mt-1.5 text-xs text-red-600"></p>
                         </div>
 
                     </div>
@@ -853,7 +836,7 @@
                             for="membership_reference_number"
                             class="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1"
                         >
-                            Reference Number
+                            Reference Number <span x-show="membershipFee.status === 'Paid'" class="text-red-500">*</span>
                         </label>
 
                         <input
@@ -862,8 +845,11 @@
                             name="reference_number"
                             x-model="membershipFee.reference_number"
                             placeholder="Receipt / transaction reference number"
+                            maxlength="255"
+                            :class="{ 'error-border': membershipErrors.reference_number }"
                             class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-xs transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                         >
+                        <p x-show="membershipErrors.reference_number" x-text="membershipErrors.reference_number" x-cloak class="mt-1.5 text-xs text-red-600"></p>
                     </div>
 
                     <!-- Remarks -->
@@ -881,11 +867,14 @@
                             x-model="membershipFee.remarks"
                             rows="2"
                             placeholder="Optional remarks..."
+                            maxlength="1000"
+                            :class="{ 'error-border': membershipErrors.remarks }"
                             class="w-full resize-none rounded-lg border border-gray-300
                                    px-3 py-2 text-sm
                                    focus:border-blue-500 focus:outline-none
                                    focus:ring-1 focus:ring-blue-500 transition"
                         ></textarea>
+                        <p x-show="membershipErrors.remarks" x-text="membershipErrors.remarks" x-cloak class="mt-1.5 text-xs text-red-600"></p>
                     </div>
                 </div>
 

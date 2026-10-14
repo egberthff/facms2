@@ -18,6 +18,8 @@ use App\Services\TreasuryLedgerService;
 use Illuminate\Validation\Rule;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator; 
 use Exception;
+use Illuminate\Support\Facades\Log;
+use Throwable;
 
 class MemberService
 {
@@ -289,15 +291,16 @@ class MemberService
 
     public function membershipFee(Request $request)
     {
-        $data = $request->all();
-         
+        // input() so a missing status fails validation (422) instead of erroring
+        $isPaid = $request->input('status') === MembershipFeeStatus::Paid->value;
+
         $validated = $request->validate([
             'member_id' => ['required', 'uuid', 'exists:members,id'],
             'amount' => ['required', 'regex:/^\d{1,3}(,\d{3})*(\.\d+)?$/', 'min:0'], 
             'status' => ['required', Rule::enum(MembershipFeeStatus::class)],
-            'payment_method_id' => [Rule::requiredIf($data['status'] === MembershipFeeStatus::Paid->value),'nullable','uuid','exists:payment_methods,id'],
-            'paid_at' => [Rule::requiredIf($data['status'] === MembershipFeeStatus::Paid->value), 'nullable', 'date'],
-            'reference_number' => [Rule::requiredIf($data['status'] === MembershipFeeStatus::Paid->value),'nullable','string','max:255','unique:membership_fees,reference_number'],
+            'payment_method_id' => [Rule::requiredIf($isPaid),'nullable','uuid','exists:payment_methods,id'],
+            'paid_at' => [Rule::requiredIf($isPaid), 'nullable', 'date'],
+            'reference_number' => [Rule::requiredIf($isPaid),'nullable','string','max:255','unique:membership_fees,reference_number'],
             'remarks' => ['nullable','string','max:1000'],
         ]);
 
@@ -321,7 +324,7 @@ class MemberService
 
                 if ($membershipFee->status === MembershipFeeStatus::Paid) {
 
-                    $this->ledgerEntryService->recordTransaction([
+                    $this->ledgerService->recordTransaction([
                         'campus_id' => $member->campus_id,
 
                         'sourceable_type' => MembershipFee::class,

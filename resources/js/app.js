@@ -1556,6 +1556,58 @@ window.saveCycleConfig = function (event, formElement) {
         });
 };
 
+/**
+ * Client-side rules mirroring MemberService::membershipFee(). Returns { field: message }.
+ */
+function validateMembershipFee(form) {
+    const value = (name) => (form.querySelector(`[name="${name}"]`)?.value || '').trim();
+    const errors = {};
+    const status = value('status');
+    const amount = value('amount');
+
+    if (!value('member_id')) {
+        errors.member_id = 'Please search and select a member.';
+    }
+
+    if (!amount) {
+        errors.amount = 'Please enter the payment amount.';
+    } else if (!/^\d{1,3}(,\d{3})*(\.\d{1,2})?$/.test(amount)) {
+        errors.amount = 'Enter a valid amount with up to 2 decimal places.';
+    } else if (Number(amount.replace(/,/g, '')) <= 0 && !['Waived', 'Cancelled'].includes(status)) {
+        errors.amount = 'Amount must be greater than zero.';
+    }
+
+    if (!status) {
+        errors.status = 'Please select the payment status.';
+    }
+
+    // A paid fee needs its payment trail
+    if (status === 'Paid') {
+        if (!value('payment_method_id')) {
+            errors.payment_method_id = 'Please select the payment method.';
+        }
+
+        if (!value('paid_at')) {
+            errors.paid_at = 'Please enter the payment date.';
+        }
+
+        if (!value('reference_number')) {
+            errors.reference_number = 'Please enter the reference number.';
+        }
+    }
+
+    if (value('reference_number').length > 255) {
+        errors.reference_number = 'Reference number may not be longer than 255 characters.';
+    }
+
+    if (value('remarks').length > 1000) {
+        errors.remarks = 'Remarks may not be longer than 1000 characters.';
+    }
+
+    return errors;
+}
+
+// Called as window.submitMembershipFee.call($data, $event), so `this` is the Alpine component.
 window.submitMembershipFee = async function submitMembershipFee(event) {
     event.preventDefault();
 
@@ -1563,15 +1615,28 @@ window.submitMembershipFee = async function submitMembershipFee(event) {
         return;
     }
 
-    
+    const form = event.target;
 
-    // if (!this.selectedMember) {
-    if ($('[name="member_id"]').value == '') {
-        Swal.fire({
-            icon: 'warning',
-            title: 'Selection Required',
-            text: 'Please select a member first.'
-        });
+    /**
+     * Replace the field errors and focus the first invalid one.
+     * Returns true when there are no errors.
+     */
+    const setErrors = (errors) => {
+        this.membershipErrors = errors;
+
+        const first = Array.from(form.elements).find((el) => el.name && errors[el.name] && el.type !== 'hidden')
+            || (errors.member_id ? form.querySelector('#membership_member_search') : null);
+
+        if (first) {
+            first.focus();
+            first.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            return false;
+        }
+
+        return Object.keys(errors).length === 0;
+    };
+
+    if (!setErrors(validateMembershipFee(form))) {
         return;
     }
 
@@ -1592,9 +1657,18 @@ window.submitMembershipFee = async function submitMembershipFee(event) {
         return;
     }
 
-    const form = event.target;
     const formData = new FormData(form);
     this.submittingMembershipFee = true;
+
+    Swal.fire({
+        title: 'Saving membership fee...',
+        text: 'Please wait.',
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
 
     try {
         const response = await fetch(form.action, {
@@ -1606,22 +1680,20 @@ window.submitMembershipFee = async function submitMembershipFee(event) {
             body: formData,
         });
 
-        const data = await response.json();
+        const data = await response.json().catch(() => ({}));
 
         /*
-         * Laravel validation errors (422)
+         * Laravel validation errors (422): show them under their inputs
          */
-        if (response.status === 422) {
-            const errors = data.errors ?? {};
-            const messages = Object.values(errors)
-                .flat()
-                .join('\n');
-            
-            Swal.fire({
-                icon: 'error',
-                title: 'Validation Error',
-                text: messages || 'Please check the information provided.'
+        if (response.status === 422 && data.errors) {
+            Swal.close();
+
+            const errors = {};
+            Object.entries(data.errors).forEach(([field, messages]) => {
+                errors[field] = [].concat(messages)[0];
             });
+
+            setErrors(errors);
             return;
         }
 
