@@ -330,12 +330,20 @@ class MemberController extends Controller
     /**
      * A member updating their own contact and payout details.
      */
-    public function updateProfile(UpdateOwnProfileRequest $request): RedirectResponse
+    public function updateProfile(UpdateOwnProfileRequest $request): RedirectResponse|JsonResponse
     {
         // Always the signed-in user's own record, never one from the URL
         $member = Member::where('user_id', Auth::id())->firstOrFail();
 
         $member->update($request->validated());
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Your profile has been updated.',
+                'redirect' => route('members.profile'),
+            ]);
+        }
 
         return redirect()->route('members.profile')->with('success', 'Profile updated.');
     }

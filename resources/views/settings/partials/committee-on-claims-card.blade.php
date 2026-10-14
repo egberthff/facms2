@@ -64,12 +64,23 @@
                         this.query = '';
                         this.results = [];
                         this.open = false;
+                        this.clearError();
                     },
 
                     clear() {
                         this.selectedId = '';
                         this.selectedName = '';
                         this.selectedMeta = '';
+                        this.clearError();
+                    },
+
+                    // Picking or removing a member clears the server error shown under the card
+                    clearError() {
+                        const message = this.$root.querySelector('[data-error-for=setting_value]');
+                        if (message) {
+                            message.textContent = '';
+                            message.classList.add('hidden');
+                        }
                     }
                 }"
                 class="flex flex-col rounded-lg border border-slate-200 bg-slate-50/60 p-3.5 transition hover:border-blue-200"
@@ -82,7 +93,7 @@
                     <span class="shrink-0 rounded-full bg-white px-2 py-0.5 text-[10px] font-semibold text-slate-500 ring-1 ring-slate-200">{{ optional($setting->campus)->acronym ?? 'Campus' }}</span>
                 </div>
 
-                <form method="POST" action="{{ route('settings.update', $setting) }}" class="setting-ajax-form mt-auto space-y-2" data-can-edit="{{ $canEdit ? 'true' : 'false' }}" data-confirm-text="Save this {{ $cardTitle }} assignment?">
+                <form method="POST" action="{{ route('settings.update', $setting) }}" class="setting-ajax-form mt-auto space-y-2" data-can-edit="{{ $canEdit ? 'true' : 'false' }}" data-confirm-text="Save this {{ $cardTitle }} assignment?" novalidate>
                     @csrf
                     @method('PUT')
                     <input type="hidden" name="campus_filter" value="{{ $selectedCampusId ?? '' }}">
@@ -103,6 +114,7 @@
                             <x-heroicon-o-x-mark class="size-4" />
                         </button>
                     </div>
+                    <p data-error-for="setting_value" class="mt-1.5 text-xs text-red-600 hidden"></p>
 
                     <!-- Member search + save -->
                     <label for="committee-search-{{ $setting->id }}" class="sr-only">Search member</label>

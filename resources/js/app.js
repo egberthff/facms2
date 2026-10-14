@@ -124,6 +124,50 @@ document.addEventListener('DOMContentLoaded', () => {
     // Datatables
     document.querySelectorAll(".dt-table:not([data-datatable-defer])").forEach(initializeDataTable);
 
+    // Settings amount / whole-number inputs (claim-style typing)
+    document.querySelectorAll('[data-amount-format]').forEach((input) => {
+        input.value = formatAmountValue(input.value);
+    });
+
+    document.addEventListener('input', (event) => {
+        const input = event.target;
+
+        if (input.matches?.('[data-amount-format]')) {
+            // Restore the caret after re-formatting by counting the digits before it.
+            const caret = input.selectionStart ?? input.value.length;
+            const digitsBeforeCaret = input.value.slice(0, caret).replace(/[^\d.]/g, '').length;
+
+            input.value = formatAmountValue(input.value);
+
+            let position = 0;
+            for (let seen = 0; position < input.value.length && seen < digitsBeforeCaret; position++) {
+                if (/[\d.]/.test(input.value[position])) seen++;
+            }
+            input.setSelectionRange(position, position);
+        } else if (input.matches?.('[data-integer]')) {
+            input.value = input.value.replace(/\D/g, '');
+        }
+
+        // Typing in a settings field clears its error
+        const form = input.closest?.('.setting-ajax-form, .cycle-config-form');
+        if (form && input.name) clearSettingsFieldError(form, input.name);
+    });
+
+    document.addEventListener('change', (event) => {
+        const form = event.target.closest?.('.setting-ajax-form, .cycle-config-form');
+        if (form && event.target.name) clearSettingsFieldError(form, event.target.name);
+    });
+
+    document.addEventListener('focusout', (event) => {
+        const input = event.target;
+        if (!input.matches?.('[data-amount-format]') || input.value === '') return;
+
+        const amount = Number(input.value.replace(/,/g, ''));
+        if (Number.isFinite(amount)) {
+            input.value = amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+    });
+
     //Submit system setting config
      document.addEventListener('submit', async function (event) {
         const form = event.target.closest('.setting-ajax-form');
@@ -141,6 +185,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 icon: 'warning',
                 confirmButtonColor: '#2563eb'
             });
+            return;
+        }
+
+        // Field validation: show errors under their inputs before asking to confirm
+        if (!setSettingsFormErrors(form, validateSettingsForm(form))) {
             return;
         }
 
@@ -169,7 +218,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // 4. Capture fields (Including Laravel's hidden _token and _method fields)
         const actionUrl = form.getAttribute('action');
-        const formData = new FormData(form);
+        const formData = settingsFormData(form);
 
         fetch(actionUrl, {
             method: 'POST', // Laravel uses method spoofing POST with hidden input _method: 'PUT'
@@ -212,17 +261,19 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('Settings Form Submission Error:', error);
 
             if (error && error.data) {
-                // If inline error processing function exists, activate field styling highlights
-                // if (error.status === 422 && error.data.errors && typeof displayValidationErrors === 'function') {
-                //     try {
-                //         displayValidationErrors(error.data.errors);
-                //     } catch (uiError) {
-                //         console.error('Error rendering inline settings indicators:', uiError);
-                //     }
-                // }
+                // Field validation errors: show them under their inputs
+                let customErrorMessage = error.data.message || 'Please review input parameters and retry.';
 
-                // EXTRACT BACKEND MESSAGES Dynamically
-                const customErrorMessage = error.data.message || 'Please review input parameters and retry.';
+                if (error.status === 422 && error.data.errors) {
+                    const unmatched = showSettingsServerErrors(form, error.data.errors);
+
+                    if (!unmatched.length) {
+                        Swal.close();
+                        return;
+                    }
+
+                    customErrorMessage = unmatched.join(' ');
+                }
 
                 Swal.fire({
                     title: error.status === 422 ? 'Validation Failed' : 'Update Failed',
@@ -1245,12 +1296,159 @@ window.updateClaimStatus = function(claimId, status, claimData = {}) {
         return false;
     };
 
+/* =====================================================
+ * SETTINGS FORM VALIDATION (claim submission pattern)
+ * Rules come from the field attributes: required, maxlength,
+ * data-amount-format (+ data-positive, data-max), data-integer (+ data-min, data-max).
+ * ===================================================== */
+
+// Keeps only digits and one decimal point (max 2 decimals), then groups the whole part with commas.
+function formatAmountValue(value) {
+    const cleaned = String(value ?? '').replace(/[^\d.]/g, '');
+    const [whole, ...decimals] = cleaned.split('.');
+    const grouped = whole.replace(/^0+(?=\d)/, '').replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+
+    return cleaned.includes('.') ? `${grouped || '0'}.${decimals.join('').slice(0, 2)}` : grouped;
+}
+
+function validateSettingsForm(form) {
+    const errors = {};
+    const fields = form.querySelectorAll('input[name]:not([type="hidden"]):not([type="checkbox"]):not(:disabled), select[name]:not(:disabled), textarea[name]:not(:disabled)');
+
+    fields.forEach((field) => {
+        if (errors[field.name]) return;
+
+        const label = field.dataset.label || 'value';
+        const value = field.value.trim();
+
+        if (value === '') {
+            if (field.required) {
+                errors[field.name] = field.tagName === 'SELECT' ? `Please select the ${label}.` : `Please enter the ${label}.`;
+            }
+            return;
+        }
+
+        if (field.hasAttribute('data-amount-format')) {
+            const raw = value.replace(/,/g, '');
+
+            if (!/^\d+(\.\d{1,2})?$/.test(raw)) {
+                errors[field.name] = 'Enter a valid amount with up to 2 decimal places.';
+            } else if (field.hasAttribute('data-positive') && Number(raw) <= 0) {
+                errors[field.name] = `The ${label} must be greater than zero.`;
+            } else if (field.dataset.max && Number(raw) > Number(field.dataset.max)) {
+                errors[field.name] = `The ${label} may not be greater than ${Number(field.dataset.max).toLocaleString('en-US')}.`;
+            }
+            return;
+        }
+
+        if (field.hasAttribute('data-integer')) {
+            const min = field.dataset.min !== undefined ? Number(field.dataset.min) : null;
+            const max = field.dataset.max !== undefined ? Number(field.dataset.max) : null;
+
+            if (!/^\d+$/.test(value)) {
+                errors[field.name] = `The ${label} must be a whole number.`;
+            } else if ((min !== null && Number(value) < min) || (max !== null && Number(value) > max)) {
+                errors[field.name] = `The ${label} must be between ${min} and ${max}.`;
+            }
+            return;
+        }
+
+        if (field.maxLength > 0 && value.length > field.maxLength) {
+            errors[field.name] = `The ${label} may not be longer than ${field.maxLength} characters.`;
+        }
+    });
+
+    return errors;
+}
+
+function clearSettingsFieldError(form, name) {
+    form.querySelectorAll(`[name="${name}"]:not([type="hidden"])`).forEach((el) => el.classList.remove('error-border'));
+
+    const message = form.querySelector(`[data-error-for="${name}"]`);
+    if (message) {
+        message.textContent = '';
+        message.classList.add('hidden');
+    }
+}
+
+/**
+ * Replace the form's field errors and focus the first invalid one.
+ * Returns true when there are no errors.
+ */
+function setSettingsFormErrors(form, errors) {
+    form.querySelectorAll('[data-error-for]').forEach((el) => clearSettingsFieldError(form, el.dataset.errorFor));
+
+    let firstInvalid = null;
+
+    Object.entries(errors).forEach(([name, message]) => {
+        if (!message) return;
+
+        const input = form.querySelector(`[name="${name}"]:not([type="hidden"])`);
+        input?.classList.add('error-border');
+
+        const target = form.querySelector(`[data-error-for="${name}"]`);
+        if (target) {
+            target.textContent = message;
+            target.classList.remove('hidden');
+        }
+
+        firstInvalid ??= input || target;
+    });
+
+    if (firstInvalid) {
+        firstInvalid.focus?.();
+        firstInvalid.scrollIntoView?.({ behavior: 'smooth', block: 'center' });
+        return false;
+    }
+
+    return true;
+}
+
+/**
+ * Show server-side (422) errors under their fields. Returns the messages
+ * that have no place on this form, so the caller can still show them.
+ */
+function showSettingsServerErrors(form, serverErrors) {
+    const fieldErrors = {};
+    const unmatched = [];
+
+    Object.entries(serverErrors).forEach(([name, messages]) => {
+        const message = [].concat(messages)[0];
+
+        if (form.querySelector(`[data-error-for="${name}"]`)) {
+            fieldErrors[name] = message;
+        } else {
+            unmatched.push(message);
+        }
+    });
+
+    setSettingsFormErrors(form, fieldErrors);
+
+    return unmatched;
+}
+
+// Amount fields show thousands separators; send the raw number.
+function settingsFormData(form) {
+    const formData = new FormData(form);
+
+    form.querySelectorAll('[data-amount-format][name]').forEach((input) => {
+        if (!input.disabled) formData.set(input.name, input.value.replace(/,/g, '').trim());
+    });
+
+    return formData;
+}
+
 window.saveCycleConfig = function (event, formElement) {
     // 1. Properly stop the browser from reloading the page
     event.preventDefault();
 
+    // Field validation: show errors under their inputs before asking to confirm
+    if (!setSettingsFormErrors(formElement, validateSettingsForm(formElement))) {
+        return;
+    }
+
     // 2. Build FormData using the passed form element context
-    const formData = new FormData(formElement);
+    const formData = settingsFormData(formElement);
     const actionUrl = formElement.action;
 
     // 3. For logging FormData, console.log(formData) often prints empty. 
@@ -1323,11 +1521,24 @@ window.saveCycleConfig = function (event, formElement) {
 
                 // Check if we caught a structured server error response
                 if (error && error.data) {
+                    let errorMessage = error.data.message || 'Please check your inputs and try again.';
+
+                    // Field validation errors: show them under their inputs
+                    if (error.status === 422 && error.data.errors) {
+                        const unmatched = showSettingsServerErrors(formElement, error.data.errors);
+
+                        if (!unmatched.length) {
+                            Swal.close();
+                            return;
+                        }
+
+                        errorMessage = unmatched.join(' ');
+                    }
 
                     // 2. ERROR POPUP (Displays whatever custom message the server sent)
                     Swal.fire({
                         title: error.status === 422 ? 'Validation Failed' : 'Action Failed',
-                        text: error.data.message || 'Please check your inputs and try again.',
+                        text: errorMessage,
                         icon: error.status === 403 ? 'warning' : 'error',
                         confirmButtonColor: '#2563eb'
                     });

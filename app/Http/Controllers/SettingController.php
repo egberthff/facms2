@@ -77,6 +77,16 @@ class SettingController extends Controller
     ];
 
     /**
+     * Peso amount settings. Their inputs show thousands separators, which are stripped before validation.
+     */
+    public const AMOUNT_KEYS = [
+        'association_fund',
+        'annual_claim_limit',
+        'annual_contribution',
+        'member_contribution',
+    ];
+
+    /**
      * Search members of one campus for the member-picker slots (Committee on Claims, report signatories).
      */
     public function searchCommitteeMembers(Request $request)
@@ -157,6 +167,11 @@ class SettingController extends Controller
         $isCycleConfiguration = $setting->setting_key === 'claim_cycle_start_year'
             && $request->has(['cycle_start_year', 'cycle_start_month', 'cycle_years']);
 
+        // Amount inputs display thousands separators; never store them
+        if (in_array($setting->setting_key, self::AMOUNT_KEYS, true) && is_string($request->input('setting_value'))) {
+            $request->merge(['setting_value' => str_replace(',', '', trim($request->input('setting_value')))]);
+        }
+
         if ($isCycleConfiguration) {
             $request->validate([
                 'cycle_start_year' => ['required', 'integer', 'between:1900,2200'],
@@ -171,6 +186,7 @@ class SettingController extends Controller
             'claim_cycle_start_month' => ['required', 'integer', 'between:1,12'],
             'claim_cycle_years' => ['required', 'integer', 'between:1,20'],
             'association_fund' => ['required', 'numeric', 'decimal:0,2', 'gt:0'],
+            'annual_claim_limit', 'annual_contribution', 'member_contribution' => ['required', 'numeric', 'decimal:0,2', 'min:0'],
             // Empty clears the slot; otherwise it must be a member of the setting's campus
             'claims_committee_chair', 'claims_committee_member_1', 'claims_committee_member_2' => [
                 'nullable',
