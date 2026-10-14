@@ -31,7 +31,7 @@
 
                     <div class="relative z-10 flex flex-col items-center text-center">
                         <div class="h-20 w-20 rounded-full bg-white p-2 shadow-lg border-2 border-violet-400/30 flex items-center justify-center">
-                            <img src="{{ asset('storage/images/logo/bisu_logo.png') }}" alt="Bohol Island State University Logo" class="object-contain max-h-full">
+                            <img src="{{ asset('storage/images/logo/bisu_logo.png') }}" alt="Bohol Island State University Logo" class="object-contain max-h-full rounded-full">
                         </div>
 
                         <h1 class="mt-4 text-lg font-bold tracking-tight text-gray-100 uppercase">
@@ -79,8 +79,8 @@
                     
                     <div class="my-auto py-6 md:py-12 flex flex-col items-center text-center z-10">
                         <!-- BISU Logo Container -->
-                        <div class="h-20 w-20 md:h-28 md:w-28 rounded-full bg-white p-2 shadow-lg border-2 border-violet-400/30 flex items-center justify-center">
-                            <img src="{{ asset('storage/images/logo/bisu_logo.png') }}" alt="Bohol Island State University Logo" class="object-contain max-h-full">
+                        <div class="h-20 w-20 md:h-28 md:w-28 rounded-full bg-white p-1 shadow-lg border-1 border-violet-400/30 flex items-center justify-center">
+                            <img src="{{ asset('storage/images/logo/bisu_logo.png') }}" alt="Bohol Island State University Logo" class="object-contain max-h-full rounded-full">
                         </div>
                         
                         <h1 class="mt-5 text-lg md:text-xl font-bold tracking-tight text-gray-100 uppercase">
