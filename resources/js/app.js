@@ -559,20 +559,78 @@ window.updateClaimStatus = function(claimId, status, claimData = {}) {
                     `)
                     .join('');
         
+                // Server field key => modal input id
+                const fields = {
+                    payment_method_id: 'swal-payment-method',
+                    reference_number: 'swal-reference-number',
+                };
+
+                const clearFieldError = (field) => {
+                    document.getElementById(fields[field])?.classList.remove('error-border');
+                    const message = document.getElementById(`${fields[field]}-error`);
+                    if (message) {
+                        message.textContent = '';
+                        message.classList.add('hidden');
+                    }
+                };
+
+                /**
+                 * Replace the field errors, then focus the first invalid
+                 * one. Returns true when there are no errors.
+                 */
+                const setFieldErrors = (errors) => {
+                    Swal.resetValidationMessage();
+
+                    Object.keys(fields).forEach((field) => {
+                        clearFieldError(field);
+
+                        if (errors[field]) {
+                            document.getElementById(fields[field])?.classList.add('error-border');
+                            const message = document.getElementById(`${fields[field]}-error`);
+                            message.textContent = errors[field];
+                            message.classList.remove('hidden');
+                        }
+                    });
+
+                    const firstInvalid = Object.keys(fields).find((field) => errors[field]);
+                    if (firstInvalid) {
+                        document.getElementById(fields[firstInvalid])?.focus();
+                        return false;
+                    }
+
+                    return true;
+                };
+
+                const validate = (values) => {
+                    const errors = {};
+
+                    if (!values.payment_method_id) {
+                        errors.payment_method_id = 'Please select the payment method.';
+                    }
+
+                    if (!values.reference_number) {
+                        errors.reference_number = 'Please enter the reference number.';
+                    } else if (values.reference_number.length > 255) {
+                        errors.reference_number = 'Reference number may not be longer than 255 characters.';
+                    }
+
+                    return errors;
+                };
+
                 const result = await Swal.fire({
                     title: 'Mark Membership Fee as Paid',
-        
+
                     html: `
                         <div class="text-left">
-        
+
                             <div class="mb-4">
                                 <label
                                     for="swal-payment-method"
                                     class="block text-sm font-medium text-gray-700 mb-1"
                                 >
-                                    Payment Method
+                                    Payment Method <span class="text-red-500">*</span>
                                 </label>
-        
+
                                 <select
                                     id="swal-payment-method"
                                     class="swal2-input"
@@ -581,81 +639,123 @@ window.updateClaimStatus = function(claimId, status, claimData = {}) {
                                     <option value="">
                                         -- Select Payment Method --
                                     </option>
-        
+
                                     ${paymentMethodOptions}
                                 </select>
+                                <p id="swal-payment-method-error" class="mt-1.5 text-xs text-red-600 hidden"></p>
                             </div>
-        
+
                             <div>
                                 <label
                                     for="swal-reference-number"
                                     class="block text-sm font-medium text-gray-700 mb-1"
                                 >
-                                    Reference Number
+                                    Reference Number <span class="text-red-500">*</span>
                                 </label>
-        
+
                                 <input
                                     id="swal-reference-number"
                                     type="text"
+                                    maxlength="255"
                                     class="swal2-input"
                                     placeholder="Enter reference number"
                                     style="width: 100%; margin: 0;"
                                 >
+                                <p id="swal-reference-number-error" class="mt-1.5 text-xs text-red-600 hidden"></p>
                             </div>
-        
+
                         </div>
                     `,
-        
+
                     icon: 'warning',
-        
+
                     showCancelButton: true,
-        
+
                     confirmButtonColor: '#2563eb',
                     cancelButtonColor: '#d33',
-        
+
                     confirmButtonText: 'Yes, mark as paid',
-        
+
                     focusConfirm: false,
-        
-                    preConfirm: () => {
-                        const paymentMethodId = document
-                            .getElementById('swal-payment-method')
-                            .value;
-        
-                        const referenceNumber = document
-                            .getElementById('swal-reference-number')
-                            .value
-                            .trim();
-        
-                        if (!paymentMethodId) {
-                            Swal.showValidationMessage(
-                                'Please select a payment method.'
-                            );
-        
-                            return false;
-                        }
-        
-                        if (!referenceNumber) {
-                            Swal.showValidationMessage(
-                                'Please enter a reference number.'
-                            );
-        
-                            return false;
-                        }
-        
-                        return {
-                            payment_method_id: paymentMethodId,
-                            reference_number: referenceNumber
+
+                    showLoaderOnConfirm: true,
+                    allowOutsideClick: () => !Swal.isLoading(),
+
+                    didOpen: () => {
+                        // Typing in a field clears its error
+                        Object.keys(fields).forEach((field) => {
+                            const input = document.getElementById(fields[field]);
+                            input?.addEventListener('input', () => clearFieldError(field));
+                            input?.addEventListener('change', () => clearFieldError(field));
+                        });
+                    },
+
+                    preConfirm: async () => {
+                        const values = {
+                            payment_method_id: document.getElementById(fields.payment_method_id).value,
+                            reference_number: document.getElementById(fields.reference_number).value.trim(),
                         };
+
+                        if (!setFieldErrors(validate(values))) {
+                            return false;
+                        }
+
+                        // Send from inside the modal so server errors keep it open with the values
+                        try {
+                            const response = await fetch(postUrl, {
+                                method: 'POST',
+                                headers: {
+                                    'Accept': 'application/json',
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                                },
+                                body: JSON.stringify(values)
+                            });
+
+                            const payload = await response.json().catch(() => ({}));
+
+                            if (response.ok && payload.success) {
+                                return payload;
+                            }
+
+                            // Field validation errors: show them under their inputs
+                            if (response.status === 422 && payload.errors) {
+                                const errors = {};
+                                Object.entries(payload.errors).forEach(([field, messages]) => {
+                                    errors[field] = [].concat(messages)[0];
+                                });
+
+                                // Errors for fields not in the modal (e.g. already paid) still need to be seen
+                                const unmapped = Object.keys(errors).find((field) => !fields[field]);
+                                setFieldErrors(errors);
+                                if (unmapped) {
+                                    Swal.showValidationMessage(errors[unmapped]);
+                                }
+                                return false;
+                            }
+
+                            Swal.showValidationMessage(payload.message || 'Unable to update contribution status.');
+                            return false;
+                        } catch (error) {
+                            Swal.showValidationMessage('Something went wrong while updating. Please try again.');
+                            return false;
+                        }
                     }
                 });
-        
+
                 if (!result.isConfirmed) {
                     return;
                 }
-        
-                requestData = result.value;
-        
+
+                await Swal.fire({
+                    title: 'Success',
+                    text: result.value?.message || 'Membership fee marked as paid.',
+                    icon: 'success'
+                });
+
+                window.location.reload();
+                return;
+
             } else {
         
                 /*

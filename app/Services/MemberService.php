@@ -306,7 +306,7 @@ class MemberService
 
        
         try {
-            $membershipFee = DB::transaction(function () use ($validated) {
+            $membershipFee = DB::transaction(function () use ($validated, $isPaid) {
                 $member = Member::query()
                     ->findOrFail($validated['member_id']);
                     $reference_code = 'BMRF-' . now()->format('Ymd') . '-' . strtoupper(Str::random(6));
@@ -322,7 +322,8 @@ class MemberService
                     'created_by' => Auth::id(),
                 ]);
 
-                if ($membershipFee->status === MembershipFeeStatus::Paid) {
+                // Only a paid fee is cash received; pending ones post when marked paid (ContributionService::markAsPaid)
+                if ($isPaid) {
 
                     $this->ledgerService->recordTransaction([
                         'campus_id' => $member->campus_id,
